@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jeopardizzy! Word-Game Show</title>
+<style>
+:root{--bg:#F6F4EC;--surface:#FFFFFF;--ink:#2E3A33;--mute:#7A857D;--sage-soft:#E3EFE4;--sage-d:#4F7A5D;--onsage:#FFFFFF;--butter:#F5E6A8;--butter-soft:#FBF4D3;--butter-d:#EBD983;--line:#E6E3D6;--shadow:0 6px 24px rgba(60,80,65,.08);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#18211C;--surface:#222D27;--ink:#E7EEE5;--mute:#98A69C;--sage-soft:#2A3B30;--sage-d:#A9D1B4;--onsage:#17211B;--butter:#CDBE72;--butter-soft:#3A3722;--butter-d:#DCCD82;--line:#32403A;--shadow:0 6px 24px rgba(0,0,0,.35)}}
+:root[data-theme="dark"]{--bg:#18211C;--surface:#222D27;--ink:#E7EEE5;--mute:#98A69C;--sage-soft:#2A3B30;--sage-d:#A9D1B4;--onsage:#17211B;--butter:#CDBE72;--butter-soft:#3A3722;--butter-d:#DCCD82;--line:#32403A;--shadow:0 6px 24px rgba(0,0,0,.35)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.55}
+a{color:var(--sage-d)}
+header{padding:18px 24px}
+header .in{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+header a.brand{color:var(--ink);text-decoration:none;font-size:22px;font-weight:650;letter-spacing:-.01em}
+header a.brand span{color:var(--sage-d)}
+nav{display:flex;gap:4px;flex-wrap:wrap;font-size:15px}
+nav a{color:var(--mute);text-decoration:none;padding:7px 15px;border-radius:999px;transition:background .15s,color .15s}
+nav a:hover{background:var(--sage-soft)}
+nav a.on{background:var(--sage-soft);color:var(--sage-d);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:10px 24px 60px}
+h1{font-size:32px;font-weight:650;letter-spacing:-.02em;margin-bottom:6px}
+h2{font-size:13px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.1em;margin:34px 0 12px}
+.lead{color:var(--mute);margin-bottom:14px;max-width:700px}
+.hero{background:linear-gradient(135deg,var(--sage-soft),var(--butter-soft));border-radius:28px;padding:48px 34px;margin:6px 0 4px}
+.hero h1{font-size:48px;letter-spacing:-.03em}
+.hero h1 span{color:var(--sage-d)}
+.hero p{color:var(--mute);max-width:560px;margin:10px 0 22px;font-size:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.card{display:block;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);transition:transform .15s,background .15s}
+.card:hover{transform:translateY(-2px);background:var(--sage-soft)}
+.card b{display:block;font-size:17px;font-weight:600;margin-bottom:3px}
+.card small{color:var(--mute);font-size:14px}
+.jt{display:block;text-decoration:none;background:var(--butter);color:#33311B;border-radius:18px;padding:22px 12px;text-align:center;transition:transform .15s,background .15s}
+.jt:hover{transform:translateY(-2px);background:var(--butter-d)}
+.jt b{display:block;font-size:28px;font-weight:650;letter-spacing:-.02em}
+.jt small{font-size:14px;opacity:.75}
+.btn,button,.big{font-family:inherit;font-size:15px;padding:9px 18px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-block;transition:background .15s}
+.btn:hover,button:hover{background:var(--sage-soft)}
+.btn.p,.big{background:var(--sage-d);color:var(--onsage);border-color:var(--sage-d)}
+.btn.p:hover,.big:hover{background:var(--sage-d);filter:brightness(1.08)}
+.big{font-size:17px;padding:13px 28px;font-weight:600}
+.rounds{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.rounds button.on{background:var(--sage-d);color:var(--onsage);border-color:var(--sage-d)}
+.board{display:grid;gap:10px}
+.cat{background:var(--sage-soft);color:var(--sage-d);padding:12px 8px;text-align:center;font-size:15px;font-weight:600;min-height:66px;display:flex;align-items:center;justify-content:center;line-height:1.25;border-radius:14px}
+.cell{background:var(--butter);color:#33311B;font-size:26px;font-weight:650;text-align:center;padding:22px 6px;cursor:pointer;user-select:none;border-radius:14px;border:1px solid transparent;transition:background .15s,transform .15s}
+.cell:hover{background:var(--butter-d);transform:translateY(-1px)}
+.cell:focus-visible{outline:3px solid var(--sage-d);outline-offset:2px}
+.cell.done{background:transparent;border:1px dashed var(--line);color:transparent;cursor:default;transform:none}
+.scores{margin-top:26px;display:flex;gap:12px;flex-wrap:wrap}
+.team{flex:1 1 160px;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.team input{border:none;border-bottom:1px solid var(--line);font-family:inherit;font-size:15px;padding:3px 0;background:transparent;color:var(--ink)}
+.team input:focus{outline:none;border-bottom-color:var(--sage-d)}
+.team .score{font-size:32px;font-weight:650;color:var(--sage-d)}
+.adj{display:flex;gap:6px}.adj button{padding:5px 12px}
+.tools{display:flex;flex-direction:column;gap:8px;justify-content:center}
+.overlay{position:fixed;inset:0;background:rgba(36,48,40,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
+.overlay.open{display:flex}
+.mcard{background:var(--surface);width:min(720px,100%);max-height:92vh;overflow:auto;padding:34px 38px;border-radius:26px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.meta{font-size:13px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px}
+.clue{font-size:27px;line-height:1.35;font-weight:550;margin-bottom:22px}
+.answer{font-size:24px;font-weight:600;color:var(--sage-d);background:var(--sage-soft);padding:14px 18px;border-radius:14px;margin-bottom:22px;display:none}
+.answer.show{display:block}
+.answer small{display:block;font-size:15px;font-weight:400;color:var(--ink);margin-top:6px;line-height:1.4}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.award{margin-top:16px;display:none}.award.show{display:block}
+.award p{color:var(--mute);margin-bottom:8px}
+.gc{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);margin:16px 0;overflow:hidden}
+.gc h3{background:var(--sage-soft);color:var(--sage-d);font-weight:600;font-size:18px;padding:12px 18px}
+.gc div.b{padding:14px 18px 18px}
+.gc .sk{color:var(--mute);font-size:14px;margin-bottom:6px}
+.gc h4{font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.1em;margin:14px 0 4px}
+.gc .ex{background:var(--butter-soft);padding:10px 14px;border-radius:12px}
+.gc ul{margin-left:20px}.gc li{margin:3px 0}
+ol.tasks{margin-left:26px}ol.tasks li{margin:6px 0;font-size:17px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 16px;margin:12px 0}
+details summary{cursor:pointer;color:var(--sage-d);font-weight:600}
+ol.key{margin-left:26px;margin-top:8px}ol.key li{margin:4px 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{header,nav,.rounds,.btn,button{display:none}}
+@media (max-width:720px){header{padding:14px 12px}main{padding:6px 12px 44px}h1{font-size:26px}.hero{padding:30px 20px;border-radius:22px}.hero h1{font-size:34px}.board{gap:5px}.cat{font-size:11px;min-height:54px;padding:8px 3px;border-radius:10px}.cell{font-size:17px;padding:14px 3px;border-radius:10px}.mcard{padding:24px 20px}.clue{font-size:21px}.answer{font-size:20px}}
+</style>
+
+</head>
+<body>
+<header><div class="in"><a class="brand" href="#/">Jeopardizzy<span>!</span></a>
+<nav id="nav"></nav></div></header>
+<main id="app"></main>
+<div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="mcard">
+<div class="meta" id="meta"></div><div class="clue" id="clue"></div><div class="answer" id="answer"></div>
+<div class="row"><button class="btn p" id="reveal">Reveal answer</button><button class="btn" id="close">Close</button></div>
+<div class="award" id="award"><p>Award points to:</p><div class="row" id="awardBtns"></div></div></div></div>
+<script>
+const SETS=[{data:[
+ { name:"Endings & Beginnings", items:[
+  ["April ___ Proof","Fool","April fool: a prank victim on April 1. Foolproof: impossible to get wrong."],
+  ["Touch ___ Town","Down","Touchdown: a football score. Downtown: the city centre."],
+  ["Cottage ___ Cloth","Cheese","Cottage cheese; cheesecloth: a loosely woven cotton fabric."],
+  ["Double ___ Word","Cross","Double-cross: to betray. Crossword: a word puzzle."],
+  ["Slap ___ Shift","Stick","Slapstick: physical, knockabout comedy. Stick shift: a manual gearbox."]]},
+ { name:"Opposites Attract", items:[
+  ["Rearrange ARF / EARN into a pair of opposites.","Far / Near",""],
+  ["Rearrange GIRTH / FELT into a pair of opposites.","Right / Left",""],
+  ["Rearrange THORN / SHOUT into a pair of opposites.","North / South",""],
+  ["Rearrange INDIES / TEDIOUS into a pair of opposites.","Inside / Outside",""],
+  ["Rearrange STREAM / TAVERNS into a pair of opposites.","Master / Servant","Servant: a person employed to perform domestic duties."]]},
+ { name:"Homonyms", items:[
+  ["A long cry of pain, grief or anger; and a marine mammal.","Wail / Whale","Wail: a prolonged, high-pitched cry."],
+  ["An animal hunted for food; and to appeal to God.","Prey / Pray",""],
+  ["To cause liquid to flow from a container; and a tiny opening in the skin.","Pour / Pore","Pore: a tiny skin opening for sweat or oil."],
+  ["A proboscis; and has information.","Nose / Knows","Proboscis: a nose, especially a long one."],
+  ["A person who claims to predict the future; and a financial gain.","Prophet / Profit","Prophet: someone who foretells the future or speaks for God."]]},
+ { name:"What a Pair!", items:[
+  ["Wit and ___","Wisdom","Wit and wisdom: cleverness paired with sound judgment."],
+  ["Bits and ___","Pieces","Bits and pieces: assorted small fragments; odds and ends."],
+  ["___ and cry","Hue","Hue and cry: a loud public outcry or clamour."],
+  ["___ and key","Lock","Lock and key: kept securely guarded."],
+  ["Part and ___","Parcel","Part and parcel: an essential, inseparable component."]]},
+ { name:"Down to the Wire", items:[
+  ["___ to the music","Dance","Dance to the music: move in time with the beat."],
+  ["___ to the ground","Ear","Ear to the ground: stay alert to news and rumours."],
+  ["___ to the moon","Fly me","Fly me to the moon: a classic song title."],
+  ["___ to the top","Race","Race to the top: compete to reach the highest position."],
+  ["___ to the wheel","Shoulder","Shoulder to the wheel: get down to hard, steady work."]]},
+ { name:"Change a Letter", items:[
+  ["Play, Snail, Waist: change one letter, the same in all three.","R: Pray, Snarl, Wrist",""],
+  ["Flask, Way, Pour","H: Flash, Why, Hour",""],
+  ["Umpire, Omit, Diving","E: Empire, Emit, Divine",""],
+  ["Gym, Fly, Onion","U: Gum, Flu, Union",""],
+  ["Bring, Thin, Mango","E: Brine, Then, Mange","Mange: a skin disease of animals."]]},
+ { name:"Stinky Pinky", items:[
+  ["A gloomy father","Sad dad",""],
+  ["A small fake horse","Phony pony","Phony: fake, not genuine."],
+  ["A science research room for a leggy crustacean","Crab lab",""],
+  ["A very bad smell in Paris","French stench","Stench: a strong, foul smell."],
+  ["Hilarious currency","Funny money","Funny money: counterfeit or dubious cash."]]},
+ { name:"Acronym Alphabet", items:[
+  ["POV","Point of view",""],
+  ["VIN","Vehicle Identification Number",""],
+  ["FLOTUS","First Lady of the United States",""],
+  ["DVM","Doctor of Veterinary Medicine","Veterinary: relating to the medical care of animals."],
+  ["ERA","Earned run average / Equal Rights Amendment","A baseball pitching statistic; a proposed U.S. amendment on gender equality."]]},
+ { name:"What's the Animal?", items:[
+  ["Cash ___","Cow","Cash cow: a reliably profitable product or business."],
+  ["Silly ___","Goose","Silly goose: a playfully foolish person."],
+  ["Eager ___","Beaver","Eager beaver: an enthusiastic, hard-working person."],
+  ["Grease ___","Monkey","Grease monkey: a mechanic."],
+  ["Spring ___","Chicken","Spring chicken: a young person (usually 'no spring chicken')."]]},
+ { name:"FINE Words", items:[
+  ["K _ _ _ _  (missing letters F, I, N, E)","Knife",""],
+  ["_ _ FTE _ _","Fifteen",""],
+  ["ID _ _ T _ _ Y","Identify",""],
+  ["BE _ _ _ _ T","Benefit",""],
+  ["CO _ _ _ D _","Confined",""]]},
+ { name:"What's the Word?", items:[
+  ["VA___ · COL___E · SO___ · HO___AY","LID","Valid, Collide, Solid, Holiday."],
+  ["___ROOM · BOM___ · CLIM___ · STAB___","BED","Bedroom, Bombed, Climbed, Stabbed."],
+  ["JU___ · INVO___ · CHO___ · L___NSE","ICE","Juice, Invoice, Choice, License."],
+  ["TH___ · P___ATE · ___OT · AC___AT","ROB","Throb, Probate, Robot, Acrobat. Probate: the legal process of validating a will."],
+  ["___THER · ___TRY · ___CREAS · OCCU___T","PAN","Panther, Pantry, Pancreas, Occupant. Pancreas: a gland that aids digestion. Occupant: a person living in a place."]]},
+ { name:"Double Trouble", items:[
+  ["Holy, Mineral, Spring + ?","Water","Holy water, mineral water, spring water."],
+  ["Odd, Wrong, Rational + ?","Number","Odd number, wrong number, rational number."],
+  ["Cow, Golden, Cover + ?","Girl","Cowgirl; golden girl (a favourite); cover girl (a magazine model)."],
+  ["Egg, Figure, Letter + ?","Head","Egghead (an intellectual), figurehead (a nominal leader), letterhead (printed stationery header)."],
+  ["Rules and ___","Regulations","Rules and regulations: the official requirements governing something."]]},
+ { name:"Rebus & Rhymes", items:[
+  ["Mrs. Onassis's tan pants (a Stinky Pinky)","Jackie's khakis",""],
+  ["Polo player − striped letter O + a tree","Poultry","Polo − O + tree = poultry: domestic fowl kept for meat or eggs."],
+  ["Scuba diver + city skyline","Diversity","Diver + city = diversity: a range of different people or things."],
+  ["Sink − K + bowler (Derby) hat − Y + padlock","Cinderblock","Sink − K + Derby − Y + lock: a hollow concrete building brick."],
+  ["Dirty ___","Dog (or Rat)","Dirty dog / dirty rat: a despicable, untrustworthy person."]]},
+ { name:"Odds & Ends", items:[
+  ["OED","Oxford English Dictionary",""],
+  ["O _ F _ _ S _ VE  (missing F, I, N, E)","Offensive",""],
+  ["___VE · S___F · VI___ · MAS___A","CAR","Carve, Scarf, Vicar, Mascara. Vicar: an Anglican parish priest."],
+  ["___LEX · P___ER · CA___UL · BA___OOT","REF","Reflex, Prefer, Careful, Barefoot. Reflex: an automatic bodily response."],
+  ["THR___ · CH___Y · M___ION · P___OW","ILL","Thrill, Chilly, Million, Pillow."]]}
+],rounds:[[0,5],[5,10],[10,14]]},
+{data:[
+ { name:"Need Directions?", items:[
+  ["The Beltway","Washington, DC","Beltway: the ring highway around DC; also slang for U.S. federal politics."],
+  ["Abbey Road","London, England","Also the title of a famous Beatles album."],
+  ["The Yellow Brick Road","The Wizard of Oz","The path Dorothy follows to the Emerald City."],
+  ["The Grand Canal","Venice, Italy","Venice's main waterway."],
+  ["The Bowery","New York City","A historic street and neighbourhood in lower Manhattan."]]},
+ { name:"Say What?", items:[
+  ["\u201CHumans who reside in clear, vitreous residences ought not to hurl small rocks.\u201D","People who live in glass houses should not throw stones.","Proverb: don't criticise others for faults you have yourself."],
+  ["\u201CExcellent-quality boundary barriers create excellent-quality people who live very nearby.\u201D","Good fences make good neighbors.","Proverb: clear boundaries keep neighbourly relations friendly."],
+  ["\u201CThe discharge of atmospheric electricity at no time hits the identical location on two occasions.\u201D","Lightning never strikes in the same place twice.","Saying: a rare misfortune is unlikely to happen again."],
+  ["\u201CCreate dried grass during the time that the star at the center of the Milky Way galaxy radiates.\u201D","Make hay while the sun shines.","Idiom: use an opportunity while conditions are good."],
+  ["\u201CSpy the smallest coin, lift it, and for 24 hours you will experience serendipitous fortune.\u201D","See a penny, pick it up, and all day long, you'll have good luck.","Rhyme: finding a penny is said to bring luck. Serendipitous: happening by lucky chance."]]},
+ { name:"Finish the Proverb", items:[
+  ["____ the crime.","Let the punishment fit the crime.","Saying: a penalty should be proportionate to the offence."],
+  ["____ do today.","Never put off until tomorrow what you can do today.","Proverb against procrastination (delaying)."],
+  ["____ are free.","The best things in life are free.","Saying: love, friendship and nature cost nothing."],
+  ["____ good thing.","You can never have too much of a good thing.","Saying (often ironic): enjoyable things can't be overdone."],
+  ["(Say What?) \u201CThat which leaves in a circular fashion, returns in a circular fashion.\u201D","What goes around, comes around.","Idiom: your actions eventually have consequences for you."]]},
+ { name:"Nicknames", items:[
+  ["Soup Strainer","Mustache","Humorous slang for a moustache."],
+  ["Old Glory","The American flag","The U.S. flag's traditional nickname."],
+  ["The Tube","The London Metro (or TV)","The Tube: London's Underground railway; also slang for television."],
+  ["Lady Lindy","Amelia Earhart","Aviation pioneer, nicknamed after Charles 'Lucky Lindy' Lindbergh."],
+  ["Shrub","George W. Bush","Nickname used by his critics and by some Texans."]]},
+ { name:"Odd Man Out", items:[
+  ["Rule, Retriever, Girls, Pencil: which is the odd one out, and why?","Pencil: the rest finish \u201CGolden ____\u201D","Golden Rule, Golden Retriever, Golden Girls. Retriever: a dog bred to fetch game."],
+  ["Chocolate, Casino, Potato, Guitar: which is the odd one out, and why?","Guitar: the rest are types of chips","Chocolate chip, casino chip, potato chip."],
+  ["Glory, Testament, Amendment, Age: which is the odd one out, and why?","Amendment: the rest finish \u201COld ____\u201D","Old Glory, Old Testament, Old Age."],
+  ["Cotton, Horse, Saddle, Tap: which is the odd one out, and why?","Cotton: the rest are types of shoes","Horseshoe, saddle shoe, tap shoe."],
+  ["(Need Directions?) Bourbon Street","New Orleans","A famous street in the French Quarter, known for jazz and nightlife."]]},
+ { name:"Opposites Attract I", items:[
+  ["Rearrange LAYER / TALE into a pair of opposites.","Early / Late",""],
+  ["Rearrange SLOT / FONDU into a pair of opposites.","Lost / Found",""],
+  ["Rearrange NINER / ROUTE into a pair of opposites.","Inner / Outer",""],
+  ["Rearrange CLERIC / LIEN into a pair of opposites.","Circle / Line","Cleric: a member of the clergy. Lien: a legal claim on property."],
+  ["Rearrange OWLETS / EIGHTHS into a pair of opposites.","Lowest / Highest",""]]},
+ { name:"Opposites Attract II", items:[
+  ["Rearrange GROWN / GIRTH into a pair of opposites.","Wrong / Right",""],
+  ["Rearrange ROVE / NUDER into a pair of opposites.","Over / Under",""],
+  ["Rearrange TARTS / POST into a pair of opposites.","Start / Stop",""],
+  ["Rearrange CHEAT / RENAL into a pair of opposites.","Teach / Learn",""],
+  ["Rearrange COLES / PONE into a pair of opposites.","Close / Open",""]]},
+ { name:"Down to the Wire", items:[
+  ["____ to the plate","Step up","Step up to the plate: take responsibility and act (baseball image)."],
+  ["____ to the chase","Cut","Cut to the chase: get to the point."],
+  ["____ to the teeth","Armed","Armed to the teeth: carrying a great many weapons."],
+  ["Hitchhiker's Guide ____ the Galaxy (book)","The Hitchhiker's Guide to the Galaxy","A comic sci-fi novel by Douglas Adams."],
+  ["____ to the slaughter","Like a lamb","Like a lamb to the slaughter: going innocently into danger."]]},
+ { name:"BigBoy", items:[
+  ["IBM's nickname","Big Blue",""],
+  ["The leading explanation for how the universe began from small dense matter and expanded outward","The Big Bang theory","The Big Bang: the cosmological model of the universe's origin."],
+  ["A group of seven stars in the constellation Ursa Major","The Big Dipper","Dipper: a ladle-shaped star pattern (constellation: a group of stars)."],
+  ["More pressing concerns; more important things to do","Bigger fish to fry","Idiom: more important matters to attend to."],
+  ["Proverb Theodore Roosevelt used to describe his foreign policy","Speak softly and carry a big stick.","Roosevelt's 'big stick diplomacy': negotiate calmly, but back it with strength."]]},
+ { name:"Stinky Pinky", items:[
+  ["Mrs. Onassis's tan pants","Jackie's khakis",""],
+  ["Homily in Berlin","German sermon","Homily / sermon: a religious talk given by a preacher."],
+  ["Soft French cheese at no cost","Free brie",""],
+  ["In-shape London resident","Fit Brit","Brit: informal for a British person."],
+  ["Eating utensil made from a dried plum","Prune spoon",""]]},
+ { name:"Happy Endings", items:[
+  ["CA___ \u00B7 SWE___ \u00B7 OBSE___ \u00B7 CONSE___","RVE","Carve, swerve, observe, conserve."],
+  ["VO___ \u00B7 FIS___ \u00B7 RAS___ \u00B7 LOGI___","CAL","Vocal, fiscal, rascal, logical. Fiscal: relating to government money."],
+  ["ST___ \u00B7 LOV___ \u00B7 PORT___ \u00B7 IRRIT___","ABLE","Stable, lovable, portable, irritable."],
+  ["SW___ \u00B7 BAB___ \u00B7 BUFF___ \u00B7 MACAR___","OON","Swoon, baboon, buffoon, macaroon. Buffoon: a ridiculous, foolish person."],
+  ["NA___ \u00B7 FES___ \u00B7 CREA___ \u00B7 FUGI___","TIVE","Native, festive, creative, fugitive. Fugitive: someone escaping capture."]]},
+ { name:"Change a Letter", items:[
+  ["Play, Snail, Waist: same new letter in all three","R: Pray, Snarl, Wrist",""],
+  ["Blown, Aloud, Soup","C: Clown, Cloud, Coup","Coup: a sudden seizure of power."],
+  ["Iron, Polite, Spatter","C: Icon, Police, Scatter",""],
+  ["Timer, Loiter, Pint","G: Tiger, Goiter, Sing","Goiter: a swelling of the thyroid gland in the neck."],
+  ["Spa, Mouth, Math","Y: Spy, Youth, Myth",""]]},
+ { name:"OTHER Words", items:[
+  ["BA _ _ _ _ B _  (missing O, T, H, E, R)","Bathrobe",""],
+  ["_ A _ _ _ W _ RM","Earthworm",""],
+  ["_ RC _ _ S _ _ A","Orchestra","Orchestra: a large group of musicians playing together."],
+  ["T _ _ _ M _ S _ AT","Thermostat","Thermostat: a device that regulates temperature."],
+  ["G _ _ S _ WRIT _ _","Ghostwriter","Ghostwriter: someone who writes for another person, uncredited."]]},
+ { name:"FORE Words", items:[
+  ["_ _ F _ _  (missing F, O, R, E)","Offer",""],
+  ["B _ N _ I _ _","Bonfire",""],
+  ["_ _ _ _ IGN","Foreign",""],
+  ["BA _ _ _ O _ T","Barefoot","Barefoot: without shoes or socks."],
+  ["IN _ _ RI _ _","Inferior","Inferior: lower in quality or rank."]]},
+ { name:"What's the Word?", items:[
+  ["PRO___ \u00B7 ___NESS \u00B7 OUT___ \u00B7 GRAF___I","FIT","Profit, fitness, outfit, graffiti. Graffiti: writing or drawings on walls."],
+  ["___EL \u00B7 F___ \u00B7 ___DOG \u00B7 COL___SE","LAP","Lapel, flap, lapdog, collapse. Lapel: the folded front edge of a jacket."],
+  ["T___ \u00B7 ___ATE \u00B7 P___ECT \u00B7 P___EIN","ROT","Trot, rotate, protect, protein."],
+  ["___SE \u00B7 OP___ \u00B7 CAM___ \u00B7 C___MICS","ERA","Erase, opera, camera, ceramics. Ceramics: objects made of baked clay."],
+  ["___ION \u00B7 C___US \u00B7 F___ORY \u00B7 COMP___","ACT","Action, cactus, factory, compact."]]},
+ { name:"Letter Play", items:[
+  ["(What's the Word?) ___B \u00B7 CI___ \u00B7 SU___ \u00B7 ___DEN","GAR","Garb, cigar, sugar, garden. Garb: clothing, especially of a distinctive kind."],
+  ["(What's the Word?) S___E \u00B7 C___BER \u00B7 ___LET \u00B7 ___STER","HAM","Shame, chamber, hamlet, hamster. Hamlet: a small village."],
+  ["(What's the Word?) CO___ \u00B7 ___RO \u00B7 ___HOD \u00B7 DIA___ER","MET","Comet, metro, method, diameter. Diameter: a straight line across a circle through its centre."],
+  ["(OTHER Words) BUT _ _ _ SC _ TC _","Butterscotch","Butterscotch: a sweet made of butter and brown sugar."],
+  ["(FORE Words) B _ Y _ _ I _ ND","Boyfriend",""]]}
+],rounds:[[0,4],[4,8],[8,12],[12,16]]},
+{data:[
+ { name:"Jingles & Slogans", items:[
+  ["\u201CMaybe she's born with it, ____.\u201D Name the product.","\u2026maybe it's Maybelline. (Maybelline)","A cosmetics brand's long-running jingle."],
+  ["\u201CIt's the quicker ____.\u201D Name the product.","\u2026picker-upper. (Bounty paper towels)","Bounty: a paper towel brand."],
+  ["\u201CNobody doesn't like ____.\u201D Name the product.","\u2026Sara Lee. (Sara Lee)","A bakery brand known for cakes and desserts."],
+  ["\u201CWhat would you do for ____?\u201D Name the product.","\u2026a Klondike Bar? (Klondike)","Klondike: an ice-cream bar brand."],
+  ["\u201CIf you've got the time, we've ____.\u201D Name the product.","\u2026got the beer. (Miller High Life)","Miller High Life: an American beer."]]},
+ { name:"Say What?", items:[
+  ["\u201CNot within one's visual field, not within one's brain.\u201D","Out of sight, out of mind.","Saying: people forget what they can't see."],
+  ["\u201CNot a thing exists as a gratis midday repast.\u201D","There is no such thing as a free lunch.","Idiom: everything has a hidden cost. Gratis: free of charge."],
+  ["\u201CIf you desire an indeterminate thing accomplished correctly, perform it on your own.\u201D","If you want something done right, do it yourself.","Proverb: it's best to do important things yourself."],
+  ["\u201CConverse for the duration it takes for your mug to become a shade of azure.\u201D","Talk until you are blue in the face.","Idiom: talk for a very long time without persuading anyone."],
+  ["\u201CThat's the manner in which the baked good falls into pieces.\u201D","That's the way the cookie crumbles.","Idiom: that's how things go; accept the outcome."]]},
+ { name:"Stinky Pinky", items:[
+  ["A feeble person from Athens","Weak Greek","Feeble: physically weak."],
+  ["Prince Charles's mother after a bath","Clean queen",""],
+  ["Lock openers made of gouda","Cheese keys","Gouda: a mild Dutch cheese."],
+  ["A yellow fruit from the capital of Cuba","Havana banana",""],
+  ["A traditional song about a bowl of greens and other raw vegetables","Salad ballad","Ballad: a slow, story-telling song."]]},
+ { name:"Acronym Alphabet", items:[
+  ["CPR","Cardio-pulmonary resuscitation","An emergency technique to restart breathing and circulation."],
+  ["VCR","Video cassette recorder",""],
+  ["FCC","Federal Communications Commission","The U.S. agency that regulates radio, TV and telecoms."],
+  ["MASH","Mobile Army Surgical Hospital","Also a TV series set in a Korean War field hospital."],
+  ["BMW","Bavarian Motor Works (Bayerische Motoren Werke)","A German car and motorcycle maker."]]},
+ { name:"Saintly Surprises", items:[
+  ["A brand of aspirin","St. Joseph",""],
+  ["Children's hospital founded by Danny Thomas","St. Jude","A research hospital in Memphis, Tennessee."],
+  ["Hospital that's the setting for a 1980s TV series","St. Elsewhere",""],
+  ["Charles Lindbergh's airplane","The Spirit of St. Louis","The plane that made the first solo nonstop transatlantic flight (1927)."],
+  ["Medicinal herb said to have antidepressant properties","St. John's wort","Wort: an old word for a plant or herb."]]},
+ { name:"Double Trouble", items:[
+  ["Book, Silk, Tape + ? (an animal)","Worm","Bookworm: an avid reader. Silkworm: moth larva that spins silk."],
+  ["Eat, Jim, Scare + ? (an animal)","Crow","Eat crow: admit you were wrong. Jim Crow: U.S. laws enforcing racial segregation."],
+  ["Cry, Lone, Timber + ? (an animal)","Wolf","Cry wolf: raise a false alarm. Lone wolf: someone who acts independently."],
+  ["Talk, Cold, Wild + ? (an animal)","Turkey","Talk turkey: speak frankly. Cold turkey: quitting something abruptly."],
+  ["Spring, Rubber, Fried + ? (an animal)","Chicken","Spring chicken: a young person (usually 'no spring chicken')."]]},
+ { name:"Opposites Attract I", items:[
+  ["Rearrange AFT / HINT into a pair of opposites.","Fat / Thin",""],
+  ["Rearrange RIFTS / SALT into a pair of opposites.","First / Last",""],
+  ["Rearrange PATS / SERPENT into a pair of opposites.","Past / Present",""],
+  ["Rearrange PEED / HALLOWS into a pair of opposites.","Deep / Shallow",""],
+  ["Rearrange MALLS / GLARE into a pair of opposites.","Small / Large",""]]},
+ { name:"Opposites Attract II", items:[
+  ["Rearrange DESERT / TRIED into a pair of opposites.","Rested / Tired",""],
+  ["Rearrange FATS / OWLS into a pair of opposites.","Fast / Slow",""],
+  ["Rearrange VOLE / HEAT into a pair of opposites.","Love / Hate",""],
+  ["Rearrange GLEAN / LIVED into a pair of opposites.","Angel / Devil",""],
+  ["Rearrange BAKER / RAPIER into a pair of opposites.","Break / Repair",""]]},
+ { name:"Odd Man Out", items:[
+  ["Cassiopeia, Orion, Scorpius, Cormorant: which is the odd one out, and why?","Cormorant: a bird; the rest are constellations","Constellation: a named group of stars. Cormorant: a diving seabird."],
+  ["Shuttlecock, Shylock, Puck, Falstaff: which is the odd one out, and why?","Shuttlecock: the badminton object; the rest are Shakespeare characters","Shylock, Puck and Falstaff appear in Shakespeare's plays."],
+  ["Quiche, Vichyssoise, Borscht, Gazpacho: which is the odd one out, and why?","Quiche: an egg-and-cheese pie; the rest are soups","Vichyssoise: chilled potato-leek soup. Gazpacho: cold tomato soup. Borscht: beet soup."],
+  ["Lake Placid, Gettysburg, Baseball Hall of Fame, Coney Island: which is the odd one out, and why?","Gettysburg: in Pennsylvania; the rest are in New York","Gettysburg: site of a famous Civil War battle."],
+  ["(Saintly Surprises) Full and proper name for the Mormon church","The Church of Jesus Christ of Latter-day Saints",""]]},
+ { name:"FLAG Words", items:[
+  ["_ RU _ _ _  (missing F, L, A, G)","Frugal","Frugal: careful and economical with money."],
+  ["_ R _ _ I _ E","Fragile","Fragile: easily broken."],
+  ["_ E _ P _ RO _","Leapfrog","Leapfrog: a game in which players vault over each other's backs."],
+  ["_ R _ TE _ U _","Grateful",""],
+  ["_ _ OOD _ _ TE","Floodgate","Floodgate: a gate that controls the flow of water."]]},
+ { name:"Happy Endings", items:[
+  ["CA___ \u00B7 SWE___ \u00B7 OBSE___ \u00B7 CONSE___","RVE","Carve, swerve, observe, conserve."],
+  ["PO___ \u00B7 GENE___ \u00B7 NUME___ \u00B7 VIGO___","ROUS","Porous, generous, numerous, vigorous. Porous: full of tiny holes."],
+  ["LA___ \u00B7 ENO___ \u00B7 THRO___ \u00B7 HICCO___","UGH","Laugh, enough, through, hiccough (a variant spelling of hiccup)."],
+  ["VA___ \u00B7 OCC___ \u00B7 RES___ \u00B7 ASSA___","ULT","Vault, occult, result, assault. Occult: supernatural or mystical."],
+  ["RE___ \u00B7 ASS___ \u00B7 FORE___ \u00B7 CAMPA___","IGN","Reign, assign, foreign, campaign."]]},
+ { name:"Change a Letter", items:[
+  ["Play, Snail, Waist: same new letter in all three","R: Pray, Snarl, Wrist",""],
+  ["Arid, Incite, Lease","V: Avid, Invite, Leave","Avid: very enthusiastic."],
+  ["Butter, Driver, Filmed","L: Butler, Drivel, Filled","Drivel: silly nonsense."],
+  ["Eat, Binge, Battle","O: Oat, Bingo, Bottle",""],
+  ["Owes, Calmer, Scamp","L: Owls, Caller, Scalp",""]]},
+ { name:"What's the Word?", items:[
+  ["___NERS \u00B7 AL___AC \u00B7 HU___ \u00B7 ___SION","MAN","Manners, almanac, human, mansion."],
+  ["B___ \u00B7 SP___ \u00B7 T___ET \u00B7 TURM___","OIL","Boil, spoil, toilet, turmoil. Turmoil: a state of great confusion."],
+  ["IS___ \u00B7 TIS___ \u00B7 ___DE \u00B7 PUR___","SUE","Issue, tissue, suede, pursue. Suede: soft leather with a velvety surface."],
+  ["___K \u00B7 S___K \u00B7 ___KET \u00B7 FRAN___","TIC","Tick, stick, ticket, frantic."],
+  ["DI___ \u00B7 ___ITY \u00B7 AD___CE \u00B7 ___ILLA","VAN","Divan, vanity, advance, vanilla. Divan: a long, low sofa."]]},
+ { name:"Bonus Mix", items:[
+  ["(Addables) BUST + one letter, rearranged. Name 5 of 10 words.","Abuts, Bouts, Bunts, Burst, Busts, Busty, Butts, Stubs, Tubas, Tubes","Abuts: borders on. Tubas: large brass instruments. Other correct answers are possible."],
+  ["(Addables) GRIN + one letter, rearranged. Name 3 of 9 words.","Bring, Grain, Grind, Grins, Groin, Reign, Rings, Ruing, Wring","Ruing: feeling deep regret. Other correct answers are possible."],
+  ["(Addables) HERE + one letter, rearranged. Name 3 of 6 words.","Cheer, Ether, Sheer, There, Three, Where","Ether: a volatile liquid once used as an anaesthetic. Other correct answers are possible."],
+  ["(FLAG Words) _ I _ E _ U _ RD","Lifeguard",""],
+  ["(Acronym Alphabet) ROTC","Reserve Officer Training Corps","A U.S. college program that trains future military officers."]]}
+],rounds:[[0,5],[5,10],[10,14]]},
+{data:[
+ { name:"Endings & Beginnings", items:[
+  ["Pony ____ Gate","Tail","Ponytail: a hairstyle. Tailgate: to drive too close behind another vehicle."],
+  ["Watch ____ Fight","Dog","Watchdog: a guard dog or vigilant monitor. Dogfight: aerial combat between fighter planes."],
+  ["Type ____ Lift","Face","Typeface: a style of lettering. Facelift: a cosmetic surgery, or a renovation."],
+  ["Space ____ Agent","Travel","Space travel; travel agent."],
+  ["Hang ____ Polish","Nail","Hangnail: a torn strip of skin beside a fingernail."]]},
+ { name:"Mathematically Speaking", items:[
+  ["In the 1950s and 1960s, the opposite of a \u201Chip\u201D person","Square","Square: slang for a conventional, old-fashioned person."],
+  ["What a pilot does if too many planes are trying to land","Circle","Circling: flying a holding pattern until a runway is free."],
+  ["A unit of ice","Cube",""],
+  ["A measure of the percentage of alcohol in whiskey, gin and other hard liquors","Proof","In the U.S., proof is twice the alcohol percentage."],
+  ["This percussion instrument is popular in grammar school bands","Triangle",""]]},
+ { name:"Geographical Nicknames", items:[
+  ["The Big Peach","Atlanta","Georgia is known as the Peach State."],
+  ["Second City","Chicago","Nickname from when it was America's second-largest city."],
+  ["Witch City","Salem (Massachusetts)","Site of the 1692 witch trials."],
+  ["The Forbidden City","Beijing","Forbidden City: the imperial palace complex in central Beijing."],
+  ["The Big Pineapple","Honolulu","Hawaii is famous for its pineapple industry."]]},
+ { name:"Need Directions?", items:[
+  ["The Ginza","Tokyo, Japan","A famous upscale shopping district."],
+  ["Beale Street","Memphis, TN","Historic home of the blues."],
+  ["Lombard Street","San Francisco, CA","Known for its steep, winding, brick-paved curves."],
+  ["Gasoline Alley","In the funny pages","A long-running newspaper comic strip."],
+  ["Khyber Pass","Pakistan (near Afghanistan)","A historic mountain pass linking South and Central Asia."]]},
+ { name:"Ted's Terrible Titles", items:[
+  ["From This Place Until Forever","From Here to Eternity (James Jones)","Eternity: time without end."],
+  ["Gentle Be the Darkness","Tender Is the Night (F. Scott Fitzgerald)",""],
+  ["Hubris and Bias","Pride and Prejudice (Jane Austen)","Prejudice: an unfair opinion formed without knowledge."],
+  ["The Summons of the Untamed","The Call of the Wild (Jack London)",""],
+  ["Felony and Disciplinary Action","Crime and Punishment (Fyodor Dostoevsky)","Felony: a serious crime."]]},
+ { name:"Say What?", items:[
+  ["\u201CRefrain from severing your olfactory organ in order to defy your visage.\u201D","Don't cut off your nose to spite your face.","Idiom: don't harm yourself just to get back at someone."],
+  ["\u201COne-sixteenth of a pint's worth of avoidance is as valuable as sixteen ounces of complete healing.\u201D","An ounce of prevention is worth a pound of cure.","Proverb: preventing a problem is easier than fixing it."],
+  ["\u201CThe hardest gemstones are a young female's closest companion.\u201D","Diamonds are a girl's best friend.","Famous song lyric and saying about jewellery."],
+  ["\u201CPlace your currency in the same location as your oral cavity.\u201D","Put your money where your mouth is.","Idiom: back up your words with action."],
+  ["\u201CThe most excellent item after carved brioche.\u201D","The best thing since sliced bread.","Idiom: a great new invention or idea."]]},
+ { name:"Stinky Pinky", items:[
+  ["The entrance to a house in Oslo","Norway doorway",""],
+  ["A cantaloupe that was convicted of a crime","Felon melon","Felon: a person convicted of a serious crime."],
+  ["A tasty marine crustacean that is a member of the mafia","Mobster lobster","Mobster: a member of organised crime."],
+  ["An inn for a small antelope","Gazelle hotel","Gazelle: a small, fast antelope."],
+  ["Plates for a flounder","Fish's dishes","Flounder: a flat fish."]]},
+ { name:"Scrambled States", items:[
+  ["AAA LAMB (unscramble into a U.S. state)","Alabama",""],
+  ["RAN MADLY","Maryland",""],
+  ["I'M ACHING","Michigan",""],
+  ["A HEN WHIMPERS","New Hampshire",""],
+  ["HAIRCUT SALOON","South Carolina",""]]},
+ { name:"Opposites Attract", items:[
+  ["Rearrange SEAT / STEW into a pair of opposites.","East / West",""],
+  ["Rearrange TACIT / RECALL into a pair of opposites.","Attic / Cellar",""],
+  ["Rearrange BINGE / DEN into a pair of opposites.","Begin / End",""],
+  ["Rearrange ULCER / DINK into a pair of opposites.","Cruel / Kind",""],
+  ["Rearrange FINDER / YEMEN into a pair of opposites.","Friend / Enemy",""]]},
+ { name:"Number Words", items:[
+  ["Sk ___ (insert a numeral)","Sk8 (Skate)",""],
+  ["___ th","2th (Tooth)",""],
+  ["___ k","4k (Fork)",""],
+  ["Be ___","Be4 (Before) or Be9 (Benign)","Benign: gentle and harmless."],
+  ["Ba ___","Ba6 (Basics)","Sounds like 'ba-six'. Basics: the simplest, most essential parts."]]},
+ { name:"CODE Words", items:[
+  ["_ _ M _ _ Y  (missing C, O, D, E)","Comedy",""],
+  ["S _ _ _ N _","Second",""],
+  ["_ _ N _ _ MN","Condemn","Condemn: to express strong disapproval of."],
+  ["_ H _ W _ _ R","Chowder","Chowder: a thick seafood or vegetable soup."],
+  ["_ _ U _ ATI _ N","Education",""]]},
+ { name:"KIND Words", items:[
+  ["_ _ _ _ EY  (missing K, I, N, D)","Kidney",""],
+  ["_ UC _ L _ _ G","Duckling","Duckling: a young duck."],
+  ["WR _ _ _ LE _","Wrinkled",""],
+  ["QU _ C _ SA _ _","Quicksand","Quicksand: soft, wet sand that sucks things down."],
+  ["CA _ _ LEST _ C _","Candlestick","Candlestick: a holder for a candle."]]},
+ { name:"Happy Endings", items:[
+  ["CA___ \u00B7 SWE___ \u00B7 OBSE___ \u00B7 CONSE___","RVE","Carve, swerve, observe, conserve."],
+  ["AP___ \u00B7 MA___ \u00B7 SIM___ \u00B7 STEE___","PLE","Apple, maple, simple, steeple. Steeple: a church's tall tower."],
+  ["ST___ \u00B7 INF___ \u00B7 CONF___ \u00B7 UNIF___","ORM","Storm, inform, conform, uniform."],
+  ["P___ \u00B7 SW___ \u00B7 TW___ \u00B7 BEW___","ITCH","Pitch, switch, twitch, bewitch. Bewitch: to cast a spell on; to charm."],
+  ["BU___ \u00B7 WOO___ \u00B7 FINA___ \u00B7 CASUA___","LLY","Bully, woolly, finally, casually."]]},
+ { name:"Change a Letter", items:[
+  ["Play, Snail, Waist: same new letter in all three","R: Pray, Snarl, Wrist",""],
+  ["Valve, Empire, Revenge","U: Value, Umpire, Revenue",""],
+  ["Pout, Whittle, Quartz","S: Post, Whistle, Quarts","Whittle: to carve wood into shape with a knife."],
+  ["Two, Why, Spar","O: Too, Who, Soar",""],
+  ["Urine, Lame, Cured","B: Brine, Lamb, Cubed","Brine: very salty water."]]},
+ { name:"Double Trouble", items:[
+  ["____ + nip, burglar, fish","Cat","Catnip, cat burglar, catfish."],
+  ["____ + Suit, Clerk, Firm","Law","Lawsuit, law clerk, law firm."],
+  ["____ + Sake, Brand, Dropper","Name","Namesake: someone or something with the same name. Name-dropper: someone who mentions famous acquaintances to impress."],
+  ["____ + Jury, Piano, Slam","Grand","Grand jury: a group deciding whether charges go to trial. Grand slam: winning all the major titles."],
+  ["____ + Elephant, Pages, Wash","White","White elephant: a costly, useless possession. Whitewash: to cover up faults."]]},
+ { name:"What's the Word?", items:[
+  ["___ORY \u00B7 A___IST \u00B7 BREA___ \u00B7 CLO___S","THE","Theory, atheist, breathe, clothes. Atheist: a person who doesn't believe in God."],
+  ["___P \u00B7 ___LL \u00B7 A___NG \u00B7 PIG___N","SKI","Skip, skill, asking, pigskin."],
+  ["T___P \u00B7 F___ED \u00B7 ___BLE \u00B7 CE___IC","RAM","Tramp, framed, ramble, ceramic."],
+  ["F___S \u00B7 A___N \u00B7 GOA___ \u00B7 RE___F","LIE","Flies, alien, goalie, relief."],
+  ["(CODE Words) ANN _ UN _ _ _","Announced",""]]},
+ { name:"Odd Man Out", items:[
+  ["Under, Either, Over, Around: which is the odd one out, and why?","Either: a conjunction; the rest are prepositions","Preposition: a word showing position or relation (under, over)."],
+  ["Burr, Eisenhower, Humphrey, Mondale: which is the odd one out, and why?","Eisenhower: became president; the rest were vice presidents who never did","Vice president: the U.S. second-highest elected officer."],
+  ["Puerto Rico, Grand Cayman, Cyprus, Aruba: which is the odd one out, and why?","Cyprus: in the Mediterranean; the rest are Caribbean islands","Caribbean: the sea and islands southeast of Florida."],
+  ["Desk Set, Woman of the Year, Guess Who's Coming to Dinner, The Big Sleep: which is the odd one out, and why?","The Big Sleep: the rest star Katharine Hepburn","A 1946 film noir with Humphrey Bogart and Lauren Bacall."],
+  ["(Need Directions?) Via Dolorosa","Jerusalem","Via Dolorosa: the 'Way of Sorrow', the route traditionally taken by Jesus to his crucifixion."]]},
+ { name:"Bonus Mix", items:[
+  ["(Addables) SIR + one letter, rearranged. Name 9 of 16 words.","Airs, Bris, Firs, Iris, Irks, Ribs, Rids, Rigs, Rims, Rips, Rise, Risk, Sari, Sire, Sirs, Stir","Sari: a long wrapped garment worn by South Asian women. Other correct answers are possible."],
+  ["(Addables) NUT + one letter, rearranged. Name 5 of 11 words.","Aunt, Bunt, Hunt, Nuts, Punt, Runt, Stun, Tuna, Tune, Turn, Unit, Unto","Punt: to kick a dropped ball. Runt: the smallest in a litter. Other correct answers are possible."],
+  ["(Addables) ACHE + one letter, rearranged. Name 6 of 12 words.","Ached, Aches, Beach, Cache, Chafe, Chase, Cheap, Cheat, Leach, Peach, Reach, Teach","Cache: a hidden store. Chafe: to rub and irritate. Leach: to drain away slowly. Other correct answers are possible."],
+  ["(KIND Words) W _ _ _ BREA _ ER","Windbreaker","Windbreaker: a light jacket that blocks the wind."],
+  ["(Ted's Terrible Titles) Alabaster Long Pointed Tooth","White Fang (Jack London)","Fang: a long, sharp tooth."]]}
+],rounds:[[0,5],[5,10],[10,14],[14,18]]},
+{data:[
+ { name:"Say What? I", items:[
+  ["\u201CNo more quickly uttered than completed.\u201D","No sooner said than done.","Idiom: done immediately after being said."],
+  ["\u201CThe truth is the optimum political plan.\u201D","Honesty is the best policy.","Proverb: being truthful is the wisest course."],
+  ["\u201CDo not take a nip from the palm and fingers that give you meals.\u201D","Don't bite the hand that feeds you.","Idiom: don't harm someone who helps you."],
+  ["\u201CBe optimistic for the superlative, get ready for the most unfavorable.\u201D","Hope for the best, prepare for the worst.","Saying: be optimistic but plan for problems."],
+  ["\u201CYou are able to guide a palomino to H2O, but you are not able to compel him to imbibe.\u201D","You can lead a horse to water, but you can't make him drink.","Proverb: you can offer help but can't force someone to accept it. Palomino: a golden horse."]]},
+ { name:"Who's Asking?", items:[
+  ["\u201CAre you going to Scarborough Fair?\u201D","Simon & Garfunkel","Scarborough Fair: a traditional English folk ballad the duo recorded."],
+  ["\u201CIs that all there is?\u201D","Peggy Lee","A signature 1969 song by the jazz and pop singer."],
+  ["\u201CWhat did the president know and when did he know it?\u201D","Senator Howard Baker (during the Watergate hearings)","Watergate: the 1970s scandal that led to President Nixon's resignation."],
+  ["\u201CWhen it comes to establishing your worldview, what newspapers and magazines did you regularly read to stay informed?\u201D","Katie Couric (to vice presidential candidate Sarah Palin)","Worldview: a person's overall outlook on life."],
+  ["\u201CHave you no sense of decency, sir? At long last, have you left no sense of decency?\u201D","Attorney Joseph Welch, to Senator Joseph McCarthy","Welch was special counsel for the U.S. Army. Decency: behaviour that is respectable and fair."]]},
+ { name:"Whose Biography?", items:[
+  ["A Moveable Feast (1899\u20131961)","Ernest Hemingway","A memoir of his years in 1920s Paris."],
+  ["I Know Why the Caged Bird Sings (1928\u20132014)","Maya Angelou","A celebrated memoir of her childhood."],
+  ["Kitchen Confidential (1956\u20132018)","Anthony Bourdain","A memoir about restaurant-kitchen life. Confidential: secret."],
+  ["The Long Walk to Freedom (1918\u20132013)","Nelson Mandela","South African leader and anti-apartheid activist."],
+  ["The Motorcycle Diaries: Notes on a Latin American Journey (1928\u20131967)","Ernesto \u201CChe\u201D Guevara","Argentine revolutionary who travelled South America by motorcycle."]]},
+ { name:"Filled with Emotion", items:[
+  ["Green with ____","Envy","Green with envy: extremely jealous."],
+  ["Buyer's ____","Remorse","Buyer's remorse: regret after a purchase. Remorse: deep regret."],
+  ["____ Club","Glee","Glee club: a choir that sings light songs."],
+  ["Taken by ____","Surprise","Taken by surprise: caught off guard."],
+  ["More's the ____","Pity","More's the pity: unfortunately; that's a shame."]]},
+ { name:"Say What? II", items:[
+  ["\u201CThe minutes take wing while you are participating in amusement.\u201D","Time flies when you're having fun.","Saying: enjoyable time seems to pass quickly."],
+  ["\u201CI will traverse that raised road over water at the moment I arrive at it.\u201D","I'll cross that bridge when I come to it.","Idiom: deal with a problem only when it arises."],
+  ["\u201CYou are not able to hoodwink every person in every instance.\u201D","You can't fool all the people all the time.","Saying (often credited to Lincoln). Hoodwink: to deceive."],
+  ["\u201CView you at a future time, large swamp-dwelling reptile.\u201D","See you later, alligator.","A playful, rhyming goodbye."],
+  ["\u201CIf you can't be victorious over the others, unite with the others.\u201D","If you can't beat 'em, join 'em.","Idiom: if you can't defeat them, cooperate with them."]]},
+ { name:"Endings & Beginnings", items:[
+  ["Wall ____ Clip","Paper","Wallpaper: decorative wall covering. Paper clip."],
+  ["Junk ____ Stamps","Food","Junk food: unhealthy snacks. Food stamps: government food assistance."],
+  ["Holy ____ Town","Ghost","Holy Ghost; ghost town: an abandoned settlement."],
+  ["Gold ____ Field","Mine","Gold mine; minefield: an area laid with explosive mines."],
+  ["Track ____ Player","Record","Track record: a history of past performance. Record player."]]},
+ { name:"Number Words", items:[
+  ["Car ___ n (insert a numeral)","Car2n (Cartoon)",""],
+  ["Qui ___","Qui9 (Quinine)","Quinine: a bitter drug once used to treat malaria."],
+  ["___ est","4est (Forest)",""],
+  ["S ___ ch","S10ch (Stench)","Stench: a strong, foul smell."],
+  ["Or ___ or","Or8or (Orator)","Orator: a skilled public speaker."]]},
+ { name:"What's the Animal?", items:[
+  ["Count ____","Sheep","Count sheep: imagine sheep to fall asleep."],
+  ["Loan ____","Shark","Loan shark: a lender who charges extreme interest."],
+  ["Play ____","Possum","Play possum: pretend to be asleep or dead."],
+  ["Eat ____","Crow","Eat crow: admit you were wrong."],
+  ["Cold ____","Duck (fish and turkey also work)","Cold duck: a sparkling wine drink. Cold fish: an unfriendly person. Cold turkey: quitting abruptly."]]},
+ { name:"Say What? III", items:[
+  ["\u201CNot hard arrival, not hard departure.\u201D","Easy come, easy go.","Saying: what is gained effortlessly is lost just as easily."],
+  ["\u201CIt is superior to be behind time than at no time.\u201D","Better late than never.","Proverb: arriving late beats not arriving at all."],
+  ["\u201CWhat you do articulates with more volume than vocabulary units.\u201D","Actions speak louder than words.","Proverb: deeds matter more than promises."],
+  ["\u201CNo male human is an area of land surrounded by water.\u201D","No man is an island.","Saying (from John Donne): people need one another."],
+  ["\u201CThe sooner-than-expected flying animal receives the fish bait.\u201D","The early bird catches the worm.","Proverb: those who start early succeed."]]},
+ { name:"Odd Man Out", items:[
+  ["Garage, Guard, Hockey, Yard: which is the odd one out, and why?","Garage: the rest are types of sticks","Yardstick, hockey stick."],
+  ["Calabash, Wishbone, Corncob, Hookah: which is the odd one out, and why?","Wishbone: a chicken bone; the rest are smoking pipes","Calabash: a gourd-bodied pipe. Hookah: a water pipe."],
+  ["Delicious, Paris, Gala, Rome: which is the odd one out, and why?","Paris: the rest are types of apples","Red Delicious, Gala and Rome are apple varieties."],
+  ["Bolivia, Panama, Costa Rica, Guatemala: which is the odd one out, and why?","Bolivia: in South America; the rest are in Central America",""],
+  ["Oscar, Felix, Tony, Emmy: which is the odd one out, and why?","Felix: the rest are entertainment awards","Oscar (film), Tony (theatre), Emmy (television)."]]},
+ { name:"Double Trouble", items:[
+  ["____ + Collector, Bracket, Deduction","Tax","Tax collector, tax bracket, tax deduction."],
+  ["____ + Block, Map, Rage","Road","Roadblock, road map, road rage: aggressive driving anger."],
+  ["____ + Belt, Order, Bags","Money","Money belt, money order (a prepaid payment), moneybags."],
+  ["____ + Muffin, Language, Teacher","English","English muffin, English language, English teacher."],
+  ["____ + Alley, Date, Fold","Blind","Blind alley, blind date, blindfold."]]},
+ { name:"Colorfill", items:[
+  ["____ parachute","Golden","Golden parachute: a generous severance package for executives."],
+  ["____ panther","Pink / Black","Pink Panther: a film and cartoon character. Black Panther: a superhero."],
+  ["Agent ____","Orange","Agent Orange: a herbicide used in the Vietnam War."],
+  ["____ submarine","Yellow","A famous Beatles song."],
+  ["(What's the Animal?) Dark ____","Horse","Dark horse: an unexpectedly successful competitor."]]},
+ { name:"Change a Letter", items:[
+  ["Play, Snail, Waist: same new letter in all three","R: Pray, Snarl, Wrist",""],
+  ["Wry, Sage, Brood","A: Way, Saga, Broad","Wry: dryly humorous. Saga: a long story."],
+  ["Fir, Coal, Edit","X: Fix, Coax, Exit","Coax: to persuade gently."],
+  ["Wasted, Fabled, Grate","I: Waited, Failed, Irate","Irate: very angry. Fabled: famous from legend."],
+  ["Accent, Commute, Suite","P: Accept, Compute, Spite","Spite: a desire to hurt or annoy."]]},
+ { name:"What's the Word?", items:[
+  ["___NERS \u00B7 AL___AC \u00B7 HU___ \u00B7 ___SION","MAN","Manners, almanac, human, mansion."],
+  ["CO___ \u00B7 ___IN \u00B7 ___VEST \u00B7 ___CELET","BRA","Cobra, brain, bravest, bracelet."],
+  ["B___ \u00B7 WH___ \u00B7 BR___H \u00B7 CR___URE","EAT","Beat, wheat, breath, creature."],
+  ["W___D \u00B7 DES___ \u00B7 ADM___ \u00B7 D___CTOR","IRE","Wired, desire, admire, director. Ire: anger."],
+  ["BUD___ \u00B7 NUG___ \u00B7 TAR___ \u00B7 VE___ABLE","GET","Budget, nugget, target, vegetable."]]},
+ { name:"Happy Endings", items:[
+  ["AN___ \u00B7 BAD___ \u00B7 FIN___ \u00B7 SWIN___","GER","Anger, badger, finger, swinger. Badger: a burrowing mammal."],
+  ["C___ \u00B7 SM___ \u00B7 STR___ \u00B7 PROV___","OKE","Coke, smoke, stroke, provoke. Provoke: to deliberately stir up anger."],
+  ["GAL___ \u00B7 WAL___ \u00B7 DEVE___ \u00B7 SCAL___","LOP","Gallop, wallop, develop, scallop. Wallop: to hit hard."],
+  ["PO___ \u00B7 REF___ \u00B7 COMPO___ \u00B7 PROFO___","UND","Pound, refund, compound, profound. Profound: very deep or intense."],
+  ["(Double Trouble) ____ + Story, Bread, Cut","Short","Short story, shortbread, shortcut."]]},
+ { name:"Bonus Mix", items:[
+  ["(Odd Man Out) Bing, Reddit, Trident, Monster","Trident: the rest are internet websites","Trident: a three-pronged spear (also a chewing gum brand)."],
+  ["(Odd Man Out) Toronto, Michigan, Ontario, Erie","Toronto: the rest are Great Lakes","Toronto is a city; Ontario, Erie and Michigan are lakes."],
+  ["(Odd Man Out) Shrimp, Chickens, Blessings, Calories","Shrimp: the rest are things you count","Count your chickens, blessings and calories."],
+  ["(Double Trouble) ____ + Pilot, Drive, Tube","Test","Test pilot, test drive, test tube."],
+  ["(Double Trouble) ____ + Code, Service, Agent","Secret","Secret code, Secret Service (the U.S. protective agency), secret agent."]]}
+],rounds:[[0,4],[4,8],[8,12],[12,16]]},
+{data:[
+ { name:"Federal Holidays", items:[
+  ["Federal holiday on January 1","New Year's Day",""],
+  ["Federal holiday in July","Independence Day","Celebrates the 1776 Declaration of Independence."],
+  ["Federal holiday in September honoring workers","Labor Day",""],
+  ["Federal holiday in November honoring military veterans","Veterans Day",""],
+  ["Federal holiday in December","Christmas Day",""]]},
+ { name:"It's Playtime", items:[
+  ["Where kids go to swing and seesaw","Playground",""],
+  ["Punch this, if you want to get paid","Timecard (or time clock)",""],
+  ["Scott Joplin's musical milieu","Ragtime","Milieu: a person's surroundings or setting. Ragtime: a syncopated piano style."],
+  ["A wealthy man devoted to pleasure","Playboy",""],
+  ["As Gershwin wrote, when \u201Cthe livin' is easy\u201D","Summertime","From the opera Porgy and Bess."]]},
+ { name:"Letter Speller", items:[
+  ["The Caribbean or Mediterranean (one letter)","C (sea)",""],
+  ["Seeing orb (one letter)","I (eye)",""],
+  ["Be indebted (one letter)","O (owe)","Indebted: owing money or gratitude."],
+  ["Pod legume (one letter)","P (pea)","Legume: a plant with seed pods, such as peas or beans."],
+  ["Honey-maker (one letter)","B (bee)",""]]},
+ { name:"Rhyme Time", items:[
+  ["Humorous; and cash","Funny; money",""],
+  ["A gentle wind; and to store food below 32\u00B0F","Breeze; freeze",""],
+  ["A percussion instrument; and how your jaw feels after Novocain","Drum; numb","Novocain: a dental anaesthetic."],
+  ["Large gathering of people; and tilled the soil","Crowd; plowed","Plowed: turned over soil with a plow."],
+  ["The cowardly color; and the wiggly dessert","Yellow; Jell-O","Yellow: slang for cowardly."]]},
+ { name:"Alma's Shopping List", items:[
+  ["Fix one letter: Silk","Milk",""],
+  ["Fix one letter: Crib","Crab",""],
+  ["Fix one letter: Scrimp","Shrimp",""],
+  ["Fix one letter: Snackers","Snickers","Snickers: a chocolate and nougat candy bar."],
+  ["Fix one letter: Winded","Windex","Windex: a glass-cleaning brand."]]},
+ { name:"Stinky Pinky", items:[
+  ["Mrs. Onassis's tan pants","Jackie's khakis",""],
+  ["An introverted insect","Shy fly","Introverted: shy and inward-looking."],
+  ["Parsimonious wool producers","Cheap sheep","Parsimonious: extremely unwilling to spend money."],
+  ["Inebriated animal that emits a bad smell","Drunk skunk","Inebriated: drunk."],
+  ["Former President Clinton's medicine","Bill's pills",""]]},
+ { name:"Big Bang", items:[
+  ["An insect \u2026 or a brand of tuna fish (B B)","Bumble Bee",""],
+  ["Style of pants very popular in the 1960s","Bell Bottoms",""],
+  ["London's famous timekeeper","Big Ben","The great bell in the clock tower at the Houses of Parliament."],
+  ["Nickname for anyone born between 1946 and 1964","Baby Boomer","Boomer: someone born in the post-war birth boom."],
+  ["Halitosis","Bad Breath","Halitosis: the medical term for bad breath."]]},
+ { name:"Rhyming Words & Phrases", items:[
+  ["A magician's phrase","Hocus pocus","Hocus pocus: magic words, or deceptive nonsense."],
+  ["8:00 to 10:00 P.M. on television","Prime time",""],
+  ["A compendium of recipes","Cookbook","Compendium: a collection of related items."],
+  ["A bag often used by students to carry books","Backpack",""],
+  ["A portable two-way radio device","Walkie-talkie",""]]},
+ { name:"Who the What?", items:[
+  ["Bozo the ____","Clown",""],
+  ["Attila the ____","Hun","Attila: a 5th-century ruler of the Huns."],
+  ["Dennis the ____","Menace","Menace: someone who causes trouble."],
+  ["Kermit the ____","Frog",""],
+  ["Frosty the ____","Snowman",""]]},
+ { name:"Word Parts", items:[
+  ["Opposite of pro + opposite of back","Confront (con + front)",""],
+  ["Opposite of on + frozen water","Office (off + ice)",""],
+  ["Mr. Rickles + locking device","Donkey (Don + key)","Don Rickles: American insult comedian."],
+  ["Chum + highest/lowest card","Palace (pal + ace)",""],
+  ["A summer complexion color + a corner Monopoly space","Tango (tan + go)",""]]},
+ { name:"It's Charming", items:[
+  ["A fowl meal","Chicken",""],
+  ["George Washington's favorite pie","Cherry","From the legend of the cherry tree."],
+  ["This begins at home","Charity","Charity begins at home: look after your own first."],
+  ["Offspring","Children","Offspring: a person's or animal's young."],
+  ["Swiss or Jack","Cheese",""]]},
+ { name:"Replace the Swamp", items:[
+  ["The Bridge Over the SWAMP Kwai","River","A novel by Pierre Boulle."],
+  ["Go Tell It on the SWAMP","Mountain","A novel by James Baldwin."],
+  ["Treasure SWAMP","Island","Robert Louis Stevenson's adventure novel."],
+  ["Swan SWAMP (ballet)","Lake","Tchaikovsky's ballet."],
+  ["Little House on the SWAMP","Prairie","Prairie: a large open grassland."]]},
+ { name:"What's the Missing Number?", items:[
+  ["____ Angry Men","12","A classic jury drama."],
+  ["The ____ Commandments","10",""],
+  ["The ____ Musketeers","3","Musketeer: a soldier armed with a musket."],
+  ["____ states in the U.S.","50",""],
+  ["____ deadly sins","7",""]]},
+ { name:"Just J's", items:[
+  ["You need this to change a tire","Jack",""],
+  ["A carpenter's tool \u2026 or a kind of puzzle","Jigsaw",""],
+  ["An old, barely operable car; a clunker","Jalopy","Clunker: slang for an old, unreliable car."],
+  ["If you were a native, you'd call this country Nippon","Japan",""],
+  ["The ultimate win at a casino or in the lottery","Jackpot",""]]},
+ { name:"What Do They Have in Common?", items:[
+  ["Paper, rag, and kewpie","They are all types of dolls",""],
+  ["A pair of jeans, a pool table, and a catcher's mitt","They all have pockets","Mitt: a padded baseball glove."],
+  ["Barney, Socks, Millie, and Checkers","They are all presidential pets",""],
+  ["An airplane, a tuxedo, a comet, and a horse","They all have tails",""],
+  ["Jig, Twist, and Tango","They are all dances",""]]},
+ { name:"Finish the Food Idiom", items:[
+  ["Couch ____","Potato","Couch potato: a person who watches a lot of TV."],
+  ["Flat as a ____","Pancake",""],
+  ["Bring home the ____","Bacon","Bring home the bacon: earn the money."],
+  ["Spill the ____","Beans","Spill the beans: reveal a secret."],
+  ["Sour ____","Grapes","Sour grapes: pretending to dislike what you can't have."]]},
+ { name:"Patchwork", items:[
+  ["Often made from duck or goose liver","Pat\u00E9","Pat\u00E9: a smooth spread of ground meat or liver."],
+  ["A paved area in the backyard","Patio",""],
+  ["A small, round, flat cake of hamburger meat","Patty",""],
+  ["Legal proof that you invented something","Patent",""],
+  ["Official name of the kneecap","Patella",""]]},
+ { name:"Brrrr!", items:[
+  ["The largest country in South America","Brazil",""],
+  ["A contusion","Bruise","Contusion: the medical term for a bruise."],
+  ["The person who makes the money to support a family","Breadwinner",""],
+  ["To make coffee or beer","Brew",""],
+  ["The organ of thought and feeling","Brain",""]]},
+ { name:"Anagrams", items:[
+  ["Rearrange INKS: find 2 other words","Sink, Skin",""],
+  ["Rearrange EVIL: find 3 other words","Live, Veil, Vile","Veil: a thin covering for the face."],
+  ["Rearrange GNUS: find 3 other words","Guns, Snug, Sung","Snug: warm and cozy."],
+  ["Rearrange LEAP: find 3 other words","Pale, Peal, Plea","Peal: a loud ringing of bells. Plea: an earnest request."],
+  ["Rearrange ACRES: find 3 other words","Cares, Races, Scare",""]]},
+ { name:"Echo Echo", items:[
+  ["Yogi Bear's companion \u2026 or a little cut or bruise","Boo Boo",""],
+  ["Popular nickname for President Kennedy's son","John-John",""],
+  ["Toy gun that shoots round projectiles","BB","BB gun: an air rifle that fires small metal balls."],
+  ["Perfect vision","20/20",""],
+  ["Made up of a string and two discs; a toy for thousands of years","Yo-yo",""]]},
+ { name:"Golly Gee", items:[
+  ["This San Francisco bridge is actually red (G G)","Golden Gate",""],
+  ["Charlie Brown's favorite saying","Good Grief","Good grief: an exclamation of surprise or dismay."],
+  ["Her famous line: \u201CI vant to be alone!\u201D","Greta Garbo",""],
+  ["Term for a very fuel-inefficient car","Gas Guzzler","Guzzle: to drink greedily."],
+  ["Illustrated beauties of the 1890s\u20131920s with thin waists and piled-up hair","Gibson Girls","Drawn by the illustrator Charles Dana Gibson."]]},
+ { name:"Just One Letter", items:[
+  ["Kellogg's \u201Cspecial\u201D cereal","K",""],
+  ["A kind of turn \u2026 or a German submarine","U","U-turn; U-boat."],
+  ["Movie rating for under 17s only with a parent or guardian","R",""],
+  ["The acceleration force astronauts feel at blastoff","G","G-force."],
+  ["A very casual shirt","T","T-shirt."]]},
+ { name:"Chartreuse Titles", items:[
+  ["\u201CSnow CHARTREUSE and the Seven Dwarfs\u201D","White","Chartreuse: a bright yellow-green color."],
+  ["Anne of CHARTREUSE Gables","Green",""],
+  ["CHARTREUSE Christmas","White (or Blue)",""],
+  ["The CHARTREUSE Panther","Pink",""],
+  ["On CHARTREUSE Pond","Golden",""]]},
+ { name:"Don't Be an Idiom", items:[
+  ["Your TV stops working: it's on the ____","Blink (or fritz)","On the blink: not working properly."],
+  ["Success after success: you're on a ____","Roll","On a roll: having a streak of success."],
+  ["A well-informed, capable assistant is on the ____","Ball","On the ball: alert and efficient."],
+  ["You've stopped drinking alcohol: you're on the ____","Wagon","On the wagon: not drinking alcohol."],
+  ["Receiving welfare or food stamps: you're on the ____","Dole","On the dole: receiving government unemployment benefit."]]},
+ { name:"What a Pair", items:[
+  ["Scarlet hosiery \u2026 and Union soldiers","Red Sox and Yankees","Two rival baseball teams."],
+  ["Steak or chicken \u2026 and Yukon golds","Meat and Potatoes",""],
+  ["Sleeping furniture \u2026 and the morning meal","Bed and Breakfast","A small guesthouse that includes breakfast."],
+  ["Flounder \u2026 and Fritos","Fish and Chips",""],
+  ["Macintoshes \u2026 and navels","Apples and Oranges","Apples and oranges: two things that can't be compared."]]},
+ { name:"Palindromes", items:[
+  ["Restaurants offer this with boiled lobster","Bib","Palindrome: reads the same backward and forward."],
+  ["A mature female sheep","Ewe",""],
+  ["Type of small tent for one or two people","Pup",""],
+  ["A polite, formal term of address for a woman","Madam",""],
+  ["Adam's gal","Eve",""]]},
+ { name:"Down to the Wire", items:[
+  ["____ to the wise","A word","A word to the wise: a hint that is enough for a sensible person."],
+  ["____ to the chase","Cut","Cut to the chase: get to the point."],
+  ["____ to the nines","Dressed","Dressed to the nines: very elegantly dressed."],
+  ["____ to the brim","Filled",""],
+  ["____ to the grindstone","Nose","Nose to the grindstone: working hard without a break."]]}
+],rounds:[[0,5],[5,10],[10,15],[15,19],[19,23],[23,27]]}];
+const GUIDES=[[{"n": "What a Pair!", "sk": "long-term memory, working memory, executive functioning", "how": "You get half of a familiar word pairing (a fixed phrase joined by 'and'). Supply the missing half. The blank can come first or second.", "ex": "<b>Clue:</b> Part and ____ &nbsp;&nbsp; <b>Answer:</b> Part and <b>parcel</b> (an essential component).", "st": ["Say the phrase aloud. These pairs are fixed in order and often sound right before you can explain why.", "Listen for alliteration or rhyme (wit/wisdom, bits/pieces, part/parcel).", "Ask what kind of pair it is: near-synonyms (rules/regulations), complements (lock/key) or an old phrase (hue and cry).", "If stuck, run through the alphabet with the first letter of the missing word."]}, {"n": "Stinky Pinky", "sk": "long-term memory, executive functioning", "how": "Each answer is two rhyming words. You decode it from an offbeat definition.", "ex": "<b>Clue:</b> A gloomy father &nbsp;&nbsp; <b>Answer:</b> <b>Sad dad</b>. (Example from the file: Mrs. Onassis's tan pants = Jackie's khakis.)", "st": ["Split the clue into an adjective and a noun, then find a synonym for each (gloomy = sad, father = dad).", "Look for the rhyme: test synonyms of one word against rhymes of the other.", "Count syllables. Both answer words usually have the same number (crab lab, phony pony).", "Wordier clues often point to longer answers (French stench, funny money)."]}, {"n": "Word Rebus", "sk": "multitasking, attention to detail, executive functioning", "how": "Each picture stands for a word or a single letter. Follow the plus and minus signs to add or remove sounds, then read the result.", "ex": "<b>Picture sum:</b> polo - O + tree &nbsp;&nbsp; <b>Answer:</b> take one O out of 'polo', add 'tree', and by sound you get <b>poultry</b>.", "st": ["Name every picture with the simplest word first, then try alternatives (hat may be 'derby', sink may be 'basin').", "Work left to right and write each step down.", "Think in sounds as well as letters: the result must sound like a real word.", "Test the final word. If it isn't a real word, re-check which picture names you chose.", "In the file: diver + city = diversity; sink - K + derby - Y + lock = cinderblock."]}, {"n": "What's the Word?", "sk": "working memory, attention to detail, executive functioning", "how": "Four partial words share the same three missing letters, which form a three-letter word. The blanks can sit at the start or the end of each word.", "ex": "<b>Clues:</b> ___NERS, AL___AC, HU___, ___SION &nbsp;&nbsp; <b>Answer:</b> <b>MAN</b> (manners, almanac, human, mansion).", "st": ["Start with the clue that has the most fixed letters and is easiest to guess.", "List candidate three-letter words (ice, car, bed, pan, lid, rob, ref, ill) and test each against all four clues.", "Remember the same letters may go before one word and after another.", "Only accept an answer that works in all four, and say each finished word to double-check."]}, {"n": "Acronym Alphabet", "sk": "long-term memory, working memory", "how": "Say what a common acronym stands for.", "ex": "<b>Clue:</b> VIN &nbsp;&nbsp; <b>Answer:</b> <b>Vehicle Identification Number</b>.", "st": ["Ask where you have seen it (car, sports page, government, dictionary, vet clinic).", "Map each letter to a likely word from that field.", "Some acronyms have more than one meaning (ERA: earned run average or Equal Rights Amendment). Give both if you know them.", "Use patterns: FLOTUS follows POTUS (President of the United States)."]}, {"n": "Homonyms", "sk": "long-term memory, attention to detail, executive functioning", "how": "You get two definitions. Find the two words that sound the same but differ in meaning and spelling, and spell each correctly. (In this file all pairs are strictly homophones.)", "ex": "<b>Clues:</b> a long cry of pain; a marine mammal &nbsp;&nbsp; <b>Answer:</b> <b>wail / whale</b>.", "st": ["Solve the easier definition first, then say it aloud and hunt for a sound-alike.", "Check the tricky spellings: silent letters (knows/nose), wh/w (whale/wail), -ai-/-a-e (pray/prey).", "Write both words and check that each matches its own definition, not the other.", "Match every definition to the correct spelling; a spelling error means a wrong answer."]}, {"n": "What's the Animal?", "sk": "long-term memory, working memory, executive functioning", "how": "Each answer is a two-word idiom or phrase containing an animal. You get the first word and supply the animal.", "ex": "<b>Clue:</b> Cash ____ &nbsp;&nbsp; <b>Answer:</b> Cash <b>cow</b> (a reliably profitable business).", "st": ["Skim animal groups in your head: farm, pets, wild, birds, insects.", "Say the phrase with each candidate and listen for one that sounds like a real expression.", "Recall the meaning: idioms are about people (eager beaver, silly goose).", "Some items accept more than one answer (dirty dog or dirty rat)."]}, {"n": "Double Trouble", "sk": "working memory, executive functioning", "how": "You get several words. Find the one word that can follow each of them to make a compound word or a two-word phrase.", "ex": "<b>Clues:</b> knuckle, moth, basket &nbsp;&nbsp; <b>Answer:</b> <b>ball</b> (knuckleball, mothball, basketball).", "st": ["Start with the most flexible word and list what can follow it (Holy: water, land, Bible ...).", "Test each candidate against the other words. Cross out fast.", "Don't lock onto one meaning of a word; it may be part of a phrase (cover girl, golden girl).", "Answers can be closed, open or hyphenated compounds.", "Use the first-letter hint only as a last resort."]}, {"n": "Change a Letter", "sk": "long-term memory, attention to detail, multitasking, executive functioning", "how": "Replace exactly one letter in each of three words, using the same new letter every time, without rearranging the remaining letters. The letter can be in a different position in each word.", "ex": "<b>Clues:</b> PLAY, SNAIL, WAIST &nbsp;&nbsp; <b>Answer:</b> <b>R</b>: pray, snarl, wrist.", "st": ["Pick the shortest word and try replacement letters one at a time (there are only 26).", "For each candidate letter, check the other two words right away.", "Vowel-to-consonant swaps are common, and the same letter may replace a vowel in one word and a consonant in another.", "More than one answer can work; any valid solution counts."]}, {"n": "FINE Words", "sk": "long-term memory, attention to detail, executive functioning", "how": "Every word is missing the letters F, I, N and E, in any order. Fill the blanks to reveal a common English word.", "ex": "<b>Clue:</b> K _ _ _ _ &nbsp;&nbsp; <b>Answer:</b> <b>knife</b> (the blanks hold N, I, F, E).", "st": ["Use the given letters as anchors and count the blanks: there are always four.", "Check that the four blanks use F, I, N and E exactly once each.", "Look for common endings and beginnings (-ify, -ive, -teen, con-).", "Remember the word may already contain F, I, N or E (fifteen)."]}, {"n": "Down to the Wire", "sk": "long-term memory, working memory, processing speed", "how": "Complete each expression. For a better mental workout, try all the questions in one minute.", "ex": "<b>Clue:</b> ____ to the ground &nbsp;&nbsp; <b>Answer:</b> <b>Ear</b> to the ground (stay alert to news).", "st": ["Read all items first, then answer the easiest ones.", "Move on if you're stuck for more than a few seconds; come back at the end.", "Run through likely categories: body parts, verbs, song titles.", "Other correct answers may exist, so trust the first phrase that sounds natural."]}, {"n": "Endings & Beginnings", "sk": "working memory, multitasking", "how": "You get the first half of one compound word or phrase and the second half of another. Find the single word that completes both.", "ex": "<b>Clue:</b> April ____ Proof &nbsp;&nbsp; <b>Answer:</b> <b>Fool</b> (April fool, foolproof).", "st": ["Try the more restrictive half first (____ proof: fool, water, bullet ...).", "Test each candidate against the other half.", "Say both compounds aloud, e.g. double-cross and crossword.", "Use the first-letter hint only if you're truly stuck."]}, {"n": "Opposites Attract", "sk": "multitasking, executive functioning", "how": "Rearrange the letters of each word to reveal a pair of opposites.", "ex": "<b>Clue:</b> ARF / EARN &nbsp;&nbsp; <b>Answer:</b> <b>far / near</b>.", "st": ["Think of common opposite pairs first (near/far, left/right, north/south, inside/outside).", "Check the letter counts for each candidate before you commit.", "Solve the easier half: once you know 'far', 'near' follows.", "Look for letter clusters (TH, SH, -IDE, -ER) and write the letters in a circle."]}], [{"n": "Need Directions?", "sk": "long-term memory, working memory", "how": "You get the name of a famous street, intersection or highway, real or fictional. Say which city, country, region or story it belongs to.", "ex": "<b>Clue:</b> The Grand Canal &nbsp;&nbsp; <b>Answer:</b> <b>Venice, Italy</b>.", "st": ["Look for clues in the name itself: canal (water city), Bowery or Beltway (American), Road (British or fictional).", "Think of songs, films and books: Abbey Road (the Beatles), the Yellow Brick Road (The Wizard of Oz).", "Sort what you know into groups (capitals, port cities, fiction) and place the street in one.", "Give the most specific answer you can, e.g. the city and its country."]}, {"n": "Say What?", "sk": "long-term memory, executive functioning", "how": "A sentence has been rewritten in stiff, overly formal words. Translate it back into the well-known saying.", "ex": "<b>Clue:</b> 'Humans who reside in clear, vitreous residences ought not to hurl small rocks.' &nbsp;&nbsp; <b>Answer:</b> <b>People who live in glass houses should not throw stones.</b>", "st": ["Replace the fancy words with plain ones one by one (vitreous = glass, residences = houses).", "Look at the sentence's shape and rhythm; proverbs are short and often rhyme or repeat sounds.", "Ask what general lesson the sentence teaches, then recall a saying with that message.", "Check that the words you swapped back match the clue word for word."]}, {"n": "Finish the Proverb", "sk": "long-term memory, executive functioning", "how": "You get just the last words of a well-known saying. Fill in the rest.", "ex": "<b>Clue:</b> ____ are free. &nbsp;&nbsp; <b>Answer:</b> <b>The best things in life are free.</b>", "st": ["Think about the message that the ending suggests (free things: love, friendship, nature).", "Try likely openings aloud (The best, All the best, The greatest).", "Remember proverbs are in fixed wording, so aim for the classic version.", "If you cannot recall it, say the ending with a tune or rhythm; wording often follows."]}, {"n": "Odd Man Out", "sk": "long-term memory, working memory, executive functioning", "how": "In each list, all but one item share a link. Find the one that does not belong and say why.", "ex": "<b>Items:</b> Chocolate, Casino, Potato, Guitar &nbsp;&nbsp; <b>Answer:</b> <b>Guitar</b>. The rest are types of chips.", "st": ["Look for a word that can go before or after each item (Golden ____, ____ chip, Old ____).", "Try the same word with all four; the one that does not fit is the odd one out.", "Consider different meanings of each word, not just the first one that comes to mind.", "Say the link out loud, because the explanation counts as much as the item."]}, {"n": "Happy Endings", "sk": "working memory, multitasking, attention to detail", "how": "Four incomplete words share the same missing letters at their ends. Find the letters that complete all four.", "ex": "<b>Clues:</b> CA___, SWE___, OBSE___, CONSE___ &nbsp;&nbsp; <b>Answer:</b> <b>RVE</b> (carve, swerve, observe, conserve).", "st": ["Start with the shortest stem and list what could end it.", "Test each ending on the other three words at once.", "Common endings to try: -able, -tive, -cal, -oon.", "The number of blanks tells you how many letters to add; count them."]}, {"n": "Nicknames", "sk": "long-term memory, executive functioning", "how": "Name the person, place or thing from its nickname.", "ex": "<b>Clue:</b> Old Glory &nbsp;&nbsp; <b>Answer:</b> <b>The American flag</b>.", "st": ["Ask what the nickname describes (a look, a shape, a habit).", "Decide the category first: person, place, object.", "Break the nickname into parts: 'Soup Strainer' hints at something worn on the face.", "Some nicknames have more than one answer (The Tube = London Underground or TV)."]}, {"n": "BigBoy", "sk": "long-term memory, working memory", "how": "Each answer is a word, name, phrase or saying containing BIG.", "ex": "<b>Clue:</b> A group of seven stars in Ursa Major &nbsp;&nbsp; <b>Answer:</b> <b>The Big Dipper</b>.", "st": ["Use the clue's field (science, business, history) to pick from BIG phrases you know: Big Bang, Big Blue, Big Stick.", "Fill in the blank: 'The Big ___', 'Big ___', 'Bigger ___ to fry'.", "The answer may be a whole saying, so think about proverbs and famous quotations.", "Say the phrase aloud to confirm it works."]}, {"n": "OTHER Words and FORE Words", "sk": "long-term memory, attention to detail, executive functioning", "how": "Every word is missing the letters O, T, H, E, R (or F, O, R, E), in any order. Restore them to reveal a common word. The same idea appears in earlier guides as FINE Words.", "ex": "<b>Clue:</b> _ A _ _ _ W _ RM &nbsp;&nbsp; <b>Answer:</b> <b>earthworm</b>.", "st": ["Count the blanks; they must hold exactly the given letters, once each.", "Use the fixed letters as anchors and guess common word shapes (-ster, -ing, -ent).", "Letters can repeat: a printed letter may match one you must add (OFFER has two F's, one printed).", "Say the word aloud; the sound often reveals it faster than the spelling."]}], [{"n": "Addables", "sk": "long-term memory, multitasking, attention to detail", "how": "You get a word and a success scale in brackets. In two minutes, add one letter to the word and rearrange all the letters to make as many new words as you can. The first number is a good score; the second is how many common words exist.", "ex": "<b>Clue:</b> RUG (4 out of 8) &nbsp;&nbsp; <b>Answers:</b> burg, drug, frug, grub, guru, rugs, rung, urge.", "st": ["Try each letter of the alphabet in turn (A, B, C ...) and rearrange; this is the most reliable method.", "Add common endings first: -S, -ED, -ER, -Y (busts, busty).", "Watch for letter clusters: for BUST, try B-U-T plus a letter (butts, bouts).", "Do not worry about the exact list; other correct words also count."]}, {"n": "Saintly Surprises", "sk": "long-term memory, working memory", "how": "Each answer is a person, place or thing with a saint's name hidden in it. Find the saint.", "ex": "<b>Clue:</b> A brand of aspirin &nbsp;&nbsp; <b>Answer:</b> <b>St. Joseph</b>.", "st": ["Think of names that start with St. (hospitals, cities, brands, herbs).", "Use the clue's category: medicine (St. Joseph, St. Jude), travel (The Spirit of St. Louis), TV (St. Elsewhere).", "Say the name with possible saints aloud; one will ring a bell.", "Some answers are plain-sounding: St. John's wort is a herb."]}, {"n": "Jingles & Slogans", "sk": "long-term memory, executive functioning", "how": "Finish the advertising jingle or slogan, and, where needed, name the product.", "ex": "<b>Clue:</b> 'Maybe she's born with it, ____.' &nbsp;&nbsp; <b>Answer:</b> <b>maybe it's Maybelline.</b>", "st": ["Hum the tune. Jingles are built to be remembered by rhythm and melody.", "Think about the type of product (cosmetics, paper towels, beer) and recall brands that used it.", "Finish the rhyme if there is one (time / beer).", "Name the product or company to complete the answer."]}, {"n": "Double Trouble: Animal Edition", "sk": "working memory, executive functioning", "how": "As in Double Trouble: find the one word that can follow each given word. Here, every answer is an animal. (The general strategy is in the first guide.)", "ex": "<b>Clues:</b> Book, Silk, Tape &nbsp;&nbsp; <b>Answer:</b> <b>worm</b> (bookworm, silkworm, tapeworm).", "st": ["Run through animal groups (birds, farm, wild, insects) and test each against the clues.", "Say the phrases: eat crow, cry wolf, talk turkey, spring chicken.", "Watch idiom meanings; 'Jim Crow' and 'cold turkey' are fixed phrases.", "Use the first-letter hint only when stuck."]}], [{"n": "Mathematically Speaking", "sk": "long-term memory, working memory", "how": "The clues seem unrelated to maths, but every answer is a mathematical term.", "ex": "<b>Clue:</b> A unit of ice &nbsp;&nbsp; <b>Answer:</b> <b>cube</b>.", "st": ["Think of maths vocabulary: shapes (square, circle, cube, triangle), operations, units.", "Test each shape or term against the clue's everyday meaning.", "Look for the double meaning: a 'square' is a shape and an unhip person; 'proof' is both a maths term and an alcohol measure.", "Ask what the word does in ordinary life (a pilot 'circles')."]}, {"n": "Geographical Nicknames", "sk": "long-term memory, executive functioning", "how": "Name each city from its nickname.", "ex": "<b>Clue:</b> Second City &nbsp;&nbsp; <b>Answer:</b> <b>Chicago</b>.", "st": ["Ask what the nickname points to: a product (Big Peach), a history (Witch City), a rank (Second City).", "Match the food or symbol to a place known for it.", "Think of landmarks: the Forbidden City is in Beijing.", "Give the state too if you know it (Salem, Massachusetts)."]}, {"n": "Number Words", "sk": "multitasking, attention to detail, executive functioning", "how": "Insert a numeral in the blank to complete a word, by the sound of the number.", "ex": "<b>Clue:</b> Lieu___ant &nbsp;&nbsp; <b>Answer:</b> <b>Lieu10ant</b> (lieutenant).", "st": ["Say the clue with each number from 1 to 10 in the blank (Sk + eight = skate).", "Listen for the sound: 4 = for/fore, 2 = too/to, 8 = ate, 6 = six.", "Some blanks work with more than one number (Be4 = before; Be9 = benign).", "Check that the joined word is spelled correctly."]}, {"n": "Scrambled States", "sk": "working memory, executive functioning", "how": "Each odd phrase is an anagram of a U.S. state. Unscramble the letters.", "ex": "<b>Clue:</b> AAA LAMB &nbsp;&nbsp; <b>Answer:</b> <b>Alabama</b>.", "st": ["Count the letters and compare with state names of the same length.", "Look for letter patterns: -ING, -ARY, -IA, -OTA (Michigan, Maryland).", "Try the longest, most distinctive letters first (W, Z, H).", "Work through the list of 50 states alphabetically if stuck."]}, {"n": "Ted's Terrible Titles", "sk": "long-term memory, executive functioning", "how": "A title of a book, play, song or film has been reworded. Restore the original.", "ex": "<b>Clue:</b> Hubris and Bias &nbsp;&nbsp; <b>Answer:</b> <b>Pride and Prejudice</b>.", "st": ["Swap each word for a synonym (hubris = pride, bias = prejudice).", "Keep the rhythm; titles are short and often in a fixed pattern (___ and ___).", "Think of the genre: a novel, a play, a film.", "Name the author if you know it; it confirms your answer."]}], [{"n": "Colorfill", "sk": "long-term memory, working memory", "how": "Put the missing colour back into each phrase, title or name.", "ex": "<b>Clue:</b> Agent ____ &nbsp;&nbsp; <b>Answer:</b> <b>Orange</b>.", "st": ["Run through the basic colours and test each one aloud.", "Think of films, songs and famous names (Yellow Submarine, Pink Panther).", "Some blanks accept more than one colour (Pink Panther or Black Panther).", "Use the rest of the phrase for context: parachute, panther, submarine."]}, {"n": "Who's Asking?", "sk": "long-term memory, working memory, executive functioning", "how": "You get a famous question. Name the person or group who asked it.", "ex": "<b>Clue:</b> 'Is that all there is?' &nbsp;&nbsp; <b>Answer:</b> <b>Peggy Lee</b>.", "st": ["Ask where the question was said: a song, a hearing, an interview, a film.", "Think of the era and the people who were famous then.", "A rhetorical tone ('Have you no sense of decency?') points to a dramatic public moment.", "Say the line aloud; a melody or an old news clip may come to mind."]}, {"n": "Whose Biography?", "sk": "long-term memory, executive functioning", "how": "From the title of a biography, memoir or autobiography, and the years of the subject's life, name the person.", "ex": "<b>Clue:</b> A Moveable Feast (1899-1961) &nbsp;&nbsp; <b>Answer:</b> <b>Ernest Hemingway</b>.", "st": ["Use the dates first: which famous person lived 1899 to 1961?", "Think of the subject's field: writer, chef, statesman, revolutionary.", "Match the title's theme to the person's life (a journey, a kitchen, a long walk).", "Recall where you have seen the book (library, bestseller list, school reading)."]}, {"n": "Filled with Emotion", "sk": "long-term memory, working memory", "how": "Each phrase is missing an emotion word. Put it back.", "ex": "<b>Clue:</b> Green with ____ &nbsp;&nbsp; <b>Answer:</b> <b>envy</b>.", "st": ["List feelings (envy, pity, joy, regret, fear) and test each in the blank.", "Say the whole phrase; fixed expressions sound right immediately.", "Think of clubs, names and titles too (Glee Club).", "Sometimes the word is a noun, not an adjective (remorse, surprise)."]}], [{"n": "Letter-Pattern Definition Games", "sk": "long-term memory, working memory", "how": "It's Playtime, Big Bang, It's Charming, Just J's, Patchwork, Brrrr!, Golly Gee and Echo Echo. Every answer follows a hidden pattern: it contains a word (play, time), starts with certain letters (CH, J, PAT, BR), starts with the initials B B or G G, or repeats a sound (boo boo, yo-yo).", "ex": "<b>Clue (Just J's):</b> A carpenter's tool or a kind of puzzle &nbsp;&nbsp; <b>Answer:</b> <b>Jigsaw</b>.", "st": ["Read the rule at the top first; it shrinks the answer list dramatically.", "Say the clue's meaning in one word, then check it against the pattern.", "Use the letters as a search tool: run through words that start with CH, BR or PAT.", "For initials (B B, G G), think of famous names and phrases first.", "For Echo Echo, think of doubled words: hush-hush, bye-bye, tutu."]}, {"n": "Federal Holidays (30-Second Madness)", "sk": "long-term memory, working memory, processing speed", "how": "Name as many of the ten official U.S. federal holidays as you can in thirty seconds.", "ex": "<b>Prompt:</b> Federal holiday in July &nbsp;&nbsp; <b>Answer:</b> <b>Independence Day</b>.", "st": ["Go through the calendar month by month.", "Group them: winter (New Year's Day, MLK Day, Presidents Day), summer (Memorial, Independence, Labor), autumn (Columbus, Veterans, Thanksgiving) and Christmas.", "Use mnemonics: holidays tied to people, to wars, or to work.", "Write each as you recall it; do not repeat one."]}, {"n": "Letter Speller", "sk": "long-term memory, working memory", "how": "Each answer sounds like a single letter (sea = C, eye = I). Give the letter.", "ex": "<b>Clue:</b> The plural of 'is' &nbsp;&nbsp; <b>Answer:</b> <b>R</b> (are).", "st": ["First find the word the clue describes, then say it aloud.", "Match the sound to the alphabet: bee, sea, tea, pea, you, why.", "Think of homophones (ewe = U, owe = O).", "Check that the word and letter sound exactly alike."]}, {"n": "Rhyme Time and Rhyming Words and Phrases", "sk": "long-term memory, working memory", "how": "Rhyme Time gives two definitions whose answers rhyme. Rhyming Words and Phrases has one definition whose answer is a two-word or two-syllable rhyme (hocus pocus).", "ex": "<b>Clues:</b> Humorous; and cash &nbsp;&nbsp; <b>Answer:</b> <b>funny; money</b>.", "st": ["Solve the easier definition first, then search for rhymes of that word.", "Run through the alphabet (b, c, d, f ...) in front of the ending sound.", "For two-word rhymes, think of common phrases: prime time, fender bender, brain drain.", "Check that both definitions fit their words."]}, {"n": "Alma's Shopping List", "sk": "working memory, executive function, processing speed", "how": "Each grocery item is misspelled by one letter. Fix the letter to reveal a real brand or food name. For extra challenge, try to get as many as possible in one minute.", "ex": "<b>Clue:</b> Winded &nbsp;&nbsp; <b>Answer:</b> <b>Windex</b> (D changes to X).", "st": ["Say the misspelled word aloud; it often sounds like the real one.", "Change one letter at a time, working from the vowels.", "Think of brands: Snickers, Pampers, Skippy, Jell-O.", "Some items have more than one answer (corn or pork)."]}, {"n": "Who the What?", "sk": "long-term memory, working memory", "how": "You get the name and 'the'; supply the word that follows (Felix the Cat).", "ex": "<b>Clue:</b> Alexander the ____ &nbsp;&nbsp; <b>Answer:</b> <b>Great</b>.", "st": ["Think of cartoons, history, nicknames and nursery characters.", "Say the full phrase aloud.", "The word is often a job (Sailor, Pirate) or trait (Great, Terrible).", "Use your general memory of famous nicknames."]}, {"n": "Word Parts", "sk": "long-term memory, working memory, executive functioning", "how": "You get definitions for the two parts of a word. Put them together (men + ace = menace).", "ex": "<b>Clues:</b> Chum + highest card &nbsp;&nbsp; <b>Answer:</b> <b>pal + ace = palace</b>.", "st": ["Solve each part separately and write it down.", "Join the parts in order; try both orders if needed.", "Watch for opposites (opposite of on = off).", "Check that the joined word is real."]}, {"n": "Replace the Swamp / Chartreuse Titles", "sk": "long-term memory, executive functioning", "how": "A famous title contains a placeholder (SWAMP or CHARTREUSE). Replace it with the correct geographic feature or color.", "ex": "<b>Clue:</b> Treasure SWAMP &nbsp;&nbsp; <b>Answer:</b> <b>Treasure Island</b>.", "st": ["Say the title with a likely geographic word (island, lake, river) or color (pink, red).", "Think of the author or film the title belongs to.", "Check the rhythm: titles are fixed in wording.", "Some answers have alternatives (Blue Christmas)."]}, {"n": "What's the Missing Number?", "sk": "long-term memory, executive functioning", "how": "Fill in the number from a title, saying or fact.", "ex": "<b>Clue:</b> ____ deadly sins &nbsp;&nbsp; <b>Answer:</b> <b>7</b>.", "st": ["Recall the whole phrase, then the number.", "Use categories: films (12 Angry Men), history (13 colonies), religion (10 Commandments).", "Sing it if it is a song: 99 bottles of beer.", "Check unusual numbers by counting (50 states)."]}, {"n": "What Do They Have in Common?", "sk": "long-term memory, executive functioning, attention to detail", "how": "A list of items shares something. Find the link.", "ex": "<b>Clue:</b> Jig, Twist, Tango &nbsp;&nbsp; <b>Answer:</b> <b>They are all dances</b>.", "st": ["Think of different meanings for each word (tail, pocket, crown, pin).", "Try categories: pets, dolls, fish, cars, slang for money.", "Test your link on every item.", "Names often point to people (Olivers, First Ladies' maiden names)."]}, {"n": "Finish the Food Idiom / Don't Be an Idiom", "sk": "long-term memory, executive functioning", "how": "Complete the idiom with a food (Finish the Food Idiom) or finish a sentence with an idiom starting with 'on' (Don't Be an Idiom).", "ex": "<b>Clue:</b> Spill the ____ &nbsp;&nbsp; <b>Answer:</b> <b>beans</b>.", "st": ["Say the idiom aloud; the food usually pops up.", "Read the situation carefully: 'on the wagon' means not drinking.", "Check the meaning, not just the sound.", "Some idioms accept more than one answer (on the blink or on the fritz)."]}, {"n": "Anagrams", "sk": "executive functioning", "how": "Rearrange the letters of the word to make the stated number of other words.", "ex": "<b>Clue:</b> Evil (3) &nbsp;&nbsp; <b>Answers:</b> live, veil, vile.", "st": ["Try starting with different first letters.", "Look for common endings (-s, -ed, -er) and clusters (ST, TH).", "Write the letters in a circle.", "Count the words you find against the number given."]}, {"n": "What a Pair (Redefine)", "sk": "long-term memory, working memory, executive functioning", "how": "Each clue redefines the two halves of a familiar pair. Work out the pair.", "ex": "<b>Clue:</b> Wonder and Perrier &nbsp;&nbsp; <b>Answer:</b> <b>Bread and Water</b>.", "st": ["Identify what each half is (steak or chicken = meat).", "Say the likely pair: Meat and Potatoes.", "Think of famous pairings: Fish and Chips, Bed and Breakfast.", "Check that both clues fit."]}, {"n": "Palindromes", "sk": "long-term memory, working memory, executive functioning", "how": "Each answer is a word that reads the same backward and forward.", "ex": "<b>Clue:</b> Adam's gal &nbsp;&nbsp; <b>Answer:</b> <b>Eve</b>.", "st": ["Think of short words with symmetrical letters (bib, pup, nun, dud).", "Test by writing the word backward.", "Common palindromes: madam, kayak, level, radar.", "Clues often describe a simple object or name."]}]];
+const WBK={"WW": ["___DAY · ___FLOWER · ___SET", "___FISH · ___NIP · ___WALK", "___ROOM · ___BUG · ___TIME", "___SON · ___T · ___L · ___WEED", "___THER · ___TRY · ___CAKE · ___DA", "P___Y · ___IST · ST___ · ___WORK", "___CHER · ___M · ___R · ___POT", "___ION · C___US · F___ORY · COMP___", "___VE · S___F · VI___ · MAS___A", "VA___ · COL___E · SO___ · HO___AY", "JU___ · INVO___ · CHO___ · L___NSE", "B___ · SP___ · T___ET · TURM___", "___K · S___K · ___KET · FRAN___", "B___ · WH___ · BR___H · CR___URE", "___P · ___LL · A___NG · PIG___N", "BUD___ · NUG___ · TAR___ · VE___ABLE", "TH___ · P___ATE · ___OT · AC___AT", "___ORY · A___IST · BREA___ · CLO___S", "F___S · A___N · GOA___ · RE___F", "DI___ · ___ITY · AD___CE · ___ILLA"], "OP": ["TFA / HTIN", "ARF / ENRA", "IGBEN / EDN", "OVEL / ATHE", "TFSA / LOSW", "PNEO / LECSO", "TSRAT / TPOS", "IHTRG / ETFL", "ERAYL / LTAE", "REOV / RNEDU", "LSMLA / RAEGL", "DEPE / LLHAWOS", "SRITF / SATL", "ERNIN / TEROU", "CUNDIKRLE (5+4)", "TLENRHCAAE (5+5)", "EGLIAVNLDE (5+5)", "MEDIRNENFEY (6+5)", "TEAMNEATVRRSS (6+7)", "SDIETSIIUNDEO (6+7)"], "SW": ["“Arriving behind schedule is preferable to not arriving at all.” <i>(Better …)</i>", "“What you do shows more than what you say.” <i>(Actions …)</i>", "“What arrives with no trouble also leaves with no trouble.” <i>(Easy …)</i>", "“The bird that wakes up soonest gets the insect.” <i>(The early …)</i>", "“Telling the truth is the wisest approach.” <i>(Honesty …)</i>", "“Hours pass quickly when you are enjoying yourself.” <i>(Time …)</i>", "“No single person is cut off from everyone else.” <i>(No man …)</i>", "“If something is not seen, it is not thought about.”", "“Nothing valuable is ever given with no cost attached.”", "“Do not hurt the person who looks after you.”", "“Expect good results, but be ready for bad ones.”", "“You may offer a chance, but you cannot force someone to take it.”", "“For a job to be perfect, handle it personally.”", "“Do not hurt yourself just to take revenge on someone else.”", "“A small amount of caution now outweighs a large amount of repair later.”", "“Those whose own dwellings are transparent should refrain from launching pebbles.”", "“Do your harvesting of dried grass while the sun is out.”", "“A bolt from the sky never lands twice on the same spot.”", "“Solid boundaries between yards produce friendly relations with the folks next door.”", "“Talk gently, but keep a thick piece of wood at hand.”"], "ML": ["_ _ F _ _ (F, O, R, E)", "K _ _ _ _ (F, I, N, E)", "_ R U _ _ _ (F, L, A, G)", "_ _ M _ _ Y (C, O, D, E)", "S _ _ _ N _ (C, O, D, E)", "_ _ _ _ E Y (K, I, N, D)", "B _ N _ I _ _ (F, O, R, E)", "_ _ _ _ I G N (F, O, R, E)", "_ R _ _ I _ E (F, L, A, G)", "B _ _ E _ _ T (F, I, N, E)", "_ _ F T _ E _ (F, I, N, E)", "_ _ N _ _ M N (C, O, D, E)", "_ H _ W _ _ R (C, O, D, E)", "B A _ _ _ _ O T (F, O, R, E)", "_ U C _ L _ _ G (K, I, N, D)", "_ E _ P _ R O _ (F, L, A, G)", "B A _ _ _ _ B _ (O, T, H, E, R)", "_ _ U _ A T I _ N (C, O, D, E)", "_ A _ _ _ W _ R M (O, T, H, E, R)", "_ _ _ _ M _ S T A T (O, T, H, E, R)"], "KWW": ["<b>SUN</b> – Sunday, sunflower, sunset.", "<b>CAT</b> – catfish, catnip (a plant cats love), catwalk (a narrow raised path or fashion runway).", "<b>BED</b> – bedroom, bedbug, bedtime.", "<b>SEA</b> – season, seat, seal, seaweed.", "<b>PAN</b> – panther (a large black big cat), pantry (a food cupboard), pancake, panda.", "<b>ART</b> – party, artist, start, artwork.", "<b>TEA</b> – teacher, team, tear, teapot.", "<b>ACT</b> – action, cactus, factory, compact (small and tidy; also a pocket mirror case).", "<b>CAR</b> – carve (cut into slices or shapes), scarf, vicar (an Anglican parish priest), mascara (eye cosmetic).", "<b>LID</b> – valid (acceptable), collide (crash together), solid, holiday.", "<b>ICE</b> – juice, invoice (a bill listing goods or services), choice, license (an official permit).", "<b>OIL</b> – boil, spoil, toilet, turmoil (a state of great confusion).", "<b>TIC</b> – tick, stick, ticket, frantic (wildly anxious or hurried).", "<b>EAT</b> – beat, wheat, breath, creature (a living being).", "<b>SKI</b> – skip, skill, asking, pigskin (leather from a pig; also an American football).", "<b>GET</b> – budget (a spending plan), nugget (a small lump, e.g. of gold), target, vegetable.", "<b>ROB</b> – throb (to beat or pulse), probate (the legal process of proving a will), robot, acrobat (a skilled gymnast or circus performer).", "<b>THE</b> – theory (an idea that explains something), atheist (a person who does not believe in God), breathe, clothes.", "<b>LIE</b> – flies, alien (a foreigner or a creature from space), goalie (a goalkeeper), relief (comfort after worry).", "<b>VAN</b> – divan (a long, low sofa), vanity (excessive pride in one's looks), advance (to move forward), vanilla."], "KOP": ["<b>Fat / Thin</b> – size or body shape. Tip: THIN keeps the TH pair together.", "<b>Far / Near</b> – distance. A 3-letter and a 4-letter word.", "<b>Begin / End</b> – start and finish. BEGIN contains the common cluster GIN.", "<b>Love / Hate</b> – strong feelings. Both end in a vowel.", "<b>Fast / Slow</b> – speed.", "<b>Open / Close</b> – a door or a lid. Note: close is pronounced “clohz” here.", "<b>Start / Stop</b> – beginning and ending an action.", "<b>Right / Left</b> – direction. RIGHT has the cluster IGHT.", "<b>Early / Late</b> – time.", "<b>Over / Under</b> – position (above / below).", "<b>Small / Large</b> – size.", "<b>Deep / Shallow</b> – depth. SHALLOW is the longer word.", "<b>First / Last</b> – order in a sequence.", "<b>Inner / Outer</b> – position (inside / outside). Both end in -ER.", "<b>Cruel / Kind</b> – character. Split the 9 letters as 5 + 4.", "<b>Teach / Learn</b> – giving and getting knowledge. 5 + 5 letters.", "<b>Angel / Devil</b> – good and evil spirits. 5 + 5 letters.", "<b>Friend / Enemy</b> – relationships. 6 + 5 letters.", "<b>Master / Servant</b> – a person in charge and a person who serves. 6 + 7 letters.", "<b>Inside / Outside</b> – position. The 13 letters split 6 + 7; look for the shared IDE ending."], "KSW": ["<b>Better late than never.</b> Arriving late is still better than not arriving. (<i>behind schedule</i> = late; <i>preferable</i> = better.)", "<b>Actions speak louder than words.</b> What people do matters more than what they promise.", "<b>Easy come, easy go.</b> Things gained without effort are quickly lost.", "<b>The early bird catches the worm.</b> People who act first get the best result.", "<b>Honesty is the best policy.</b> Telling the truth is the wisest course.", "<b>Time flies when you're having fun.</b> Enjoyable moments pass quickly.", "<b>No man is an island.</b> People need one another (a line from the poet John Donne).", "<b>Out of sight, out of mind.</b> We forget what we cannot see.", "<b>There's no such thing as a free lunch.</b> Everything has a hidden cost.", "<b>Don't bite the hand that feeds you.</b> Do not harm someone who helps you.", "<b>Hope for the best, prepare for the worst.</b> Be optimistic but plan for problems.", "<b>You can lead a horse to water, but you can't make him drink.</b> You can offer help but not force acceptance.", "<b>If you want something done right, do it yourself.</b> It is safest to do important jobs personally.", "<b>Don't cut off your nose to spite your face.</b> Do not harm yourself to get back at someone (<i>spite</i> = a wish to hurt or annoy).", "<b>An ounce of prevention is worth a pound of cure.</b> Preventing a problem is easier than fixing it.", "<b>People who live in glass houses should not throw stones.</b> Do not criticise others for faults you have yourself.", "<b>Make hay while the sun shines.</b> Use an opportunity while conditions are good (hay is dried grass).", "<b>Lightning never strikes in the same place twice.</b> A rare misfortune is unlikely to repeat (though it can).", "<b>Good fences make good neighbors.</b> Clear boundaries keep neighbours on friendly terms.", "<b>Speak softly and carry a big stick.</b> Negotiate calmly but be ready to use strength (Theodore Roosevelt's motto)."], "KML": ["<b>offer</b> – O-F-F-E-R; blanks O, F, E, R. To propose something.", "<b>knife</b> – K-N-I-F-E; a cutting tool.", "<b>frugal</b> – F-R-U-G-A-L; careful with money.", "<b>comedy</b> – C-O-M-E-D-Y; a funny play or film.", "<b>second</b> – S-E-C-O-N-D; the one after the first.", "<b>kidney</b> – K-I-D-N-E-Y; the organ that filters blood.", "<b>bonfire</b> – B-O-N-F-I-R-E; a large outdoor fire.", "<b>foreign</b> – F-O-R-E-I-G-N; from another country.", "<b>fragile</b> – F-R-A-G-I-L-E; easily broken.", "<b>benefit</b> – B-E-N-E-F-I-T; an advantage or gain.", "<b>fifteen</b> – F-I-F-T-E-E-N; the number 15. The printed F is the second F.", "<b>condemn</b> – C-O-N-D-E-M-N; to express strong disapproval.", "<b>chowder</b> – C-H-O-W-D-E-R; a thick seafood or vegetable soup.", "<b>barefoot</b> – B-A-R-E-F-O-O-T; without shoes or socks.", "<b>duckling</b> – D-U-C-K-L-I-N-G; a young duck.", "<b>leapfrog</b> – L-E-A-P-F-R-O-G; a game of vaulting over a bent-over player.", "<b>bathrobe</b> – B-A-T-H-R-O-B-E; a robe worn after bathing.", "<b>education</b> – E-D-U-C-A-T-I-O-N; teaching and learning.", "<b>earthworm</b> – E-A-R-T-H-W-O-R-M; a worm that lives in soil.", "<b>thermostat</b> – T-H-E-R-M-O-S-T-A-T; a device that regulates temperature."]};
+const VALUES=[200,400,600,800,1000];
+const $=id=>document.getElementById(id);
+const app=$('app'),ov=$('overlay'),ansEl=$('answer'),awEl=$('award'),awBtns=$('awardBtns');
+let teams=[{name:'',score:0},{name:'',score:0}],cur=null,round=0,done=new Set(),setIdx=0;
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function nav(p){const items=[['#/','Home','home'],['#/play/1','Jeopardy','play'],['#/guide/1','Guides','guide'],['#/workbook','Workbook','workbook']];
+ $('nav').innerHTML=items.map(i=>`<a href="${i[0]}" class="${p===i[2]?'on':''}">${i[1]}</a>`).join('')}
+function home(){
+ nav('home');
+ const cats=SETS.map(s=>s.data.length);
+ app.innerHTML=`<div class="hero"><h1>Jeopardizzy<span>!</span></h1><p>The word-game show for your classroom. Pick a category, name the answer, win the points.</p><a class="big" href="#/play/1">Play Jeopardy \u25B6</a></div>
+ <h2>Choose your board</h2><div class="grid">${SETS.map((s,i)=>`<a class="jt" href="#/play/${i+1}"><b>Set ${i+1}</b><small>${cats[i]} categories \u00B7 ${s.data.length*5} clues</small></a>`).join('')}</div>
+ <h2>Get ready: strategy guides</h2><p class="lead">Learn how each puzzle type works and how to solve it.</p><div class="grid">${GUIDES.map((g,i)=>`<a class="card" href="#/guide/${i+1}"><b>Guide ${i+1}</b><small>${i==0?'All 13 puzzle types':'New puzzle types in Set '+(i+1)}</small></a>`).join('')}</div>
+ <h2>Train on your own</h2><div class="grid"><a class="card" href="#/workbook"><b>Workbook</b><small>80 graded tasks with answer key</small></a></div>`}
+function play(n){
+ nav('play');setIdx=n-1;round=0;done=new Set();const S=SETS[setIdx];
+ app.innerHTML=`<h1>Jeopardizzy! \u00B7 Set ${n}</h1><div class="row" style="margin:8px 0"><a class="btn" href="#/guide/${n}">Strategy guide for this set</a> ${n>1?`<a class="btn" href="#/play/${n-1}">Previous set</a>`:''} ${n<SETS.length?`<a class="btn" href="#/play/${n+1}">Next set</a>`:''}</div>
+ <div class="rounds" id="rounds"></div><div class="board" id="board"></div>
+ <div class="scores"><div id="teams" style="display:contents"></div><div class="tools"><button id="addTeam">Add team</button><button id="reset">Reset board</button></div></div>`;
+ $('addTeam').onclick=()=>{if(teams.length<5){teams.push({name:'',score:0});renderTeams()}};
+ $('reset').onclick=()=>{done=new Set();teams.forEach(t=>t.score=0);buildBoard();renderTeams()};
+ buildRounds();buildBoard();renderTeams()}
+function buildRounds(){const R=SETS[setIdx].rounds,r=$('rounds');r.innerHTML='';
+ R.forEach((_,i)=>{const b=document.createElement('button');b.textContent='Round '+(i+1);b.className=i===round?'on':'';b.onclick=()=>{round=i;buildRounds();buildBoard()};r.appendChild(b)})}
+function buildBoard(){const S=SETS[setIdx],board=$('board');board.innerHTML='';const [s,e]=S.rounds[round];
+ board.style.gridTemplateColumns=`repeat(${e-s},1fr)`;
+ for(let c=s;c<e;c++){const h=document.createElement('div');h.className='cat';h.textContent=S.data[c].name;board.appendChild(h)}
+ VALUES.forEach((v,r)=>{for(let c=s;c<e;c++){const k=document.createElement('div'),key=setIdx+'-'+c+'-'+r;
+  k.className='cell'+(done.has(key)?' done':'');k.tabIndex=0;k.textContent=v;
+  const op=()=>{if(!k.classList.contains('done'))openClue(c,r,k,key)};
+  k.addEventListener('click',op);k.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();op()}});board.appendChild(k)}})}
+function openClue(c,r,cell,key){cur={c,r,cell,key};const S=SETS[setIdx],it=S.data[c].items[r];
+ $('meta').textContent=S.data[c].name+' \u00B7 '+VALUES[r];$('clue').textContent=it[0];
+ ansEl.innerHTML='';ansEl.append(it[1]);if(it[2]){const d=document.createElement('small');d.textContent=it[2];ansEl.appendChild(d)}
+ ansEl.classList.remove('show');awEl.classList.remove('show');ov.classList.add('open');$('reveal').focus()}
+$('reveal').onclick=()=>{ansEl.classList.add('show');awBtns.innerHTML='';
+ teams.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t.name||('Team '+(i+1));b.onclick=()=>{teams[i].score+=VALUES[cur.r];fin()};awBtns.appendChild(b)});
+ const n=document.createElement('button');n.textContent='No one';n.onclick=fin;awBtns.appendChild(n);awEl.classList.add('show')};
+function fin(){done.add(cur.key);cur.cell.classList.add('done');ov.classList.remove('open');renderTeams()}
+$('close').onclick=()=>ov.classList.remove('open');
+ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')ov.classList.remove('open')});
+function renderTeams(){const t=$('teams');if(!t)return;t.innerHTML='';
+ teams.forEach((tm,i)=>{const b=document.createElement('div');b.className='team';
+  const inp=document.createElement('input');inp.value=tm.name;inp.placeholder='Team '+(i+1);inp.oninput=()=>{teams[i].name=inp.value};
+  const sc=document.createElement('div');sc.className='score';sc.textContent=tm.score;
+  const adj=document.createElement('div');adj.className='adj';
+  const m=document.createElement('button');m.textContent='\u2212100';m.onclick=()=>{teams[i].score-=100;renderTeams()};
+  const p=document.createElement('button');p.textContent='+100';p.onclick=()=>{teams[i].score+=100;renderTeams()};
+  adj.append(m,p);b.append(inp,sc,adj);t.appendChild(b)})}
+function guide(n){nav('guide');const G=GUIDES[n-1];
+ app.innerHTML=`<h1>Strategy guide \u00B7 ${n==1?'All puzzle types':'Set '+n}</h1><div class="row" style="margin:8px 0">${GUIDES.map((_,i)=>`<a class="btn ${i+1==n?'p':''}" href="#/guide/${i+1}">Guide ${i+1}</a>`).join('')}<a class="btn" href="#/play/${n}">Play Set ${n}</a><button onclick="window.print()">Print</button></div>
+ <p class="lead">${n==1?'Instructions, worked examples and strategies for the puzzle types in Set 1.':'Instructions, worked examples and strategies for the puzzle types that are new in Set '+n+'. Types that repeat work as explained in the earlier guides.'}</p>`+
+ G.map(c=>`<div class="gc"><h3>${c.n}</h3><div class="b">${c.sk?`<div class="sk">Skills trained: ${c.sk}</div>`:''}<h4>Instructions</h4><p>${c.how}</p><h4>Worked example</h4><div class="ex">${c.ex}</div><h4>Strategies</h4><ul>${c.st.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`).join('')}
+function workbook(){nav('workbook');
+ const sec=[['What\u2019s the Word?','WW','KWW','Find the 3-letter word that fits every blank in the row. Tasks get harder as you go.'],['Opposites Attract (harder)','OP','KOP','Unscramble both words into a pair of opposites. Tasks 15\u201320: the letters of the pair are mixed together, lengths in brackets.'],['Say What?','SW','KSW','Turn each sentence back into the well-known saying. Tasks 1\u20137 give the first words.'],['Missing-Letter Words','ML','KML','Fill the blanks with the letters in brackets (each once, any order).']];
+ app.innerHTML=`<h1>Workbook</h1><p class="lead">80 tasks, 20 per puzzle type, rising in difficulty. Need help? Read <a href="#/guide/1">Guide 1</a> for strategies. Tap \u201CShow answers\u201D only after a real attempt.</p>`+
+ sec.map(s=>`<h2>${s[0]}</h2><p class="lead">${s[3]}</p><ol class="tasks">${WBK[s[1]].map(t=>`<li>${t}</li>`).join('')}</ol><details><summary>Show answers</summary><ol class="key">${WBK[s[2]].map(t=>`<li>${t}</li>`).join('')}</ol></details>`).join('')}
+function route(){ov.classList.remove('open');const h=(location.hash||'#/').split('/');window.scrollTo(0,0);
+ try{if(h[1]==='play'&&SETS[+h[2]-1])play(+h[2]);else if(h[1]==='guide'&&GUIDES[+h[2]-1])guide(+h[2]);else if(h[1]==='workbook')workbook();else home()}catch(e){home()}}
+window.addEventListener('hashchange',route);route();
+</script>
+</body>
+</html>
