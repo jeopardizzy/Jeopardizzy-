@@ -79,14 +79,23 @@ ol.tasks{margin-left:26px}ol.tasks li{margin:6px 0;font-size:17px}
 details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 16px;margin:12px 0}
 details summary{cursor:pointer;color:var(--sage-d);font-weight:600}
 ol.key{margin-left:26px;margin-top:8px}ol.key li{margin:4px 0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:22px 24px;max-width:720px}
+.chips,.seg{display:flex;flex-wrap:wrap;gap:8px}
+.chips button.on,.seg button.on{background:var(--sage-soft);color:var(--sage-d);border-color:var(--sage-d);font-weight:600}
+.btn[disabled],button[disabled]{opacity:.5;cursor:not-allowed}
+.wb{max-width:720px}.tag{font-size:13px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+.prog{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin:8px 0 18px}.prog i{display:block;height:100%;background:var(--sage-d);transition:width .3s}
+.q{font-size:26px;line-height:1.4;font-weight:550;margin:10px 0 16px;word-break:break-word}
+.ans-in{width:100%;font-size:20px;padding:12px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font-family:inherit}
+.ans-in:focus{outline:2px solid var(--sage-d);border-color:transparent}
+.fb{margin-top:14px;padding:12px 16px;border-radius:14px;display:none;line-height:1.5}.fb.show{display:block}.fb.ok{background:var(--sage-soft);color:var(--ink)}.fb.no{background:var(--butter-soft);color:var(--ink)}
+.score{font-size:56px;font-weight:650;color:var(--sage-d);letter-spacing:-.02em}
+.hc{display:flex;flex-direction:column;gap:10px;padding:24px}.hc b{font-size:22px}.hc small{font-size:15px;flex:1}.hc .btn{align-self:flex-start;margin-top:6px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media print{header,nav,.rounds,.btn,button{display:none}}
 @media (max-width:720px){header{padding:14px 12px}main{padding:6px 12px 44px}h1{font-size:26px}.hero{padding:30px 20px;border-radius:22px}.hero h1{font-size:34px}.board{gap:5px}.cat{font-size:11px;min-height:54px;padding:8px 3px;border-radius:10px}.cell{font-size:17px;padding:14px 3px;border-radius:10px}.mcard{padding:24px 20px}.clue{font-size:21px}.answer{font-size:20px}}
-.authbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.authuser{font-size:14px;color:var(--mute);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.authpanel{background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:22px;max-width:520px;margin:18px 0}.authpanel input{width:100%;font:inherit;padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);margin:5px 0 9px}.authmsg{margin:8px 0;color:var(--mute);font-size:14px}.authmsg.err{color:#a64b4b}.lb{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}.lb th,.lb td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left}.lb th{background:var(--sage-soft);color:var(--sage-d);font-weight:600}.lb td:last-child,.lb th:last-child{text-align:right}.lb tr:last-child td{border-bottom:0}.save-status{font-size:13px;color:var(--mute);margin-top:8px}</style>
+</style>
 
-<script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <header><div class="in"><a class="brand" href="#/">Jeopardizzy<span>!</span></a>
@@ -97,23 +106,6 @@ ol.key{margin-left:26px;margin-top:8px}ol.key li{margin:4px 0}
 <div class="row"><button class="btn p" id="reveal">Reveal answer</button><button class="btn" id="close">Close</button></div>
 <div class="award" id="award"><p>Award points to:</p><div class="row" id="awardBtns"></div></div></div></div>
 <script>
-/* Firebase */
-const firebaseConfig={apiKey:"AIzaSyDeV8RRUbUDoLaDj2DBlE9YaQWQuww7wiQ",authDomain:"jeopardizzy-b7a11.firebaseapp.com",projectId:"jeopardizzy-b7a11",storageBucket:"jeopardizzy-b7a11.firebasestorage.app",messagingSenderId:"574226963823",appId:"1:574226963823:web:8052f4947b6e06d945dc9a"};
-firebase.initializeApp(firebaseConfig);const auth=firebase.auth(),db=firebase.firestore();let firebaseUser=null,firebaseReady=false,saveTimer=null,lastLoadedSave=null;
-function friendlyAuthError(e){const m={'auth/email-already-in-use':'An account with this email already exists.','auth/invalid-email':'Please enter a valid email address.','auth/weak-password':'Password should be at least 6 characters.','auth/user-not-found':'No account was found with that email.','auth/wrong-password':'That password is incorrect.','auth/invalid-credential':'Email or password is incorrect.','auth/too-many-requests':'Too many attempts. Please wait a little and try again.'};return m[e.code]||e.message||'Something went wrong.'}
-async function registerUser(){const email=$('authEmail')?.value.trim(),pass=$('authPassword')?.value,msg=$('authMsg');if(!email||!pass){if(msg)msg.textContent='Enter an email and password.';return}try{await auth.createUserWithEmailAndPassword(email,pass);if(msg)msg.textContent='Account created!';location.hash='#/'}catch(e){if(msg){msg.textContent=friendlyAuthError(e);msg.className='authmsg err'}}}
-async function loginUser(){const email=$('authEmail')?.value.trim(),pass=$('authPassword')?.value,msg=$('authMsg');if(!email||!pass){if(msg)msg.textContent='Enter an email and password.';return}try{await auth.signInWithEmailAndPassword(email,pass);if(msg)msg.textContent='Logged in!';location.hash='#/'}catch(e){if(msg){msg.textContent=friendlyAuthError(e);msg.className='authmsg err'}}}
-async function firebaseSignOut(){await auth.signOut();location.hash='#/'}
-function authPage(){nav('login');app.innerHTML=`<h1>Log in to Jeopardizzy!</h1><p class="lead">Save your games, keep your progress, and appear on the leaderboard.</p><div class="authpanel"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"><label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters"><div class="row"><button class="btn p" onclick="loginUser()">Log in</button><button class="btn" onclick="registerUser()">Create account</button></div><div id="authMsg" class="authmsg">You can use the same account on any device.</div></div>`}
-function requireLogin(msg='Please log in first.'){if(firebaseUser)return true;alert(msg);location.hash='#/login';return false}
-function gameId(){return `set-${setIdx+1}`}
-function gameState(){return{set:setIdx+1,round,done:[...done],teams:teams.map(t=>({name:t.name,score:t.score})),updatedAt:firebase.firestore.FieldValue.serverTimestamp(),completed:false}}
-async function saveProgress(immediate=false){if(!firebaseUser||!firebaseReady||!SETS[setIdx])return;if(saveTimer){clearTimeout(saveTimer);saveTimer=null}const run=async()=>{try{await db.collection('users').doc(firebaseUser.uid).collection('games').doc(gameId()).set(gameState(),{merge:true});updateSaveStatus('Progress saved')}catch(e){console.error(e);updateSaveStatus('Could not save progress')}};if(immediate)await run();else saveTimer=setTimeout(run,500)}
-function updateSaveStatus(t){const el=$('saveStatus');if(el)el.textContent=t}
-async function restoreProgress(n){if(!firebaseUser||!firebaseReady)return false;try{const snap=await db.collection('users').doc(firebaseUser.uid).collection('games').doc(`set-${n}`).get();if(!snap.exists)return false;const d=snap.data();lastLoadedSave=d;round=Number.isInteger(d.round)?d.round:0;done=new Set(Array.isArray(d.done)?d.done:[]);if(Array.isArray(d.teams)&&d.teams.length)teams=d.teams.map(t=>({name:t.name||'',score:Number(t.score)||0}));return true}catch(e){console.error(e);return false}}
-async function submitLeaderboard(){if(!requireLogin('Log in before submitting a score.'))return;const score=Math.max(0,...teams.map(t=>Number(t.score)||0));if(!confirm(`Submit ${score} points to the leaderboard?`))return;try{await db.collection('leaderboard').add({uid:firebaseUser.uid,score,set:setIdx+1,createdAt:firebase.firestore.FieldValue.serverTimestamp()});updateSaveStatus('Score submitted to leaderboard');alert('Score submitted!')}catch(e){console.error(e);alert('Could not submit score. '+friendlyAuthError(e))}}
-async function leaderboard(){nav('leaderboard');app.innerHTML=`<h1>Leaderboard</h1><p class="lead">Highest submitted scores from Jeopardizzy! players.</p><div id="lbWrap">Loading leaderboard…</div>`;try{const snap=await db.collection('leaderboard').orderBy('score','desc').limit(50).get();const rows=snap.docs.map((d,i)=>{const x=d.data();return{rank:i+1,name:'Player '+String(x.uid||'').slice(0,6),score:Number(x.score)||0,set:x.set||'—'}});$('lbWrap').innerHTML=rows.length?`<table class="lb"><thead><tr><th>#</th><th>Player</th><th>Set</th><th>Score</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${x.rank}</td><td>${esc(x.name)}</td><td>${x.set}</td><td><b>${x.score.toLocaleString()}</b></td></tr>`).join('')}</tbody></table>`:'<div class="authpanel">No scores yet. Be the first!</div>'}catch(e){console.error(e);$('lbWrap').innerHTML='<div class="authpanel"><b>Leaderboard unavailable.</b><p class="authmsg">Check that Firestore is enabled and its rules are published.</p></div>'}}
-auth.onAuthStateChanged(u=>{firebaseUser=u;firebaseReady=true;navFromCurrentPage()});function navFromCurrentPage(){const h=(location.hash||'#/').split('/');const p=h[1]==='play'?'play':h[1]==='guide'?'guide':h[1]==='workbook'?'workbook':h[1]==='leaderboard'?'leaderboard':h[1]==='login'?'login':'home';nav(p)}
 const SETS=[{data:[
  { name:"Endings & Beginnings", items:[
   ["April ___ Proof","Fool","April fool: a prank victim on April 1. Foolproof: impossible to get wrong."],
@@ -763,27 +755,29 @@ const $=id=>document.getElementById(id);
 const app=$('app'),ov=$('overlay'),ansEl=$('answer'),awEl=$('award'),awBtns=$('awardBtns');
 let teams=[{name:'',score:0},{name:'',score:0}],cur=null,round=0,done=new Set(),setIdx=0;
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
-function nav(p){const items=[['#/','Home','home'],['#/play/1','Jeopardy','play'],['#/guide/1','Guides','guide'],['#/workbook','Workbook','workbook'],['#/leaderboard','Leaderboard','leaderboard']];
- $('nav').innerHTML=items.map(i=>`<a href="${i[0]}" class="${p===i[2]?'on':''}">${i[1]}</a>`).join('')+authNav()}
-function authNav(){return firebaseUser?`<span class="authbar"><span class="authuser">${esc(firebaseUser.email||'Signed in')}</span><button class="btn" onclick="firebaseSignOut()">Log out</button></span>`:`<a href="#/login">Log in</a>`}
+function nav(p){const items=[['#/','Home','home'],['#/sets','Jeopardy','play'],['#/guide/1','Guides','guide'],['#/workbook','Workbook','workbook']];
+ $('nav').innerHTML=items.map(i=>`<a href="${i[0]}" class="${p===i[2]?'on':''}">${i[1]}</a>`).join('')}
 function home(){
  nav('home');
- const cats=SETS.map(s=>s.data.length);
- app.innerHTML=`<div class="hero"><h1>Jeopardizzy<span>!</span></h1><p>The word-game show for your classroom. Pick a category, name the answer, win the points.</p><a class="big" href="#/play/1">Play Jeopardy \u25B6</a></div>
- <div class="authpanel"><b>${firebaseUser?`Signed in as ${esc(firebaseUser.email||'player')}`:'Want to save your games?'}</b><p class="authmsg">${firebaseUser?'Your progress saves automatically while you play.':'Log in to save progress and submit scores to the leaderboard.'}</p>${firebaseUser?`<div class="row"><a class="btn p" href="#/leaderboard">View leaderboard</a><button class="btn" onclick="firebaseSignOut()">Log out</button></div>`:`<a class="btn p" href="#/login">Log in / Create account</a>`}</div>
- <h2>Choose your board</h2><div class="grid">${SETS.map((s,i)=>`<a class="jt" href="#/play/${i+1}"><b>Set ${i+1}</b><small>${cats[i]} categories \u00B7 ${s.data.length*5} clues</small></a>`).join('')}</div>
- <h2>Get ready: strategy guides</h2><p class="lead">Learn how each puzzle type works and how to solve it.</p><div class="grid">${GUIDES.map((g,i)=>`<a class="card" href="#/guide/${i+1}"><b>Guide ${i+1}</b><small>${i==0?'All 13 puzzle types':'New puzzle types in Set '+(i+1)}</small></a>`).join('')}</div>
- <h2>Train on your own</h2><div class="grid"><a class="card" href="#/workbook"><b>Workbook</b><small>80 graded tasks with answer key</small></a></div>`}
-async function play(n){
- nav('play');setIdx=n-1;round=0;done=new Set();teams=[{name:'',score:0},{name:'',score:0}];if(firebaseUser)await restoreProgress(n);const S=SETS[setIdx];
- app.innerHTML=`<h1>Jeopardizzy! \u00B7 Set ${n}</h1><div class="row" style="margin:8px 0"><a class="btn" href="#/guide/${n}">Strategy guide for this set</a> ${n>1?`<a class="btn" href="#/play/${n-1}">Previous set</a>`:''} ${n<SETS.length?`<a class="btn" href="#/play/${n+1}">Next set</a>`:''}</div>
+ app.innerHTML=`<div class="hero"><h1>Jeopardizzy<span>!</span></h1><p>Word games for the classroom and for self-study.</p></div>
+ <div class="grid" style="margin-top:18px">
+ <a class="card hc" href="#/sets"><b>Jeopardy</b><small>Team quiz boards: pick a category, name the answer and win the points.</small><span class="btn p">Go to sets</span></a>
+ <a class="card hc" href="#/guide/1"><b>Guides</b><small>Learn how each puzzle type works and the best ways to solve it.</small><span class="btn p">Go to guides</span></a>
+ <a class="card hc" href="#/workbook"><b>Workbook</b><small>Practise on your own: choose your topics and your level.</small><span class="btn p">Go to workbook</span></a></div>`}
+function sets(){
+ nav('play');
+ app.innerHTML=`<h1>Choose a set</h1><p class="lead">Each set is a Jeopardy board with several rounds. Teams take turns picking a category and a value.</p>
+ <div class="grid">${SETS.map((s,i)=>`<a class="jt" href="#/play/${i+1}"><b>Set ${i+1}</b><small>${s.data.length} categories \u00B7 ${s.data.length*5} clues</small></a>`).join('')}</div>`}
+function play(n){
+ nav('play');setIdx=n-1;round=0;done=new Set();const S=SETS[setIdx];
+ app.innerHTML=`<h1>Jeopardizzy! \u00B7 Set ${n}</h1><div class="row" style="margin:8px 0"><a class="btn" href="#/sets">All sets</a> <a class="btn" href="#/guide/${n}">Strategy guide</a> ${n>1?`<a class="btn" href="#/play/${n-1}">Previous set</a>`:''} ${n<SETS.length?`<a class="btn" href="#/play/${n+1}">Next set</a>`:''}</div>
  <div class="rounds" id="rounds"></div><div class="board" id="board"></div>
- <div class="scores"><div id="teams" style="display:contents"></div><div class="tools"><button id="addTeam">Add team</button><button id="reset">Reset board</button><button class="btn p" id="submitScore">Submit score</button></div></div><div class="save-status" id="saveStatus">${firebaseUser?'Progress will save automatically.':'Log in to save progress.'}</div>`;
+ <div class="scores"><div id="teams" style="display:contents"></div><div class="tools"><button id="addTeam">Add team</button><button id="reset">Reset board</button></div></div>`;
  $('addTeam').onclick=()=>{if(teams.length<5){teams.push({name:'',score:0});renderTeams()}};
- $('reset').onclick=async()=>{if(!confirm('Reset this board and saved progress?'))return;done=new Set();teams.forEach(t=>t.score=0);round=0;buildRounds();buildBoard();renderTeams();await saveProgress(true)};
- $('submitScore').onclick=submitLeaderboard;buildRounds();buildBoard();renderTeams();if(firebaseUser&&lastLoadedSave)updateSaveStatus('Saved progress restored');lastLoadedSave=null}
+ $('reset').onclick=()=>{done=new Set();teams.forEach(t=>t.score=0);buildBoard();renderTeams()};
+ buildRounds();buildBoard();renderTeams()}
 function buildRounds(){const R=SETS[setIdx].rounds,r=$('rounds');r.innerHTML='';
- R.forEach((_,i)=>{const b=document.createElement('button');b.textContent='Round '+(i+1);b.className=i===round?'on':'';b.onclick=()=>{round=i;buildRounds();buildBoard();saveProgress()};r.appendChild(b)})}
+ R.forEach((_,i)=>{const b=document.createElement('button');b.textContent='Round '+(i+1);b.className=i===round?'on':'';b.onclick=()=>{round=i;buildRounds();buildBoard()};r.appendChild(b)})}
 function buildBoard(){const S=SETS[setIdx],board=$('board');board.innerHTML='';const [s,e]=S.rounds[round];
  board.style.gridTemplateColumns=`repeat(${e-s},1fr)`;
  for(let c=s;c<e;c++){const h=document.createElement('div');h.className='cat';h.textContent=S.data[c].name;board.appendChild(h)}
@@ -798,7 +792,7 @@ function openClue(c,r,cell,key){cur={c,r,cell,key};const S=SETS[setIdx],it=S.dat
 $('reveal').onclick=()=>{ansEl.classList.add('show');awBtns.innerHTML='';
  teams.forEach((t,i)=>{const b=document.createElement('button');b.textContent=t.name||('Team '+(i+1));b.onclick=()=>{teams[i].score+=VALUES[cur.r];fin()};awBtns.appendChild(b)});
  const n=document.createElement('button');n.textContent='No one';n.onclick=fin;awBtns.appendChild(n);awEl.classList.add('show')};
-function fin(){done.add(cur.key);cur.cell.classList.add('done');ov.classList.remove('open');renderTeams();saveProgress()}
+function fin(){done.add(cur.key);cur.cell.classList.add('done');ov.classList.remove('open');renderTeams()}
 $('close').onclick=()=>ov.classList.remove('open');
 ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('open')});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')ov.classList.remove('open')});
@@ -807,19 +801,72 @@ function renderTeams(){const t=$('teams');if(!t)return;t.innerHTML='';
   const inp=document.createElement('input');inp.value=tm.name;inp.placeholder='Team '+(i+1);inp.oninput=()=>{teams[i].name=inp.value};
   const sc=document.createElement('div');sc.className='score';sc.textContent=tm.score;
   const adj=document.createElement('div');adj.className='adj';
-  const m=document.createElement('button');m.textContent='\u2212100';m.onclick=()=>{teams[i].score-=100;renderTeams();saveProgress()};
-  const p=document.createElement('button');p.textContent='+100';p.onclick=()=>{teams[i].score+=100;renderTeams();saveProgress()};
+  const m=document.createElement('button');m.textContent='\u2212100';m.onclick=()=>{teams[i].score-=100;renderTeams()};
+  const p=document.createElement('button');p.textContent='+100';p.onclick=()=>{teams[i].score+=100;renderTeams()};
   adj.append(m,p);b.append(inp,sc,adj);t.appendChild(b)})}
 function guide(n){nav('guide');const G=GUIDES[n-1];
  app.innerHTML=`<h1>Strategy guide \u00B7 ${n==1?'All puzzle types':'Set '+n}</h1><div class="row" style="margin:8px 0">${GUIDES.map((_,i)=>`<a class="btn ${i+1==n?'p':''}" href="#/guide/${i+1}">Guide ${i+1}</a>`).join('')}<a class="btn" href="#/play/${n}">Play Set ${n}</a><button onclick="window.print()">Print</button></div>
  <p class="lead">${n==1?'Instructions, worked examples and strategies for the puzzle types in Set 1.':'Instructions, worked examples and strategies for the puzzle types that are new in Set '+n+'. Types that repeat work as explained in the earlier guides.'}</p>`+
  G.map(c=>`<div class="gc"><h3>${c.n}</h3><div class="b">${c.sk?`<div class="sk">Skills trained: ${c.sk}</div>`:''}<h4>Instructions</h4><p>${c.how}</p><h4>Worked example</h4><div class="ex">${c.ex}</div><h4>Strategies</h4><ul>${c.st.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`).join('')}
-function workbook(){nav('workbook');
- const sec=[['What\u2019s the Word?','WW','KWW','Find the 3-letter word that fits every blank in the row. Tasks get harder as you go.'],['Opposites Attract (harder)','OP','KOP','Unscramble both words into a pair of opposites. Tasks 15\u201320: the letters of the pair are mixed together, lengths in brackets.'],['Say What?','SW','KSW','Turn each sentence back into the well-known saying. Tasks 1\u20137 give the first words.'],['Missing-Letter Words','ML','KML','Fill the blanks with the letters in brackets (each once, any order).']];
- app.innerHTML=`<h1>Workbook</h1><p class="lead">80 tasks, 20 per puzzle type, rising in difficulty. Need help? Read <a href="#/guide/1">Guide 1</a> for strategies. Tap \u201CShow answers\u201D only after a real attempt.</p>`+
- sec.map(s=>`<h2>${s[0]}</h2><p class="lead">${s[3]}</p><ol class="tasks">${WBK[s[1]].map(t=>`<li>${t}</li>`).join('')}</ol><details><summary>Show answers</summary><ol class="key">${WBK[s[2]].map(t=>`<li>${t}</li>`).join('')}</ol></details>`).join('')}
+const WBT=[
+ {id:'WW',name:"What's the Word?",q:'WW',k:'KWW',instr:'Find the 3-letter word that fits every blank in the row.',ans:['SUN','CAT','BED','SEA','PAN','ART','TEA','ACT','CAR','LID','ICE','OIL','TIC','EAT','SKI','GET','ROB','THE','LIE','VAN'],ph:'3-letter word'},
+ {id:'OP',name:'Opposites Attract',q:'OP',k:'KOP',instr:'Unscramble the letters to reveal a pair of opposites. In the hardest tasks the letters of both words are mixed together (lengths in brackets).',ans:[['fat','thin'],['far','near'],['begin','end'],['love','hate'],['fast','slow'],['open','close'],['start','stop'],['right','left'],['early','late'],['over','under'],['small','large'],['deep','shallow'],['first','last'],['inner','outer'],['cruel','kind'],['teach','learn'],['angel','devil'],['friend','enemy'],['master','servant'],['inside','outside']],ph:'word / word'},
+ {id:'SW',name:'Say What?',q:'SW',k:'KSW',instr:'Turn the sentence back into the well-known saying.',ans:['Better late than never','Actions speak louder than words','Easy come, easy go','The early bird catches the worm','Honesty is the best policy',"Time flies when you're having fun",'No man is an island','Out of sight, out of mind',"There's no such thing as a free lunch","Don't bite the hand that feeds you",'Hope for the best, prepare for the worst',"You can lead a horse to water, but you can't make him drink",'If you want something done right, do it yourself',"Don't cut off your nose to spite your face",'An ounce of prevention is worth a pound of cure','People who live in glass houses should not throw stones','Make hay while the sun shines','Lightning never strikes in the same place twice','Good fences make good neighbors','Speak softly and carry a big stick'],ph:'type the saying'},
+ {id:'ML',name:'Missing-Letter Words',q:'ML',k:'KML',instr:'Fill the blanks with the letters in brackets, each used once, to make a common word.',ans:['offer','knife','frugal','comedy','second','kidney','bonfire','foreign','fragile','benefit','fifteen','condemn','chowder','barefoot','duckling','leapfrog','bathrobe','education','earthworm','thermostat'],ph:'the word'}];
+const LVN=['Easy','Medium','Hard'];
+const lvOf=i=>i<7?0:i<14?1:2;
+let wb={topics:new Set(WBT.map(t=>t.id)),level:'Mixed',n:10},ses=null;
+function norm(s){return String(s).toLowerCase().replace(/[\u2019']/g,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim()}
+function pool(){const r=[];WBT.filter(t=>wb.topics.has(t.id)).forEach(t=>t.ans.forEach((a,i)=>{if(wb.level==='Mixed'||LVN[lvOf(i)]===wb.level)r.push({t,i,a,q:WBK[t.q][i],exp:WBK[t.k][i],lv:lvOf(i)})}));return r}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function isOk(it,val){const v=norm(val);if(!v)return false;
+ if(it.t.id==='WW'||it.t.id==='ML')return v===norm(it.a);
+ if(it.t.id==='OP'){const w=v.split(' '),a=it.a.map(norm);return w.length===2&&((w[0]===a[0]&&w[1]===a[1])||(w[0]===a[1]&&w[1]===a[0]))}
+ const aw=norm(it.a).split(' '),uw=v.split(' ');return aw.filter(x=>uw.includes(x)).length/aw.length>=0.8&&uw.length<=aw.length*1.4}
+function ansText(it){return it.t.id==='OP'?it.a.join(' / '):it.t.id==='WW'?it.a:it.a}
+function hintOf(it){const a=it.a;if(it.t.id==='WW')return 'Starts with '+a[0]+'.';if(it.t.id==='ML')return 'Starts with \u201C'+a[0].toUpperCase()+'\u201D and has '+a.length+' letters.';if(it.t.id==='OP')return 'Starts with \u201C'+a[0][0].toUpperCase()+'\u201D and \u201C'+a[1][0].toUpperCase()+'\u201D.';return 'Starts with: \u201C'+a.split(' ').slice(0,2).join(' ')+' \u2026\u201D'}
+function workbook(){nav('workbook');ses=null;setup()}
+function setup(){
+ app.innerHTML=`<h1>Workbook</h1><p class="lead">Choose what you want to practise, then start. Each task checks your answer and explains it.</p>
+ <div class="panel"><h2 style="margin-top:0">Topics</h2><div class="chips" id="ch">${WBT.map(t=>`<button data-t="${t.id}" class="${wb.topics.has(t.id)?'on':''}">${t.name}</button>`).join('')}</div>
+ <h2>Level</h2><div class="seg" id="lv">${['Easy','Medium','Hard','Mixed'].map(l=>`<button data-l="${l}" class="${wb.level===l?'on':''}">${l}</button>`).join('')}</div>
+ <h2>Number of tasks</h2><div class="seg" id="nn">${[5,10,15].map(n=>`<button data-n="${n}" class="${wb.n===n?'on':''}">${n}</button>`).join('')}</div>
+ <p class="lead" id="av" style="margin:16px 0 12px"></p><button class="btn p big" id="go">Start practising</button></div>`;
+ const upd=()=>{const p=pool().length;$('av').textContent=p?`${Math.min(p,wb.n)} tasks will be used (${p} match your choice).`:'No tasks match. Choose at least one topic.';$('go').disabled=!p};
+ $('ch').onclick=e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.t;if(wb.topics.has(id)){if(wb.topics.size>1)wb.topics.delete(id)}else wb.topics.add(id);b.classList.toggle('on',wb.topics.has(id));setup2(upd)};
+ $('lv').onclick=e=>{const b=e.target.closest('button');if(!b)return;wb.level=b.dataset.l;[...$('lv').children].forEach(x=>x.classList.toggle('on',x===b));upd()};
+ $('nn').onclick=e=>{const b=e.target.closest('button');if(!b)return;wb.n=+b.dataset.n;[...$('nn').children].forEach(x=>x.classList.toggle('on',x===b));upd()};
+ $('go').onclick=()=>{let p=shuffle(pool()).slice(0,wb.n);if(wb.level==='Mixed')p.sort((a,b)=>a.lv-b.lv);ses={p,i:0,ok:0,res:[]};task()};
+ upd()}
+function setup2(f){[...$('ch').children].forEach(b=>b.classList.toggle('on',wb.topics.has(b.dataset.t)));f()}
+function task(){
+ const it=ses.p[ses.i],t=it.t;let hinted=false,answered=false;
+ app.innerHTML=`<div class="wb"><div class="tag">Task ${ses.i+1} of ${ses.p.length} \u00B7 ${t.name} \u00B7 ${LVN[it.lv]}</div><div class="prog"><i style="width:${ses.i/ses.p.length*100}%"></i></div>
+ <p class="lead" style="margin-bottom:4px">${t.instr}</p><div class="q">${it.q}</div>
+ <input class="ans-in" id="in" placeholder="${t.ph}" autocomplete="off" autocapitalize="off" spellcheck="false">
+ <div class="row" style="margin-top:12px"><button class="btn p" id="chk">Check</button><button class="btn" id="hint">Hint</button><button class="btn" id="show">Show answer</button></div>
+ <div class="fb" id="fb"></div><div class="row" style="margin-top:14px"><button class="btn p" id="next" style="display:none">${ses.i+1<ses.p.length?'Next task':'See results'}</button></div></div>`;
+ const fb=$('fb'),inp=$('in');inp.focus();
+ const end=ok=>{if(answered)return;answered=true;ses.res.push({it,ok});if(ok)ses.ok++;inp.disabled=true;$('chk').style.display=$('hint').style.display=$('show').style.display='none';$('next').style.display='';
+  fb.className='fb show '+(ok?'ok':'no');fb.innerHTML=`<b>${ok?'Correct!':'Not quite.'}</b> Answer: <b>${ansText(it)}</b><div style="margin-top:6px">${it.exp}</div>`;$('next').focus()};
+ $('chk').onclick=()=>{if(!inp.value.trim()){inp.focus();return}if(isOk(it,inp.value))end(true);else{fb.className='fb show no';fb.innerHTML='Not quite. Try again, use a hint, or show the answer.';inp.select()}};
+ $('hint').onclick=()=>{fb.className='fb show no';fb.textContent=hintOf(it);hinted=true};
+ $('show').onclick=()=>end(false);
+ inp.onkeydown=e=>{if(e.key==='Enter'){if(answered)$('next').click();else $('chk').click()}};
+ $('next').onclick=()=>{ses.i++;ses.i<ses.p.length?task():results()}}
+function results(){
+ const n=ses.p.length,by={};ses.res.forEach(r=>{const k=r.it.t.name;by[k]=by[k]||[0,0];by[k][1]++;if(r.ok)by[k][0]++});
+ const miss=ses.res.filter(r=>!r.ok);
+ app.innerHTML=`<div class="wb"><h1>Well done!</h1><div class="score">${ses.ok} / ${n}</div>
+ <p class="lead">${ses.ok===n?'A perfect score!':ses.ok>=n*0.7?'Great work. Try a harder level next.':'Good effort. Keep practising and check the guides for strategies.'}</p>
+ <ul style="margin:0 0 16px 20px">${Object.entries(by).map(([k,v])=>`<li>${k}: ${v[0]} / ${v[1]}</li>`).join('')}</ul>
+ ${miss.length?`<h2>Review the ones you missed</h2><ul style="margin-left:20px">${miss.map(r=>`<li style="margin:6px 0">${r.it.q}<br><b>${ansText(r.it)}</b></li>`).join('')}</ul>`:''}
+ <div class="row" style="margin-top:18px"><button class="btn p" id="again">Practise again</button><button class="btn" id="chg">Change settings</button><a class="btn" href="#/guide/1">Read the guides</a></div></div>`;
+ $('again').onclick=()=>{let p=shuffle(pool()).slice(0,wb.n);if(wb.level==='Mixed')p.sort((a,b)=>a.lv-b.lv);ses={p,i:0,ok:0,res:[]};task()};
+ $('chg').onclick=setup}
+
 function route(){ov.classList.remove('open');const h=(location.hash||'#/').split('/');window.scrollTo(0,0);
- try{if(h[1]==='play'&&SETS[+h[2]-1])play(+h[2]);else if(h[1]==='guide'&&GUIDES[+h[2]-1])guide(+h[2]);else if(h[1]==='workbook')workbook();else if(h[1]==='leaderboard')leaderboard();else if(h[1]==='login')authPage();else home()}catch(e){console.error(e);home()}}
+ try{if(h[1]==='play'&&SETS[+h[2]-1])play(+h[2]);else if(h[1]==='guide'&&GUIDES[+h[2]-1])guide(+h[2]);else if(h[1]==='sets')sets();else if(h[1]==='workbook')workbook();else home()}catch(e){home()}}
 window.addEventListener('hashchange',route);route();
 </script>
 </body>
