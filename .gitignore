@@ -17,3 +17,8 @@ extract/quiz_data.json
 shots/
 shots.mjs
 subpath-check.mjs
+extract/playtest-report.txt
+extract/dbg.ts
+extract/tier_review.ts
+extract/vocab.json
+extract/vocab_freq.json
