@@ -1,8 +1,11 @@
 # Quizzical — Trivia Board Game (Jeopardizzy-)
 
+[![▶ Play online](https://img.shields.io/badge/%E2%96%B6_Play_online-Quizzical-f5b942?style=for-the-badge&logoColor=0b1026&labelColor=0b1026)](https://jeopardizzy.github.io/Jeopardizzy-/)
+[![CI](https://github.com/jeopardizzy/Jeopardizzy-/actions/workflows/deploy.yml/badge.svg)](https://github.com/jeopardizzy/Jeopardizzy-/actions/workflows/deploy.yml)
+
 A fast, tactile, Jeopardy-style trivia board game that runs entirely in the
-browser. Static site, no backend — live at
-**https://jeopardizzy.github.io/Jeopardizzy-/**
+browser. Static site, no backend — **play it live at
+[jeopardizzy.github.io/Jeopardizzy-](https://jeopardizzy.github.io/Jeopardizzy-/)**.
 
 - **5 categories × 5 clues** per round, values 100–500
 - **Round 2: Double Quizzical** — a fresh board, doubled values (200–1000)
