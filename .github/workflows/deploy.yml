@@ -1,23 +1,33 @@
-name: Deploy to GitHub Pages
+name: Build, test, and publish site
+
+# This repository is served by GitHub Pages in "Deploy from a branch" mode
+# (main branch, / root). This workflow rebuilds the app from app/ and commits
+# the built static files to the repository root, which Pages then serves.
+#
+# If the Pages source is ever switched to "GitHub Actions" (repo Settings →
+# Pages), replace this with a standard actions/deploy-pages workflow and stop
+# committing build output.
 
 on:
   push:
     branches: [main]
+    paths:
+      - "app/**"
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
-# one deployment at a time; cancel older runs of the same branch
 concurrency:
-  group: pages
+  group: pages-publish
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-publish:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +35,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: app/package-lock.json
 
       - name: Install from lockfile
         run: npm ci
@@ -38,16 +49,18 @@ jobs:
       - name: Build
         run: npm run build
 
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
+      - name: Publish built site to repository root
+        run: node scripts/publish.mjs
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Commit and push published files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html assets
+          if git diff --staged --quiet; then
+            echo "Site output unchanged — nothing to publish."
+          else
+            git commit -m "Publish built site from ${{ github.sha }}"
+            git push
+          fi
+        working-directory: ${{ github.workspace }}
