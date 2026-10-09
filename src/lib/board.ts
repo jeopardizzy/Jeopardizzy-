@@ -12,25 +12,83 @@ const ROUND_VALUES: Record<1 | 2, number[]> = {
 function eligible(data: QuizData, round: 1 | 2): Category[] {
   return data.categories.filter((c) => {
     if (c.clues.length < CLUES_PER_CATEGORY) return false;
-    return round === 1 ? c.difficulty <= 2 : c.difficulty >= 2;
+    return round === 1 ? c.difficulty === 1 : c.difficulty >= 2;
   });
 }
 
+/** A long or list-style answer is painful to type — better for reveal play. */
+function isTypeable(answer: string): boolean {
+  return answer.split(" ").length <= 5 && (answer.match(/,/g) ?? []).length < 2;
+}
+
 /**
- * Build a deterministic board for a seed. Round 1 draws from easier
- * categories, round 2 ("Double Quizzical") from harder ones with doubled values.
+ * Pick 5 clues from a category, preserving the source order (clues are
+ * curated easy → hard, so position maps to point value). Prefers typeable
+ * answers; falls back to the full set when a category needs them.
  */
-export function generateRound(data: QuizData, seed: number, round: 1 | 2): Board {
+function pickClues(cat: Category, rng: () => number) {
+  const clues = cat.clues;
+  const typeable = clues.filter((c) => isTypeable(c.answer));
+  const source = typeable.length >= CLUES_PER_CATEGORY ? typeable : clues;
+  if (source.length <= CLUES_PER_CATEGORY) return [...source];
+  // seeded starting offset for the stride
+  const span = source.length - CLUES_PER_CATEGORY + 1;
+  const start = Math.floor(rng() * span);
+  const step = (source.length - start) / CLUES_PER_CATEGORY;
+  const picked = [];
+  for (let i = 0; i < CLUES_PER_CATEGORY; i++) {
+    picked.push(source[Math.min(source.length - 1, Math.floor(start + i * step))]);
+  }
+  return picked;
+}
+
+/** Base name without trailing roman numerals — used to keep one family per board. */
+function family(name: string): string {
+  return name.replace(/\s+(II|III|IV|V|VI)$/, "");
+}
+
+/**
+ * Build a deterministic board for a seed. Round 1 draws from the easiest
+ * tier; round 2 ("Double Quizzical") draws from tiers 2–3 with doubled
+ * values and never repeats a category already seen in this game.
+ */
+export function generateRound(
+  data: QuizData,
+  seed: number,
+  round: 1 | 2,
+  excludeCategoryIds: string[] = [],
+): Board {
   const rng = mulberry32(seed ^ (round === 1 ? 0x9e3779b9 : 0x85ebca6b));
-  const pool = shuffle([...eligible(data, round)], rng);
+  const exclude = new Set(excludeCategoryIds);
+  let pool = eligible(data, round).filter((c) => !exclude.has(c.id));
+  if (pool.length < CATEGORY_COUNT) {
+    // extreme safety valve: relax the exclusion rather than crash a game
+    pool = eligible(data, round);
+  }
   if (pool.length < CATEGORY_COUNT) {
     throw new Error(`Not enough eligible categories for round ${round}`);
   }
-  const picked = pool.slice(0, CATEGORY_COUNT);
+  shuffle(pool, rng);
+  // one category family per board (no "Homonyms" + "Homonyms II" together)
+  const picked: Category[] = [];
+  const usedFamilies = new Set<string>();
+  for (const c of pool) {
+    const f = family(c.name);
+    if (usedFamilies.has(f)) continue;
+    usedFamilies.add(f);
+    picked.push(c);
+    if (picked.length === CATEGORY_COUNT) break;
+  }
+  if (picked.length < CATEGORY_COUNT) {
+    for (const c of pool) {
+      if (!picked.includes(c)) picked.push(c);
+      if (picked.length === CATEGORY_COUNT) break;
+    }
+  }
   const values = ROUND_VALUES[round];
   const tiles: BoardTile[] = [];
   picked.forEach((cat, ci) => {
-    const clues = shuffle([...cat.clues], rng).slice(0, CLUES_PER_CATEGORY);
+    const clues = pickClues(cat, rng);
     clues.forEach((c, ri) => {
       tiles.push({
         id: `r${round}-c${ci}-v${values[ri]}`,

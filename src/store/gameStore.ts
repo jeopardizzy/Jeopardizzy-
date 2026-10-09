@@ -150,7 +150,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       return;
     }
     if (s.round === 1) {
-      const board2 = generateRound(quizData, s.seed, 2);
+      const board2 = generateRound(
+        quizData,
+        s.seed,
+        2,
+        board.categories.map((c) => c.id),
+      );
       sfx.chime();
       set({
         phase: "board",

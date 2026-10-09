@@ -15,6 +15,20 @@ describe("quiz dataset", () => {
       expect(blob.includes(bad)).toBe(false);
     }
   });
+
+  it("has no extraction artifacts (control chars, doubled capitals, junk tails)", () => {
+    const blob = JSON.stringify(quizData);
+    // eslint-disable-next-line no-control-regex
+    expect(/[\x00-\x08\x0b-\x1f]/.test(blob)).toBe(false);
+    expect(/\b([A-Z])\1[a-z]{3,}/.test(blob)).toBe(false); // "IIdentified"
+    for (const c of quizData.categories) {
+      for (const cl of c.clues) {
+        expect(cl.clue).not.toMatch(/(Hints|Answers)\s*\*?\s*$/);
+        expect(cl.clue.length).toBeGreaterThan(2);
+        expect(cl.answer.length).toBeGreaterThan(0);
+      }
+    }
+  });
 });
 
 describe("generateRound", () => {

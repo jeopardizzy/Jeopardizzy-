@@ -44,6 +44,8 @@ export function levenshtein(a: string, b: string, cap = 3): number {
  */
 export function alternates(answer: string): string[] {
   const out = new Set<string>();
+  const whole = normalize(answer);
+  if (whole) out.add(whole); // typing the entire answer always counts
   const chunks = answer.split("/").map((s) => s.trim());
   for (const chunk of chunks) {
     const noParen = chunk
@@ -71,9 +73,20 @@ export function isCorrect(guess: string, answer: string): boolean {
   if (!g) return false;
   for (const alt of alternates(answer)) {
     if (g === alt) return true;
-    if (levenshtein(g, alt, toleranceFor(alt.length)) <= toleranceFor(alt.length)) return true;
-    // generous containment: a long-enough single-word guess inside a multi-word answer
-    if (alt.includes(" ") && g.length >= 5 && alt.split(" ").includes(g)) return true;
+    const tol = toleranceFor(alt.length);
+    if (tol > 0 && levenshtein(g, alt, tol) <= tol) return true;
+  }
+  // generous containment — but only against short, chunk-derived alternates
+  // (e.g. "eider" inside "Duck (Eider)"), never against long full answers
+  if (g.length >= 5) {
+    for (const chunk of answer.split("/")) {
+      const noParen = chunk.replace(/\([^)]*\)/g, " ");
+      const parens = [...chunk.matchAll(/\(([^)]*)\)/g)].map((m) => m[1]).join(" ");
+      for (const v of [chunk, noParen, parens]) {
+        const n = normalize(v);
+        if (n && n.split(" ").length <= 3 && n.split(" ").includes(g)) return true;
+      }
+    }
   }
   return false;
 }
