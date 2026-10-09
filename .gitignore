@@ -1,0 +1,19 @@
+node_modules/
+dist/
+dist-*/
+playwright-report/
+test-results/
+*.local
+.DS_Store
+Thumbs.db
+
+# source material and extraction pipeline stay out of the public repo
+source_pdfs/
+extract/raw/
+extract/review.txt
+extract/quiz_data.json
+
+# local verification artifacts
+shots/
+shots.mjs
+subpath-check.mjs

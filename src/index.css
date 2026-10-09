@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #0b1026;
+  --color-ink-2: #101738;
+  --color-board: #141d47;
+  --color-tile: #1e2a63;
+  --color-tile-2: #27347e;
+  --color-edge: #3d4c9e;
+  --color-gold: #f5b942;
+  --color-gold-2: #ffd97a;
+  --color-coral: #ff6b6b;
+  --color-mint: #3ddab4;
+  --color-cream: #f4f1ea;
+  --color-sky: #6bb8ff;
+  --color-muted: #9aa3c7;
+
+  --font-display: "Archivo Black", "Arial Black", system-ui, sans-serif;
+  --font-body: "Inter Variable", Inter, system-ui, sans-serif;
+
+  --shadow-tile: 0 2px 0 0 rgb(255 255 255 / 0.08) inset, 0 -3px 0 0 rgb(0 0 0 / 0.35) inset, 0 10px 24px rgb(0 0 0 / 0.35);
+  --shadow-pop: 0 24px 64px rgb(0 0 0 / 0.55);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-cream);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+/* tactile clue tile */
+.tile {
+  background: linear-gradient(160deg, var(--color-tile-2), var(--color-tile) 55%);
+  box-shadow: var(--shadow-tile);
+  border: 1px solid rgb(255 255 255 / 0.07);
+}
+
+.tile:not(:disabled):hover {
+  background: linear-gradient(160deg, #2f3d92, var(--color-tile-2) 60%);
+  transform: translateY(-2px);
+}
+
+.tile:not(:disabled):active {
+  transform: translateY(0px) scale(0.98);
+}
+
+.tile:disabled {
+  cursor: default;
+}
+
+/* focus visibility */
+:where(button, a, input, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* dotted stage backdrop */
+.stage-bg {
+  background-image: radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1.6px);
+  background-size: 22px 22px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile:not(:disabled):hover {
+    transform: none;
+  }
+}
