@@ -72,10 +72,15 @@ export default function HostClueModal() {
                 animate={{ opacity: 1, y: 0 }}
                 role="status"
               >
-                <p className="mb-6 rounded-2xl bg-butter-soft px-4 py-3 text-center text-lg text-ink">
+                <p className="mb-2 rounded-2xl bg-butter-soft px-4 py-3 text-center text-lg text-ink">
                   The answer is <strong className="text-butter-deep">{tile.answer}</strong>
                 </p>
-                <p className="mb-3 text-center text-xs font-bold uppercase tracking-[0.2em] text-mute">
+                {tile.note && (
+                  <p className="mx-auto mb-4 max-w-lg text-center text-sm italic leading-relaxed text-mute">
+                    {tile.note}
+                  </p>
+                )}
+                <p className="mb-3 mt-5 text-center text-xs font-bold uppercase tracking-[0.2em] text-mute">
                   Award {tile.value} points to
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">

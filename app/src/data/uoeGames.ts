@@ -1,15 +1,8 @@
 /** Idiom & word-game boards from the Use of English Jeopardy series.
  *  Each game is one 5x5 round; original (funny) category names preserved. */
-export interface UoeClue { clue: string; answer: string }
-export interface UoeCategory { name: string; clues: UoeClue[] }
-export interface UoeGame {
-  id: string;
-  title: string;
-  letter: string;
-  categories: UoeCategory[];
-}
+import type { BoardGame } from './boardGames';
 
-export const UOE_GAMES: UoeGame[] = [
+export const UOE_GAMES: BoardGame[] = [
  {
   "id": "uoe-ac",
   "title": "Use of English Jeopardy · Game AC",

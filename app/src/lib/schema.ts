@@ -29,13 +29,17 @@ export interface BoardTile {
   value: number;
   clue: string;
   answer: string;
+  /** optional host note shown with the revealed answer */
+  note?: string;
 }
 
 export interface Board {
   /** 1-based round number within the current game. */
   round: number;
+  /** columns on the board (4 or 5, depends on the round's categories) */
+  cols: number;
   categories: { id: string; name: string }[];
-  /** 25 tiles, column-major: 5 categories x 5 clues ordered by ascending value. */
+  /** cols × 5 tiles, column-major, ordered by ascending value. */
   tiles: BoardTile[];
 }
 

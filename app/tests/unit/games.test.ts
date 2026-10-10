@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { quizData } from "../../src/data/quizData";
 import { GAMES } from "../../src/data/games";
 import { UOE_GAMES } from "../../src/data/uoeGames";
+import { LEGACY_BOARDS } from "../../src/data/legacyBoards";
+import { ARENA3_BOARDS } from "../../src/data/arena3Boards";
 import {
   boardForRound,
   gameRoundCount,
@@ -52,9 +54,42 @@ describe("UoE idiom games", () => {
   });
 });
 
+describe("legacy and arena boards", () => {
+  it("every board has 4-5 categories with 4-5 usable clues each", () => {
+    for (const g of [...LEGACY_BOARDS, ...ARENA3_BOARDS]) {
+      expect(g.categories.length, g.id).toBeGreaterThanOrEqual(4);
+      expect(g.categories.length, g.id).toBeLessThanOrEqual(5);
+      for (const c of g.categories) {
+        expect(c.clues.length, `${g.id}/${c.name}`).toBeGreaterThanOrEqual(4);
+        for (const cl of c.clues) {
+          expect(cl.clue.length).toBeGreaterThan(2);
+          expect(cl.answer.length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it("arena III is saying/idiom-focused and complete", () => {
+    expect(ARENA3_BOARDS).toHaveLength(5);
+    const names = ARENA3_BOARDS.flatMap((b) => b.categories.map((c) => c.name));
+    for (const expected of ["Finish the Saying I", "Finish the Proverb", "What a Pair I"]) {
+      expect(names).toContain(expected);
+    }
+  });
+
+  it("host notes survive on clues that carry them", () => {
+    const noted = LEGACY_BOARDS.flatMap((b) =>
+      b.categories.flatMap((c) => c.clues.filter((cl) => cl.note)),
+    );
+    expect(noted.length).toBeGreaterThan(50);
+  });
+});
+
 describe("games", () => {
   const bookNames = new Set(quizData.categories.map((c) => c.name));
-  const uoeIds = new Set(UOE_GAMES.map((g) => g.id));
+  const boardIds = new Set(
+    [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS].map((g) => g.id),
+  );
 
   it("every book round references existing categories with 5+ clues", () => {
     for (const g of GAMES) {
@@ -71,10 +106,10 @@ describe("games", () => {
 
   it("every uoe round references an existing game, and games do not mix sources in one round", () => {
     for (const g of GAMES) {
-      for (const id of g.uoeRounds) {
-        expect(uoeIds.has(id), `missing uoe game "${id}" in ${g.id}`).toBe(true);
+      for (const id of g.boardRounds) {
+        expect(boardIds.has(id), `missing board "${id}" in ${g.id}`).toBe(true);
       }
-      expect(gameRoundCount(g)).toBe(g.bookRounds.length + g.uoeRounds.length);
+      expect(gameRoundCount(g)).toBe(g.bookRounds.length + g.boardRounds.length);
       expect(gameRoundCount(g)).toBeGreaterThanOrEqual(2);
     }
   });
@@ -93,13 +128,15 @@ describe("games", () => {
     for (const g of GAMES) {
       for (let r = 0; r < gameRoundCount(g); r++) {
         const b = boardForRound(g, r, 42);
-        expect(b.categories).toHaveLength(5);
-        expect(b.tiles).toHaveLength(25);
+        expect(b.categories.length).toBeGreaterThanOrEqual(4);
+        expect(b.categories.length).toBeLessThanOrEqual(5);
+        expect(b.tiles).toHaveLength(b.categories.length * 5);
         const mult = r + 1;
         expect(new Set(b.tiles.map((t) => t.value))).toEqual(
           new Set([100, 200, 300, 400, 500].map((v) => v * mult)),
         );
         expect(b.round).toBe(r + 1);
+        expect(b.cols).toBe(b.categories.length);
       }
     }
   });

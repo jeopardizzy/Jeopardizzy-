@@ -11,10 +11,12 @@ export default function BoardGrid() {
   const reduce = useMotionSafe();
 
   if (!board) return null;
+  const cols = board.cols;
 
   return (
     <div
-      className="grid grid-cols-5 gap-1.5 sm:gap-2.5"
+      className="grid gap-1.5 sm:gap-2.5"
+      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
       role="grid"
       aria-label={`Round ${roundIndex + 1} clue board`}
     >
