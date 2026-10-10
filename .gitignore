@@ -24,3 +24,9 @@ subpath-check.mjs
 **/extract/vocab_freq.json
 **/__pycache__/
 *.pyc
+
+# local fork staging + reference material (not part of this repo)
+fork/
+old_guides.json
+guides_selected.json
+reference_old_site.html

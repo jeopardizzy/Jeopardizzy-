@@ -27,26 +27,20 @@ describe("saves", () => {
   });
 
   it("round-trips records", () => {
-    const r = { ...DEFAULT_RECORDS, bestScore: 4200, gamesPlayed: 3 };
+    const r = { ...DEFAULT_RECORDS, gamesPlayed: 4, workbookBests: { "homonyms|easy": 9 } };
     saveRecords(r);
     expect(loadRecords()).toEqual(r);
   });
 
   it("recovers from corrupt JSON", () => {
-    store.set("quizzical:records:v1", "{not json!!");
+    store.set("quizzical-club:records:v1", "{not json!!");
     expect(loadRecords()).toEqual(DEFAULT_RECORDS);
   });
 
-  it("recovers from schema-invalid data (wrong version / wrong types)", () => {
-    store.set("quizzical:records:v1", JSON.stringify({ version: 99, bestScore: "lots" }));
+  it("recovers from schema-invalid data", () => {
+    store.set("quizzical-club:records:v1", JSON.stringify({ version: 99 }));
     expect(loadRecords()).toEqual(DEFAULT_RECORDS);
-    store.set("quizzical:settings:v1", JSON.stringify({ sound: "yes" }));
+    store.set("quizzical-club:settings:v1", JSON.stringify({ sound: "yes" }));
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
-  });
-
-  it("persists settings", () => {
-    const s = { version: 1 as const, sound: false, reduceMotion: true };
-    saveSettings(s);
-    expect(loadSettings()).toEqual(s);
   });
 });

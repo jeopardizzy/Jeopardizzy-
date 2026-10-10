@@ -1,9 +1,9 @@
 {
-  "name": "quizzical",
+  "name": "quizzical-club",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Quizzical — a fast, tactile trivia board game for the browser. Static, GitHub Pages ready.",
+  "description": "Quizzical Club \u2014 team trivia boards, practice workbook and puzzle guides. Static, GitHub Pages ready.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

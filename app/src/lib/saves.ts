@@ -7,12 +7,9 @@ import { z } from "zod";
 
 const RecordsSchema = z.object({
   version: z.literal(1),
-  bestScore: z.number(),
-  bestStreak: z.number(),
   gamesPlayed: z.number(),
-  totalCorrect: z.number(),
-  totalAnswered: z.number(),
-  dailyScores: z.record(z.string(), z.number()),
+  /** best workbook score per "type|level" key, e.g. "homonyms|easy" */
+  workbookBests: z.record(z.string(), z.number()),
 });
 export type Records = z.infer<typeof RecordsSchema>;
 
@@ -20,27 +17,26 @@ const SettingsSchema = z.object({
   version: z.literal(1),
   sound: z.boolean(),
   reduceMotion: z.boolean(),
+  /** last used team names, for convenience */
+  teamNames: z.array(z.string()),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 
 export const DEFAULT_RECORDS: Records = {
   version: 1,
-  bestScore: 0,
-  bestStreak: 0,
   gamesPlayed: 0,
-  totalCorrect: 0,
-  totalAnswered: 0,
-  dailyScores: {},
+  workbookBests: {},
 };
 
 export const DEFAULT_SETTINGS: Settings = {
   version: 1,
   sound: true,
   reduceMotion: false,
+  teamNames: ["Team Sage", "Team Butter"],
 };
 
-const RECORDS_KEY = "quizzical:records:v1";
-const SETTINGS_KEY = "quizzical:settings:v1";
+const RECORDS_KEY = "quizzical-club:records:v1";
+const SETTINGS_KEY = "quizzical-club:settings:v1";
 
 function safeLoad<T>(key: string, schema: z.ZodType<T>, fallback: T): T {
   try {

@@ -1,13 +1,13 @@
 import { motion } from "motion/react";
-import { useGameStore } from "../store/gameStore";
+import { useTeamStore } from "../store/teamStore";
 import { useMotionSafe } from "../lib/useMotionSafe";
 
-/** The 5x5 clue board. */
+/** The 5x5 clue board (team mode). */
 export default function BoardGrid() {
-  const board = useGameStore((s) => s.board);
-  const played = useGameStore((s) => s.playedTileIds);
-  const openClue = useGameStore((s) => s.openClue);
-  const round = useGameStore((s) => s.round);
+  const board = useTeamStore((s) => s.board);
+  const played = useTeamStore((s) => s.playedTileIds);
+  const openTile = useTeamStore((s) => s.openTile);
+  const round = useTeamStore((s) => s.round);
   const reduce = useMotionSafe();
 
   if (!board) return null;
@@ -25,7 +25,7 @@ export default function BoardGrid() {
           initial={reduce ? false : { opacity: 0, y: -14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: reduce ? 0 : 0.05 * i, duration: 0.3 }}
-          className="flex min-h-14 items-center justify-center rounded-lg bg-ink-2 px-1 py-2 text-center text-[10px] font-bold uppercase leading-tight tracking-wide text-cream sm:min-h-20 sm:text-sm"
+          className="flex min-h-14 items-center justify-center rounded-xl border border-line bg-sage-soft px-1 py-2 text-center text-[10px] font-bold uppercase leading-tight tracking-wide text-sage-deep sm:min-h-20 sm:text-sm"
         >
           {c.name}
         </motion.div>
@@ -40,9 +40,9 @@ export default function BoardGrid() {
               key={tile.id}
               role="gridcell"
               disabled={isPlayed}
-              onClick={() => openClue(tile.id)}
-              initial={reduce ? false : { opacity: 0, scale: 0.8, rotateY: 90 }}
-              animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+              onClick={() => openTile(tile.id)}
+              initial={reduce ? false : { opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{
                 delay: reduce ? 0 : 0.04 * (col + row),
                 type: "spring",
@@ -54,8 +54,8 @@ export default function BoardGrid() {
                   ? `${tile.categoryName}, ${tile.value} points, already played`
                   : `${tile.categoryName} for ${tile.value} points`
               }
-              className={`tile font-display flex h-14 items-center justify-center rounded-lg text-lg text-gold transition-colors sm:h-20 sm:text-2xl ${
-                isPlayed ? "opacity-25" : ""
+              className={`tile font-display flex h-14 items-center justify-center rounded-xl text-lg text-butter-deep transition-colors sm:h-20 sm:text-2xl ${
+                isPlayed ? "opacity-30" : ""
               }`}
             >
               {isPlayed ? "·" : tile.value}

@@ -1,28 +1,47 @@
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
-import { useGameStore } from "../store/gameStore";
-import { dailyStamp } from "../lib/random";
+import { useTeamStore } from "../store/teamStore";
 import { categoryCount, clueCount } from "../data/quizData";
 import { useMotionSafe } from "../lib/useMotionSafe";
 import Toggles from "../components/Toggles";
 
 const LETTERS = "QUIZZICAL".split("");
 const TILE_COLORS = [
-  "bg-tile-2", "bg-gold", "bg-coral", "bg-mint", "bg-sky",
-  "bg-tile-2", "bg-coral", "bg-gold", "bg-mint",
+  "bg-sage-soft", "bg-butter", "bg-sage", "bg-butter-soft", "bg-sage-soft",
+  "bg-butter", "bg-sage", "bg-butter-soft", "bg-sage-soft",
+];
+
+const MODES = [
+  {
+    to: "/sets",
+    emoji: "🎯",
+    title: "Team Jeopardy",
+    text: "Pick a set, split into teams, and battle through two boards and a final wager. The host reads; teams score.",
+    cta: "Choose a set",
+    accent: "bg-sage text-white",
+  },
+  {
+    to: "/workbook",
+    emoji: "✏️",
+    title: "Workbook",
+    text: "Practice every puzzle type solo, at the difficulty you choose — a quick 10-question test with instant feedback.",
+    cta: "Start practising",
+    accent: "bg-butter text-ink",
+  },
+  {
+    to: "/guides",
+    emoji: "📖",
+    title: "Guides",
+    text: "How each puzzle type works: the rules, a worked example, and strategy tips that actually help.",
+    cta: "Read the guides",
+    accent: "bg-sage-soft text-sage-deep",
+  },
 ];
 
 export default function Home() {
   const navigate = useNavigate();
-  const startGame = useGameStore((s) => s.startGame);
-  const records = useGameStore((s) => s.records);
+  const gamesPlayed = useTeamStore((s) => s.records.gamesPlayed);
   const reduce = useMotionSafe();
-  const todayDaily = records.dailyScores[new Date().toISOString().slice(0, 10)];
-
-  const play = (mode: "classic" | "daily") => {
-    startGame(mode);
-    navigate("/game");
-  };
 
   return (
     <main className="stage-bg flex min-h-dvh flex-col items-center justify-center px-4 py-10">
@@ -30,101 +49,73 @@ export default function Home() {
         <Toggles />
       </div>
 
-      {/* Animated title tiles */}
-      <h1 className="sr-only">Quizzical</h1>
-      <div aria-hidden className="mb-6 flex flex-wrap justify-center gap-1.5 sm:gap-2.5">
+      <h1 className="sr-only">Quizzical Club</h1>
+      <div aria-hidden className="mb-2 flex flex-wrap justify-center gap-1.5 sm:gap-2.5">
         {LETTERS.map((ch, i) => (
           <motion.span
             key={i}
-            initial={reduce ? false : { y: -90, rotate: -12 + i * 3, opacity: 0 }}
+            initial={reduce ? false : { y: -70, rotate: -10 + i * 3, opacity: 0 }}
             animate={{ y: 0, rotate: 0, opacity: 1 }}
             transition={
               reduce
                 ? { duration: 0 }
                 : { type: "spring", stiffness: 260, damping: 17, delay: 0.05 * i }
             }
-            className={`font-display flex h-12 w-10 items-center justify-center rounded-lg text-xl text-ink shadow-tile sm:h-20 sm:w-16 sm:text-4xl ${TILE_COLORS[i]} ${
-              TILE_COLORS[i] === "bg-tile-2" ? "text-cream" : "text-ink"
+            className={`font-display flex h-12 w-10 items-center justify-center rounded-xl border border-line text-xl shadow-card sm:h-18 sm:w-14 sm:text-3xl ${TILE_COLORS[i]} ${
+              TILE_COLORS[i] === "bg-sage" ? "text-white" : "text-ink"
             }`}
           >
             {ch}
           </motion.span>
         ))}
       </div>
-
       <motion.p
-        initial={reduce ? false : { opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: reduce ? 0 : 0.55 }}
-        className="mb-1 text-center text-sm font-semibold uppercase tracking-[0.3em] text-gold"
+        initial={reduce ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: reduce ? 0 : 0.5 }}
+        className="font-display mb-1 text-lg uppercase tracking-[0.35em] text-sage"
       >
-        The trivia board game
+        Club
       </motion.p>
       <motion.p
         initial={reduce ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: reduce ? 0 : 0.7 }}
-        className="mb-10 max-w-md text-center text-muted"
+        transition={{ delay: reduce ? 0 : 0.6 }}
+        className="mb-10 max-w-md text-center text-mute"
       >
-        Five categories. Twenty-five clues. One final wager.
+        Team trivia boards, a practice workbook and guides — gentle colours, no hurry.
         <br />
-        <span className="text-cream/70">
+        <span className="text-ink/70">
           {categoryCount} categories · {clueCount} clues in the vault
         </span>
       </motion.p>
 
-      <motion.div
-        initial={reduce ? false : { opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: reduce ? 0 : 0.85 }}
-        className="flex w-full max-w-sm flex-col gap-4"
-      >
-        <button
-          onClick={() => play("classic")}
-          className="font-display rounded-2xl bg-gold px-8 py-5 text-2xl text-ink shadow-pop transition hover:bg-gold-2 active:scale-[0.98]"
-        >
-          PLAY
-        </button>
-        <button
-          onClick={() => play("daily")}
-          className="rounded-2xl border-2 border-edge bg-board px-8 py-4 font-semibold text-cream transition hover:bg-tile active:scale-[0.98]"
-        >
-          Daily Challenge{" "}
-          <span className="ml-1 text-sm font-normal text-muted">{dailyStamp()}</span>
-          {todayDaily !== undefined && (
-            <span className="ml-2 rounded-full bg-mint/20 px-2 py-0.5 text-xs text-mint">
-              done: {todayDaily}
+      <div className="grid w-full max-w-4xl gap-4 sm:grid-cols-3">
+        {MODES.map((m, i) => (
+          <motion.button
+            key={m.to}
+            initial={reduce ? false : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: reduce ? 0 : 0.75 + i * 0.12 }}
+            onClick={() => navigate(m.to)}
+            className="group flex flex-col rounded-3xl border border-line bg-surface p-6 text-left shadow-card transition hover:-translate-y-1 hover:shadow-pop"
+          >
+            <span className="mb-3 text-4xl">{m.emoji}</span>
+            <span className="font-display mb-2 text-xl text-ink">{m.title}</span>
+            <span className="mb-5 flex-1 text-sm leading-relaxed text-mute">{m.text}</span>
+            <span
+              className={`self-start rounded-full px-4 py-2 text-sm font-bold transition group-hover:brightness-105 ${m.accent}`}
+            >
+              {m.cta} →
             </span>
-          )}
-        </button>
-        <button
-          onClick={() => navigate("/how")}
-          className="rounded-2xl px-8 py-3 text-sm font-semibold text-muted underline-offset-4 transition hover:text-cream hover:underline"
-        >
-          How to play
-        </button>
-      </motion.div>
+          </motion.button>
+        ))}
+      </div>
 
-      {records.gamesPlayed > 0 && (
-        <motion.div
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: reduce ? 0 : 1 }}
-          className="mt-10 flex gap-6 text-center text-sm text-muted"
-        >
-          <span>
-            <strong className="block text-xl text-gold">{records.bestScore}</strong>
-            best score <span className="text-xs">(this device)</span>
-          </span>
-          <span>
-            <strong className="block text-xl text-mint">{records.bestStreak}</strong>
-            best streak
-          </span>
-          <span>
-            <strong className="block text-xl text-sky">{records.gamesPlayed}</strong>
-            games played
-          </span>
-        </motion.div>
+      {gamesPlayed > 0 && (
+        <p className="mt-10 text-sm text-mute">
+          {gamesPlayed} team game{gamesPlayed === 1 ? "" : "s"} played on this device
+        </p>
       )}
     </main>
   );
