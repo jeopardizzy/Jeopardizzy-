@@ -32,7 +32,8 @@ export interface BoardTile {
 }
 
 export interface Board {
-  round: 1 | 2;
+  /** 1-based round number within the current game. */
+  round: number;
   categories: { id: string; name: string }[];
   /** 25 tiles, column-major: 5 categories x 5 clues ordered by ascending value. */
   tiles: BoardTile[];

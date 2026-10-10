@@ -1,14 +1,22 @@
 import { motion } from "motion/react";
 import { useTeamStore } from "../store/teamStore";
+import { gameRoundCount } from "../lib/board";
 import { useMotionSafe } from "../lib/useMotionSafe";
 
 /** Team scoreboard with the active picker highlighted. */
 export default function Scoreboard() {
   const teams = useTeamStore((s) => s.teams);
   const activeTeam = useTeamStore((s) => s.activeTeam);
-  const round = useTeamStore((s) => s.round);
+  const roundIndex = useTeamStore((s) => s.roundIndex);
+  const set_ = useTeamStore((s) => s.set);
   const phase = useTeamStore((s) => s.phase);
   const reduce = useMotionSafe();
+
+  const total = set_ ? gameRoundCount(set_) : 0;
+  const label =
+    phase === "final-wager" || phase === "final-clue"
+      ? "Final"
+      : `Round ${roundIndex + 1}${total > 1 ? ` of ${total}` : ""}`;
 
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -47,7 +55,7 @@ export default function Scoreboard() {
         ))}
       </div>
       <span className="rounded-full bg-butter-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-butter-deep">
-        {round === 1 ? "Round 1" : "Double Quizzical"}
+        {label}
       </span>
     </div>
   );

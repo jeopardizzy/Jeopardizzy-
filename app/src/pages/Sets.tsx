@@ -1,7 +1,8 @@
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useTeamStore } from "../store/teamStore";
-import { SETS } from "../data/sets";
+import { GAMES } from "../data/games";
+import { gameRoundCount } from "../lib/board";
 import { useMotionSafe } from "../lib/useMotionSafe";
 
 const LEVEL_STYLES: Record<string, string> = {
@@ -12,7 +13,7 @@ const LEVEL_STYLES: Record<string, string> = {
   Expert: "bg-skyblue/15 text-skyblue",
 };
 
-/** Jeopardy set selection — the heart of the site: you choose what to play. */
+/** Jeopardy selection — the heart of the site: you choose what to play. */
 export default function Sets() {
   const navigate = useNavigate();
   const selectSet = useTeamStore((s) => s.selectSet);
@@ -28,44 +29,54 @@ export default function Sets() {
           ← Home
         </button>
 
-        <h1 className="font-display mb-1 text-3xl text-ink sm:text-4xl">Choose your set</h1>
+        <h1 className="font-display mb-1 text-3xl text-ink sm:text-4xl">Choose your jeopardy</h1>
         <p className="mb-8 text-mute">
-          Two boards per set — round one at standard values, then Double. Pick the flavor that fits
-          the table.
+          Every game is a list of boards — five categories, five clues each, values climbing with
+          every round. Pick the flavor that fits the table.
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {SETS.map((s, i) => (
-            <motion.button
-              key={s.id}
-              initial={reduce ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: reduce ? 0 : 0.06 * i }}
-              onClick={() => {
-                selectSet(s.id);
-                navigate("/setup");
-              }}
-              className="group rounded-3xl border border-line bg-surface p-6 text-left shadow-card transition hover:-translate-y-1 hover:border-sage hover:shadow-pop"
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-3xl">{s.emoji}</span>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${LEVEL_STYLES[s.level]}`}
-                >
-                  {s.level}
-                </span>
-              </div>
-              <h2 className="font-display mb-1 text-xl text-ink group-hover:text-sage-deep">
-                {s.name}
-              </h2>
-              <p className="mb-3 text-sm text-mute">{s.blurb}</p>
-              <p className="text-xs text-mute/80">
-                Round 1: {s.round1.join(" · ")}
-              </p>
-            </motion.button>
-          ))}
+          {GAMES.map((g, i) => {
+            const rounds = gameRoundCount(g);
+            return (
+              <motion.button
+                key={g.id}
+                initial={reduce ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: reduce ? 0 : 0.06 * i }}
+                onClick={() => {
+                  selectSet(g.id);
+                  navigate("/setup");
+                }}
+                className="group rounded-3xl border border-line bg-surface p-6 text-left shadow-card transition hover:-translate-y-1 hover:border-sage hover:shadow-pop"
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-3xl">{g.emoji}</span>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${LEVEL_STYLES[g.level]}`}
+                  >
+                    {g.level}
+                  </span>
+                </div>
+                <h2 className="font-display mb-1 text-xl text-ink group-hover:text-sage-deep">
+                  {g.name}
+                </h2>
+                <p className="mb-3 text-sm text-mute">{g.blurb}</p>
+                <p className="text-xs font-semibold text-sage">
+                  {rounds} board{rounds === 1 ? "" : "s"}
+                  {g.final ? " + final wager" : ""} · {rounds * 25} clues
+                </p>
+                {g.bookRounds.length > 0 && (
+                  <p className="mt-1 text-xs text-mute/80">
+                    Round 1: {g.bookRounds[0].join(" · ")}
+                  </p>
+                )}
+              </motion.button>
+            );
+          })}
         </div>
       </div>
     </main>
   );
 }
+

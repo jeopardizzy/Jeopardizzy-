@@ -7,7 +7,7 @@ export default function BoardGrid() {
   const board = useTeamStore((s) => s.board);
   const played = useTeamStore((s) => s.playedTileIds);
   const openTile = useTeamStore((s) => s.openTile);
-  const round = useTeamStore((s) => s.round);
+  const roundIndex = useTeamStore((s) => s.roundIndex);
   const reduce = useMotionSafe();
 
   if (!board) return null;
@@ -16,11 +16,11 @@ export default function BoardGrid() {
     <div
       className="grid grid-cols-5 gap-1.5 sm:gap-2.5"
       role="grid"
-      aria-label={`Round ${round} clue board`}
+      aria-label={`Round ${roundIndex + 1} clue board`}
     >
       {board.categories.map((c, i) => (
         <motion.div
-          key={`${round}-${c.id}`}
+          key={`${roundIndex}-${c.id}`}
           role="columnheader"
           initial={reduce ? false : { opacity: 0, y: -14 }}
           animate={{ opacity: 1, y: 0 }}

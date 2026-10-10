@@ -12,7 +12,7 @@ import { useMotionSafe } from "../lib/useMotionSafe";
 
 export default function TeamGame() {
   const phase = useTeamStore((s) => s.phase);
-  const round = useTeamStore((s) => s.round);
+  const roundIndex = useTeamStore((s) => s.roundIndex);
   const teams = useTeamStore((s) => s.teams);
   const navigate = useNavigate();
   const reduce = useMotionSafe();
@@ -47,7 +47,7 @@ export default function TeamGame() {
         <AnimatePresence mode="wait">
           {(phase === "board" || phase === "clue") && (
             <motion.div
-              key={`board-${round}`}
+              key={`board-${roundIndex}`}
               initial={reduce ? false : { opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               exit={reduce ? { opacity: 0 } : { opacity: 0, x: -40 }}
@@ -55,9 +55,7 @@ export default function TeamGame() {
             >
               <BoardGrid />
               <p className="mt-4 text-center text-sm text-mute">
-                {round === 1
-                  ? "The highlighted team picks a tile. Read the clue aloud, reveal, award the points."
-                  : "Double Quizzical — every clue is worth double."}
+                The highlighted team picks a tile. Read the clue aloud, reveal, award the points.
               </p>
             </motion.div>
           )}

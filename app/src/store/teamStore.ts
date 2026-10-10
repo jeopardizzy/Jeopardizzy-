@@ -1,9 +1,8 @@
 import { create } from "zustand";
 import type { Board, FinalClue } from "../lib/schema";
-import { quizData } from "../data/quizData";
-import { boardFromSet, pickFinalForSet } from "../lib/board";
+import { boardForRound, gameRoundCount, pickFinalForGame } from "../lib/board";
 import { randomSeed } from "../lib/random";
-import { SETS, type SetDef } from "../data/sets";
+import { GAMES, type GameDef } from "../data/games";
 import {
   loadRecords,
   loadSettings,
@@ -34,9 +33,10 @@ export const TEAM_COLORS = ["#4f7a5d", "#c99700", "#d97762", "#6b93c0"];
 
 interface TeamGameState {
   phase: TeamPhase;
-  set: SetDef | null;
+  set: GameDef | null;
   seed: number;
-  round: 1 | 2;
+  /** 0-based index of the current board within the game */
+  roundIndex: number;
   board: Board | null;
   finalClue: FinalClue | null;
   playedTileIds: string[];
@@ -76,7 +76,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
   phase: "sets",
   set: null,
   seed: 0,
-  round: 1,
+  roundIndex: 0,
   board: null,
   finalClue: null,
   playedTileIds: [],
@@ -92,7 +92,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     : loadRecords(),
 
   selectSet: (setId) => {
-    const found = SETS.find((s) => s.id === setId);
+    const found = GAMES.find((s) => s.id === setId);
     if (!found) return;
     sfx.tick();
     set({ set: found, phase: "setup" });
@@ -111,13 +111,13 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     }));
     if (teams.length === 0) return;
     const seed = randomSeed();
-    const board = boardFromSet(quizData, s.set, 1, seed);
+    const board = boardForRound(s.set, 0, seed);
     saveSettings({ ...s.settings, teamNames: teams.map((t) => t.name) });
     sfx.chime();
     set({
       phase: "board",
       seed,
-      round: 1,
+      roundIndex: 0,
       board,
       playedTileIds: [],
       currentTileId: null,
@@ -193,9 +193,10 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
 
   finishGame: () => {
     const s = get();
-    if (s.phase !== "final-clue" || s.finalMarks.some((m) => m === null)) return;
-    saveRecords({ ...s.records, gamesPlayed: s.records.gamesPlayed + 1 });
-    set({ records: { ...s.records, gamesPlayed: s.records.gamesPlayed + 1 } });
+    if (s.phase === "final-clue" && s.finalMarks.some((m) => m === null)) return;
+    const records = { ...s.records, gamesPlayed: s.records.gamesPlayed + 1 };
+    saveRecords(records);
+    set({ records });
     sfx.fanfare();
     set({ phase: "winner" });
   },
@@ -234,20 +235,29 @@ function advanceAfterTile(teams: Team[], activeTeam: number, set: Set, get: Get)
     set({ teams, activeTeam, playedTileIds, phase: "board", currentTileId: null, revealed: false });
     return;
   }
-  if (s.round === 1) {
-    const board2 = boardFromSet(quizData, s.set, 2, s.seed);
+
+  const totalRounds = gameRoundCount(s.set);
+  const nextIndex = s.roundIndex + 1;
+  if (nextIndex < totalRounds) {
+    const nextBoard = boardForRound(s.set, nextIndex, s.seed);
     sfx.chime();
     set({
-      teams, activeTeam, playedTileIds: [], board: board2, round: 2,
+      teams, activeTeam, playedTileIds: [], board: nextBoard, roundIndex: nextIndex,
       phase: "board", currentTileId: null, revealed: false,
     });
-  } else {
-    const finalClue = pickFinalForSet(quizData, s.set, s.seed);
+  } else if (s.set.final) {
+    const finalClue = pickFinalForGame(s.set, s.seed);
     sfx.chime();
     set({
       teams, activeTeam, playedTileIds, finalClue,
       phase: "final-wager", currentTileId: null, revealed: false,
       wagers: teams.map((t) => Math.max(0, t.score)),
     });
+  } else {
+    // no final round in this game — straight to the podium
+    const records = { ...s.records, gamesPlayed: s.records.gamesPlayed + 1 };
+    saveRecords(records);
+    sfx.fanfare();
+    set({ teams, activeTeam, playedTileIds, records, phase: "winner", currentTileId: null });
   }
 }

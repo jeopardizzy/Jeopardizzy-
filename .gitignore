@@ -30,3 +30,6 @@ fork/
 old_guides.json
 guides_selected.json
 reference_old_site.html
+
+# UoE source files (parsed into app data)
+uoe_src/
