@@ -47,9 +47,8 @@ Run `npm install` once inside `app/` (`npm --prefix app install`).
 ## Deploying changes
 
 Just push to `main`. The workflow in `.github/workflows/deploy.yml`
-type-checks, tests, builds `app/`, and commits the fresh build output to the
-repository root — GitHub Pages then serves it automatically. Only changes
-under `app/` trigger a rebuild.
+type-checks, tests, builds `app/`, and deploys `app/dist` via the official
+GitHub Pages actions.
 
 ## Stack
 
