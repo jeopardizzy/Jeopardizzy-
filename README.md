@@ -24,16 +24,14 @@ backend — **play it live at
 
 ## Repository layout
 
-This repo is published via GitHub Pages **"Deploy from a branch"** mode
-(`main`, root), so the repository root holds the **built** site:
+This repo is served by GitHub Pages via **GitHub Actions** (Settings → Pages →
+Source: GitHub Actions):
 
 ```
-index.html, assets/     ← published build output (do not edit by hand)
-app/                    ← the actual source code (edit here)
+app/                    ← the source code (edit here)
   src/                  ← React app
   tests/  e2e/          ← vitest + playwright
-  scripts/publish.mjs   ← copies app/dist to the repo root
-.github/workflows/      ← CI: typecheck → test → build → publish to root
+.github/workflows/      ← CI: typecheck → test → build → deploy app/dist
 ```
 
 ## Development
@@ -42,7 +40,6 @@ app/                    ← the actual source code (edit here)
 npm run dev        # dev server (delegates to app/, forwards --port/--host)
 npm test           # vitest: sets validity, workbook pools, guides, matcher, saves
 npm run build      # type-check + production build (app/dist)
-npm run publish    # build + copy app/dist to the repo root
 ```
 
 Run `npm install` once inside `app/` (`npm --prefix app install`).
