@@ -79,4 +79,34 @@ test.describe("Idiom arenas", () => {
       "true",
     );
   });
+
+  test("winner screen shows training notes for missed categories", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto("/#/sets");
+    await page.getByRole("button", { name: "Play Idiom Arena I", exact: true }).click();
+    await page.getByRole("button", { name: "Start the game" }).click();
+
+    // play all 5 boards: award most tiles, but "Nobody" every tile of the
+    // first category each round — those categories must top the drill list
+    for (let round = 1; round <= 5; round++) {
+      await expect(page.getByText(`Round ${round} of 5`)).toBeVisible();
+      await page.evaluate(() => {
+        const store = (window as unknown as { __teamStore: any }).__teamStore;
+        const tiles: { id: string; categoryName: string }[] = store.getState().board.tiles;
+        const firstCat = tiles[0].categoryName;
+        for (const t of tiles) {
+          store.getState().openTile(t.id);
+          store.getState().revealClue();
+          if (t.categoryName === firstCat) store.getState().noAward();
+          else store.getState().awardTo(0);
+        }
+      });
+    }
+
+    await expect(page.getByText(/wins!|tie!/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Training notes/)).toBeVisible();
+    await expect(page.getByText(/Toughest this game/)).toBeVisible();
+    await expect(page.getByText("5/5 missed").first()).toBeVisible();
+    await expect(page.getByText(/All-time drill list/)).toBeVisible();
+  });
 });

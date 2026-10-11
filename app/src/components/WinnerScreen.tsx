@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useTeamStore } from "../store/teamStore";
+import { aggregateCategoryStats, weakestCategories } from "../lib/stats";
 import { useMotionSafe } from "../lib/useMotionSafe";
 
 /** Winner celebration with final standings. */
@@ -60,6 +61,8 @@ export default function WinnerScreen() {
         ))}
       </div>
 
+      <TrainingNotes />
+
       <div className="flex flex-col gap-3 sm:flex-row">
         <button
           onClick={() => {
@@ -80,6 +83,58 @@ export default function WinnerScreen() {
           Main menu
         </button>
       </div>
+    </motion.div>
+  );
+}
+
+/** Training notes: which categories nobody cracked — this game and all time. */
+function TrainingNotes() {
+  const outcomes = useTeamStore((s) => s.outcomes);
+  const categoryStats = useTeamStore((s) => s.records.categoryStats);
+  const reduce = useMotionSafe();
+
+  const gameWeak = weakestCategories(aggregateCategoryStats(outcomes), 5);
+  const allTimeWeak = weakestCategories(categoryStats ?? {}, 3);
+
+  if (outcomes.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={reduce ? false : { opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: reduce ? 0 : 0.5 }}
+      className="mb-8 rounded-2xl border border-line bg-cream px-5 py-4 text-left"
+    >
+      <h3 className="font-display mb-1 text-sm uppercase tracking-wider text-sage-deep">
+        📉 Training notes
+      </h3>
+      {gameWeak.length === 0 ? (
+        <p className="text-sm text-mute">
+          Flawless boards — every clue found a team. Nothing to drill this time!
+        </p>
+      ) : (
+        <>
+          <p className="mb-2 text-xs text-mute">
+            Toughest this game (nobody answered):
+          </p>
+          <ul className="mb-3 space-y-1.5">
+            {gameWeak.map((w) => (
+              <li key={w.name} className="flex items-center gap-2 text-sm">
+                <span className="flex-1 truncate font-semibold text-ink">{w.name}</span>
+                <span className="rounded-full bg-coral/15 px-2 py-0.5 text-xs font-bold text-coral">
+                  {w.missed}/{w.played} missed
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {allTimeWeak.length > 0 && (
+        <p className="border-t border-line pt-2 text-xs leading-relaxed text-mute">
+          <span className="font-bold text-ink">All-time drill list:</span>{" "}
+          {allTimeWeak.map((w) => `${w.name} (${w.missed}/${w.played})`).join(" · ")}
+        </p>
+      )}
     </motion.div>
   );
 }

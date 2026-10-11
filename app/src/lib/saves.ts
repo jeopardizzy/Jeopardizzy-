@@ -10,6 +10,10 @@ const RecordsSchema = z.object({
   gamesPlayed: z.number(),
   /** best workbook score per "type|level" key, e.g. "homonyms|easy" */
   workbookBests: z.record(z.string(), z.number()),
+  /** all-time per-category outcomes from team games (added later — optional) */
+  categoryStats: z
+    .record(z.string(), z.object({ played: z.number(), missed: z.number() }))
+    .optional(),
 });
 export type Records = z.infer<typeof RecordsSchema>;
 

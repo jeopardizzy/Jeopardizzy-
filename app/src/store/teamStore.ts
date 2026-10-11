@@ -12,6 +12,11 @@ import {
   type Settings,
 } from "../lib/saves";
 import { setSoundMuted, sfx } from "../audio/sound";
+import {
+  aggregateCategoryStats,
+  mergeCategoryStats,
+  type TileOutcome,
+} from "../lib/stats";
 
 export type TeamPhase =
   | "sets"
@@ -49,6 +54,8 @@ interface TeamGameState {
   finalEnabled: boolean;
   wagers: number[];
   finalMarks: (boolean | null)[];
+  /** per-tile outcomes this game (category + awarded/nobody) for training stats */
+  outcomes: TileOutcome[];
   settings: Settings;
   records: Records;
 
@@ -90,6 +97,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
   finalEnabled: true,
   wagers: [],
   finalMarks: [],
+  outcomes: [],
   settings: initialSettings,
   records: typeof window === "undefined"
     ? { version: 1, gamesPlayed: 0, workbookBests: {} }
@@ -141,6 +149,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
       activeTeam: 0,
       wagers: teams.map(() => 0),
       finalMarks: teams.map(() => null),
+      outcomes: [],
     });
   },
 
@@ -166,13 +175,23 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     const teams = s.teams.map((t) =>
       t.id === teamId ? { ...t, score: t.score + tile.value } : t,
     );
+    const outcomes = [
+      ...s.outcomes,
+      { categoryName: tile.categoryName, value: tile.value, awarded: true },
+    ];
+    set({ outcomes });
     advanceAfterTile(teams, teamId, set, get);
   },
 
   noAward: () => {
     const s = get();
     if (s.phase !== "clue" || !s.revealed || !s.board) return;
+    const tile = s.board.tiles.find((t) => t.id === s.currentTileId);
     sfx.buzz();
+    const outcomes = tile
+      ? [...s.outcomes, { categoryName: tile.categoryName, value: tile.value, awarded: false }]
+      : s.outcomes;
+    set({ outcomes });
     const next = (s.activeTeam + 1) % s.teams.length;
     advanceAfterTile(s.teams, next, set, get);
   },
@@ -209,7 +228,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
   finishGame: () => {
     const s = get();
     if (s.phase === "final-clue" && s.finalMarks.some((m) => m === null)) return;
-    const records = { ...s.records, gamesPlayed: s.records.gamesPlayed + 1 };
+    const records = finalizeRecords(s);
     saveRecords(records);
     set({ records });
     sfx.fanfare();
@@ -237,6 +256,16 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
 
 type Set = (partial: Partial<TeamGameState>) => void;
 type Get = () => TeamGameState;
+
+/** Fold the finished game's per-category stats into the all-time record. */
+function finalizeRecords(s: TeamGameState): Records {
+  const gameStats = aggregateCategoryStats(s.outcomes);
+  return {
+    ...s.records,
+    gamesPlayed: s.records.gamesPlayed + 1,
+    categoryStats: mergeCategoryStats(s.records.categoryStats ?? {}, gameStats),
+  };
+}
 
 /** Mark the tile played and either return to the board or advance the game. */
 function advanceAfterTile(teams: Team[], activeTeam: number, set: Set, get: Get): void {
@@ -270,7 +299,7 @@ function advanceAfterTile(teams: Team[], activeTeam: number, set: Set, get: Get)
     });
   } else {
     // no final round in this game — straight to the podium
-    const records = { ...s.records, gamesPlayed: s.records.gamesPlayed + 1 };
+    const records = finalizeRecords(s);
     saveRecords(records);
     sfx.fanfare();
     set({ teams, activeTeam, playedTileIds, records, phase: "winner", currentTileId: null });
