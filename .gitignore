@@ -34,3 +34,8 @@ reference_old_site.html
 # UoE source files (parsed into app data)
 uoe_src/
 old_sets.json
+
+# doc tooling
+tools/docgen/node_modules/
+tools/docgen/package-lock.json
+tools/docgen/package.json
