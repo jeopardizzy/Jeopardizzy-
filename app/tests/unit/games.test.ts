@@ -4,6 +4,7 @@ import { GAMES } from "../../src/data/games";
 import { UOE_GAMES } from "../../src/data/uoeGames";
 import { LEGACY_BOARDS } from "../../src/data/legacyBoards";
 import { ARENA3_BOARDS } from "../../src/data/arena3Boards";
+import { ARENA4_BOARDS } from "../../src/data/arena4Boards";
 import {
   boardForRound,
   gameRoundCount,
@@ -56,7 +57,7 @@ describe("UoE idiom games", () => {
 
 describe("legacy and arena boards", () => {
   it("every board has 4-5 categories with 4-5 usable clues each", () => {
-    for (const g of [...LEGACY_BOARDS, ...ARENA3_BOARDS]) {
+    for (const g of [...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS]) {
       expect(g.categories.length, g.id).toBeGreaterThanOrEqual(4);
       expect(g.categories.length, g.id).toBeLessThanOrEqual(5);
       for (const c of g.categories) {
@@ -66,6 +67,14 @@ describe("legacy and arena boards", () => {
           expect(cl.answer.length).toBeGreaterThan(0);
         }
       }
+    }
+  });
+
+  it("arena IV keeps the named wordplay categories", () => {
+    expect(ARENA4_BOARDS).toHaveLength(5);
+    const names = ARENA4_BOARDS.flatMap((b) => b.categories.map((c) => c.name));
+    for (const expected of ["Kangaroo Words I", "Semordnilaps", "Mark My Words I", "Rhymin’ Geography I"]) {
+      expect(names).toContain(expected);
     }
   });
 
@@ -88,7 +97,7 @@ describe("legacy and arena boards", () => {
 describe("games", () => {
   const bookNames = new Set(quizData.categories.map((c) => c.name));
   const boardIds = new Set(
-    [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS].map((g) => g.id),
+    [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS].map((g) => g.id),
   );
 
   it("every book round references existing categories with 5+ clues", () => {

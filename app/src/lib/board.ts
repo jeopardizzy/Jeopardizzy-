@@ -4,13 +4,14 @@ import { quizData } from "../data/quizData";
 import { UOE_GAMES } from "../data/uoeGames";
 import { LEGACY_BOARDS } from "../data/legacyBoards";
 import { ARENA3_BOARDS } from "../data/arena3Boards";
+import { ARENA4_BOARDS } from "../data/arena4Boards";
 import type { BoardGame } from "../data/boardGames";
 import type { GameDef } from "../data/games";
 
 const BASE_VALUES = [100, 200, 300, 400, 500];
 
 const ALL_BOARDS = new Map<string, BoardGame>(
-  [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS].map((g) => [g.id, g]),
+  [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS].map((g) => [g.id, g]),
 );
 
 export interface RoundCategory {

@@ -202,4 +202,15 @@ export const GAMES: GameDef[] = [
     final: false,
     series: "Classic Vault",
   },
+  {
+    id: "idiom-arena-4",
+    name: "Idiom Arena IV",
+    emoji: "🎢",
+    blurb: "Words hiding in words, rhyming geography, letter marks and double trouble.",
+    level: "Hard",
+    bookRounds: [],
+    boardRounds: ["arena4-r0", "arena4-r1", "arena4-r2", "arena4-r3", "arena4-r4"],
+    final: false,
+    series: "Idiom Arenas",
+  },
 ];
