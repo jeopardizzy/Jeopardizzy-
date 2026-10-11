@@ -15,7 +15,8 @@ function expectedBoardTotal(gameId: string): number {
   const g = GAMES.find((x) => x.id === gameId)!;
   let total = 0;
   for (let r = 0; r < gameRoundCount(g); r++) {
-    const cols = getRoundCategories(g, r).length;
+    // mix games sample 5-wide boards at start, so 5 columns either way
+    const cols = g.mix ? 5 : getRoundCategories(g, r).length;
     total += cols * 1500 * (r + 1); // values are (100..500) x (r+1) per column
   }
   return total;

@@ -1,5 +1,5 @@
 import type { Board, BoardTile, Clue, FinalClue } from "./schema";
-import { mulberry32 } from "./random";
+import { mulberry32, shuffle } from "./random";
 import { quizData } from "../data/quizData";
 import { UOE_GAMES } from "../data/uoeGames";
 import { LEGACY_BOARDS } from "../data/legacyBoards";
@@ -14,15 +14,31 @@ const ALL_BOARDS = new Map<string, BoardGame>(
   [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS].map((g) => [g.id, g]),
 );
 
+/** Boards that Arena Mix can draw from: all four idiom arenas (21 boards). */
+const ARENA_MIX_POOL = [...UOE_GAMES, ...ARENA3_BOARDS, ...ARENA4_BOARDS].map((g) => g.id);
+
+export const MIX_ROUNDS = 5;
+
+/**
+ * A mix game has no fixed rounds: sample them from the arena pools at game
+ * start. Deterministic per seed so a session stays consistent.
+ */
+export function materializeGame(game: GameDef, seed: number): GameDef {
+  if (!game.mix) return game;
+  const rng = mulberry32(seed ^ 0x51ab3);
+  const sampled = shuffle([...ARENA_MIX_POOL], rng).slice(0, MIX_ROUNDS);
+  return { ...game, boardRounds: sampled };
+}
+
 export interface RoundCategory {
   id: string;
   name: string;
   clues: { clue: string; answer: string; note?: string }[];
 }
 
-/** Total number of boards in a game. */
+/** Total number of boards in a game (mix games always play 5). */
 export function gameRoundCount(game: GameDef): number {
-  return game.bookRounds.length + game.boardRounds.length;
+  return game.mix ? game.boardRounds.length || MIX_ROUNDS : game.bookRounds.length + game.boardRounds.length;
 }
 
 /** Resolve a round's categories (book dataset or a standalone board). */

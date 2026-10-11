@@ -9,6 +9,7 @@ import {
   boardForRound,
   gameRoundCount,
   getRoundCategories,
+  materializeGame,
   pickFinalForGame,
 } from "../../src/lib/board";
 
@@ -78,6 +79,23 @@ describe("legacy and arena boards", () => {
     }
   });
 
+  it("arena mix materializes 5 distinct boards deterministically", () => {
+    const mix = GAMES.find((g) => g.id === "arena-mix")!;
+    expect(mix.mix).toBe(true);
+    const a = materializeGame(mix, 123);
+    const b = materializeGame(mix, 123);
+    const c = materializeGame(mix, 124);
+    expect(a.boardRounds).toHaveLength(5);
+    expect(new Set(a.boardRounds).size).toBe(5); // no repeats within a game
+    expect(a.boardRounds).toEqual(b.boardRounds); // deterministic per seed
+    expect(a.boardRounds).not.toEqual(c.boardRounds);
+    // every sampled board is buildable
+    for (let r = 0; r < 5; r++) {
+      const board = boardForRound(a, r, 999);
+      expect(board.tiles).toHaveLength(25);
+    }
+  });
+
   it("arena III is saying/idiom-focused and complete", () => {
     expect(ARENA3_BOARDS).toHaveLength(5);
     const names = ARENA3_BOARDS.flatMap((b) => b.categories.map((c) => c.name));
@@ -114,7 +132,8 @@ describe("games", () => {
   });
 
   it("every uoe round references an existing game, and games do not mix sources in one round", () => {
-    for (const g of GAMES) {
+    for (const g0 of GAMES) {
+      const g = materializeGame(g0, 42); // mix games get their sampled rounds
       for (const id of g.boardRounds) {
         expect(boardIds.has(id), `missing board "${id}" in ${g.id}`).toBe(true);
       }
@@ -124,7 +143,8 @@ describe("games", () => {
   });
 
   it("rounds within a game never repeat a category", () => {
-    for (const g of GAMES) {
+    for (const g0 of GAMES) {
+      const g = materializeGame(g0, 42);
       const seen: string[] = [];
       for (let r = 0; r < gameRoundCount(g); r++) {
         seen.push(...getRoundCategories(g, r).map((c) => c.id));
@@ -134,7 +154,8 @@ describe("games", () => {
   });
 
   it("boards build for every round with escalating values", () => {
-    for (const g of GAMES) {
+    for (const g0 of GAMES) {
+      const g = materializeGame(g0, 42);
       for (let r = 0; r < gameRoundCount(g); r++) {
         const b = boardForRound(g, r, 42);
         expect(b.categories.length).toBeGreaterThanOrEqual(4);

@@ -19,6 +19,8 @@ export interface GameDef {
   series: "Book Club" | "Idiom Arenas" | "Classic Vault";
   /** run the final wager round after the last board */
   final: boolean;
+  /** when true, rounds are sampled from all arena boards at game start */
+  mix?: boolean;
 }
 
 export const GAMES: GameDef[] = [
@@ -210,6 +212,18 @@ export const GAMES: GameDef[] = [
     level: "Hard",
     bookRounds: [],
     boardRounds: ["arena4-r0", "arena4-r1", "arena4-r2", "arena4-r3", "arena4-r4"],
+    final: false,
+    series: "Idiom Arenas",
+  },
+  {
+    id: "arena-mix",
+    name: "Arena Mix",
+    emoji: "🎲",
+    blurb: "Five random boards drawn from all four arenas — a fresh lineup every game.",
+    level: "Medium",
+    bookRounds: [],
+    boardRounds: [],
+    mix: true,
     final: false,
     series: "Idiom Arenas",
   },

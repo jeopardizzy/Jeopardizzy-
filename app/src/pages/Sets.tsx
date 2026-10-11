@@ -5,8 +5,9 @@ import { GAMES, type GameDef } from "../data/games";
 import { gameRoundCount, getRoundCategories } from "../lib/board";
 import { useMotionSafe } from "../lib/useMotionSafe";
 
-/** Exact clue count across all rounds (handles 4-wide boards). */
+/** Exact clue count across all rounds (handles 4-wide boards and mixes). */
 function gameClueCount(g: GameDef): number {
+  if (g.mix) return 125; // 5 randomly drawn 5x5 boards
   let n = 0;
   for (let r = 0; r < gameRoundCount(g); r++) {
     n += getRoundCategories(g, r).length * 5;

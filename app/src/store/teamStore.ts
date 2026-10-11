@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { Board, FinalClue } from "../lib/schema";
-import { boardForRound, gameRoundCount, pickFinalForGame } from "../lib/board";
+import { boardForRound, gameRoundCount, materializeGame, pickFinalForGame } from "../lib/board";
 import { randomSeed } from "../lib/random";
 import { GAMES, type GameDef } from "../data/games";
 import {
@@ -124,12 +124,14 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     }));
     if (teams.length === 0) return;
     const seed = randomSeed();
-    const board = boardForRound(s.set, 0, seed);
+    const game = materializeGame(s.set, seed);
+    const board = boardForRound(game, 0, seed);
     saveSettings({ ...s.settings, teamNames: teams.map((t) => t.name) });
     sfx.chime();
     set({
       phase: "board",
       seed,
+      set: game,
       roundIndex: 0,
       board,
       playedTileIds: [],
