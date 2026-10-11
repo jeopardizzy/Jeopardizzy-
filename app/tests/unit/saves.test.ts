@@ -43,4 +43,10 @@ describe("saves", () => {
     store.set("quizzical-club:settings:v1", JSON.stringify({ sound: "yes" }));
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
   });
+
+  it("persists the optional finalWager preference", () => {
+    expect(loadSettings().finalWager).toBeUndefined();
+    saveSettings({ ...DEFAULT_SETTINGS, finalWager: false });
+    expect(loadSettings().finalWager).toBe(false);
+  });
 });

@@ -19,6 +19,8 @@ const SettingsSchema = z.object({
   reduceMotion: z.boolean(),
   /** last used team names, for convenience */
   teamNames: z.array(z.string()),
+  /** last chosen final-wager preference; undefined = use the game's default */
+  finalWager: z.boolean().optional(),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 

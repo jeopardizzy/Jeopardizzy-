@@ -45,6 +45,8 @@ interface TeamGameState {
   teams: Team[];
   /** whose turn it is to pick a tile */
   activeTeam: number;
+  /** play the final wager round after the last board (default: game's own rule) */
+  finalEnabled: boolean;
   wagers: number[];
   finalMarks: (boolean | null)[];
   settings: Settings;
@@ -52,6 +54,7 @@ interface TeamGameState {
 
   selectSet: (setId: string) => void;
   backToSets: () => void;
+  setFinalEnabled: (v: boolean) => void;
   startGame: (names: string[]) => void;
   openTile: (tileId: string) => void;
   revealClue: () => void;
@@ -84,6 +87,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
   revealed: false,
   teams: [],
   activeTeam: 0,
+  finalEnabled: true,
   wagers: [],
   finalMarks: [],
   settings: initialSettings,
@@ -95,10 +99,19 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     const found = GAMES.find((s) => s.id === setId);
     if (!found) return;
     sfx.tick();
-    set({ set: found, phase: "setup" });
+    // toggle starts at the game's own default, unless the player overrode it before
+    const override = get().settings.finalWager;
+    set({ set: found, phase: "setup", finalEnabled: override ?? found.final });
   },
 
   backToSets: () => set({ phase: "sets", set: null, board: null, teams: [] }),
+
+  setFinalEnabled: (v) => {
+    const s = get();
+    const settings: Settings = { ...s.settings, finalWager: v };
+    saveSettings(settings);
+    set({ finalEnabled: v, settings });
+  },
 
   startGame: (names) => {
     const s = get();
@@ -245,7 +258,7 @@ function advanceAfterTile(teams: Team[], activeTeam: number, set: Set, get: Get)
       teams, activeTeam, playedTileIds: [], board: nextBoard, roundIndex: nextIndex,
       phase: "board", currentTileId: null, revealed: false,
     });
-  } else if (s.set.final) {
+  } else if (s.finalEnabled) {
     const finalClue = pickFinalForGame(s.set, s.seed);
     sfx.chime();
     set({

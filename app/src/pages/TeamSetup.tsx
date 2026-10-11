@@ -18,6 +18,9 @@ export default function TeamSetup() {
     savedNames.length >= 2 ? savedNames.slice(0, MAX_TEAMS) : ["Team Sage", "Team Butter"],
   );
 
+  const finalEnabled = useTeamStore((s) => s.finalEnabled);
+  const setFinalEnabled = useTeamStore((s) => s.setFinalEnabled);
+
   if (!set_) {
     navigate("/sets", { replace: true });
     return null;
@@ -86,6 +89,31 @@ export default function TeamSetup() {
             + Add a team
           </button>
         )}
+
+        <button
+          onClick={() => setFinalEnabled(!finalEnabled)}
+          role="switch"
+          aria-checked={finalEnabled}
+          className={`mb-6 flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left shadow-card transition ${
+            finalEnabled ? "border-sage bg-sage-soft" : "border-line bg-cream"
+          }`}
+        >
+          <span>
+            <span className="block text-sm font-bold text-ink">Final wager round</span>
+            <span className="block text-xs text-mute">
+              One last clue after the final board — teams risk up to their whole score.
+              {set_.final ? " On by default in this game." : " Off by default in this game."}
+            </span>
+          </span>
+          <span
+            aria-hidden
+            className={`ml-4 flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition ${
+              finalEnabled ? "justify-end bg-sage" : "justify-start bg-line"
+            }`}
+          >
+            <span className="h-5 w-5 rounded-full bg-white shadow" />
+          </span>
+        </button>
 
         <button
           onClick={() => {

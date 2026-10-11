@@ -31,4 +31,52 @@ test.describe("Idiom arenas", () => {
       page.getByRole("button", { name: "Play Idiom Arena II", exact: true }),
     ).toContainText("6 boards");
   });
+
+  test("final wager can be enabled for an arena (off by default)", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto("/#/sets");
+    await page.getByRole("button", { name: "Play Idiom Arena I", exact: true }).click();
+
+    // toggle is off for arenas by default; turn it on
+    const toggle = page.getByRole("switch", { name: /Final wager round/ });
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+
+    await page.getByRole("button", { name: "Start the game" }).click();
+
+    // play all 5 boards via the store hook
+    for (let round = 1; round <= 5; round++) {
+      await expect(page.getByText(`Round ${round} of 5`)).toBeVisible();
+      await page.evaluate(() => {
+        const store = (window as unknown as { __teamStore: any }).__teamStore;
+        const ids: string[] = store.getState().board.tiles.map((t: any) => t.id);
+        for (const id of ids) {
+          store.getState().openTile(id);
+          store.getState().revealClue();
+          store.getState().awardTo(0);
+        }
+      });
+    }
+
+    // with the toggle on, the final wager appears after the last board
+    await expect(page.getByText(/Final Quizzical/)).toBeVisible();
+    await page.evaluate(() => {
+      const store = (window as unknown as { __teamStore: any }).__teamStore;
+      store.setState({ phase: "final-clue" });
+      store.getState().revealFinal();
+      store.getState().markFinal(0, true);
+      store.getState().markFinal(1, false);
+      store.getState().finishGame();
+    });
+    await expect(page.getByText(/wins!|tie!/)).toBeVisible({ timeout: 10_000 });
+
+    // preference persisted: next arena keeps the toggle on
+    await page.goto("/#/sets");
+    await page.getByRole("button", { name: "Play Idiom Arena II", exact: true }).click();
+    await expect(page.getByRole("switch", { name: /Final wager round/ })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+  });
 });
