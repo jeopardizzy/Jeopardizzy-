@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test.describe("Idiom arenas", () => {
   test("arena I offers 5 boards with original category names", async ({ page }) => {
     await page.goto("/#/sets");
-    const arena = page.getByRole("button", { name: /Idiom Arena I / });
+    const arena = page.getByRole("button", { name: "Play Idiom Arena I", exact: true });
     await expect(arena).toBeVisible();
     await expect(arena).toContainText("5 boards");
     await expect(arena).toContainText("125 clues");
@@ -27,6 +27,8 @@ test.describe("Idiom arenas", () => {
 
   test("arena II lists 6 boards", async ({ page }) => {
     await page.goto("/#/sets");
-    await expect(page.getByRole("button", { name: /Idiom Arena II / })).toContainText("6 boards");
+    await expect(
+      page.getByRole("button", { name: "Play Idiom Arena II", exact: true }),
+    ).toContainText("6 boards");
   });
 });
