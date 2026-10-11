@@ -64,6 +64,7 @@ export default function Sets() {
                   return (
                     <motion.button
                       key={g.id}
+                      aria-label={`Play ${g.name}`}
                       initial={reduce ? false : { opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: reduce ? 0 : 0.05 * i }}
