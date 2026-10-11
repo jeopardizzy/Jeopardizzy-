@@ -42,14 +42,14 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Build
+        run: npm run build
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
       - name: E2E tests (desktop viewport)
         run: npx playwright test --project=desktop
-
-      - name: Build
-        run: npm run build
 
       - uses: actions/upload-pages-artifact@v3
         with:

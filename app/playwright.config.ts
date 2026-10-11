@@ -20,6 +20,6 @@ export default defineConfig({
     command: "npm run preview -- --port 4173 --strictPort",
     url: "http://localhost:4173",
     reuseExistingServer: false,
-    timeout: 60_000,
+    timeout: 120_000,
   },
 });
