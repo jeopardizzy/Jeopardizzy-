@@ -57,7 +57,7 @@ const L = {
     titleSub: "Командная игра-викторина + тренажёр для олимпиадной подготовки · веб, Android, iOS",
     metaField: "Поле", metaValue: "Значение",
     meta: [
-      ["Версия документа", "2.0 (шаблон для развития)"],
+      ["Версия документа", "2.1 (шаблон для развития)"],
       ["Дата", "14 октября 2026"],
       ["Продакшн", "https://jeopardizzy.github.io/Jeopardizzy-/"],
       ["Репозиторий", "https://github.com/jeopardizzy/Jeopardizzy-"],
@@ -83,7 +83,7 @@ const L = {
       ["Игр (источники)", "17 — арены I–IV, Arena Mix, 5 книжных сетов, 7 классических"],
       ["Игр на экране выбора", "26 частей (длинные игры разбиты по ≤ 3 доски)"],
       ["Вопросов в хранилище", "≈ 1 690 (540 книжных + 275 UoE + 870 классических)"],
-      ["Тестов", "53 юнит (vitest) + 88 e2e (playwright, десктоп + мобильный)"],
+      ["Тестов", "57 юнит (vitest) + 90 e2e (playwright, десктоп + мобильный)"],
       ["CI/CD", "Pages-деплой с e2e-гейтом · Android APK+AAB · iOS build check (macOS)"],
     ],
 
@@ -96,7 +96,7 @@ const L = {
       "Окна активности (вопрос, ставка) на десктопе прижаты к левому краю (≤ 46% ширины) — доска и табло остаются видны; на мобильном — во всю ширину.",
       "Ведущий: плитка → вопрос → Reveal → очки команде или «Nobody». У классических вопросов под ответом есть заметки для ведущего.",
       "Кнопка «Завершить игру» на доске (неактивна, пока открыт вопрос) → подтверждение: «К финалу» / «Сразу к итогам» / «Отмена»; на экране победителя — пометка «Завершено досрочно», нераскрытые плитки не считаются промахами.",
-      "Финал со ставками; экран победителя с турнирной таблицей и «Training notes»: трудные категории игры + all-time drill list.",
+      "Финал со ставками; экран победителя с турнирной таблицей и «Training notes»: трудные категории игры + all-time drill list + кнопка «Practice these» — тест воркбука по проваленным категориям.",
       "Звук синтезируется Web Audio (без файлов), отключается; поддерживается reduced motion.",
     ],
     s22: "2.2. Workbook (тренажёр)",
@@ -104,6 +104,7 @@ const L = {
       "10 типов заданий + «Everything»; фильтр сложности Easy / Medium / Hard.",
       "Выбор длины теста: 5 / 10 / 20 вопросов (по умолчанию 10), запоминается; если пул меньше — вариант неактивен с подсказкой.",
       "Нечёткая проверка ответов (опечатки, артикли, варианты через «/»); результаты «X из N» + процент; рекорды по ключу «тип × уровень × длина», старые рекорды мигрируют как N=10.",
+      "Drill-режим из Training notes: тест по выбранным категориям (пул собирается из книжного датасета И досок арен/классики); фильтры типа/уровня отключены, длина применяется, рекорды не пишутся.",
     ],
     s23: "2.3. Guides (гайды)",
     guides: ["13 гайдов: правила, разобранный пример, стратегии; «Practice this type» ведёт в воркбук."],
@@ -130,7 +131,7 @@ const L = {
     titleSub: "Team trivia game + olympiad training workbook · web, Android, iOS",
     metaField: "Field", metaValue: "Value",
     meta: [
-      ["Document version", "2.0 (living template)"],
+      ["Document version", "2.1 (living template)"],
       ["Date", "October 14, 2026"],
       ["Production", "https://jeopardizzy.github.io/Jeopardizzy-/"],
       ["Repository", "https://github.com/jeopardizzy/Jeopardizzy-"],
@@ -156,7 +157,7 @@ const L = {
       ["Games (source)", "17 — arenas I–IV, Arena Mix, 5 book sets, 7 classic sets"],
       ["Playable entries", "26 parts (long games split into ≤ 3 boards)"],
       ["Clue vault", "≈ 1,690 (540 book + 275 UoE + 870 classic)"],
-      ["Tests", "53 unit (vitest) + 88 e2e (playwright, desktop + mobile)"],
+      ["Tests", "57 unit (vitest) + 90 e2e (playwright, desktop + mobile)"],
       ["CI/CD", "Pages deploy with e2e gate · Android APK+AAB · iOS build check (macOS)"],
     ],
 
@@ -169,7 +170,7 @@ const L = {
       "On desktop, activity windows (clue, wager) hug the left edge (≤ 46% width) so the board and scoreboard stay visible; full width on mobile.",
       "Host flow: tile → clue → Reveal → award a team or 'Nobody'. Classic clues carry host notes under the answer.",
       "'Завершить игру' (finish early) button on the board (disabled while a clue is open) → confirm: to the final / straight to results / cancel; winner screen marks 'Завершено досрочно'; unplayed tiles never count as misses.",
-      "Wagered final round; winner screen with standings and Training notes: this game's hardest categories plus the all-time drill list.",
+      "Wagered final round; winner screen with standings and Training notes: hardest categories, all-time drill list, and a 'Practice these' button opening a workbook drill test on the missed categories.",
       "Web Audio synthesized SFX (no assets), mutable; reduced-motion supported.",
     ],
     s22: "2.2. Workbook",
@@ -177,6 +178,7 @@ const L = {
       "10 puzzle types + 'Everything'; Easy / Medium / Hard level filter.",
       "Test length 5 / 10 / 20 (default 10), remembered; options larger than the pool are disabled with a hint.",
       "Fuzzy answer checking (typos, articles, '/' alternates); results 'X of N' + percentage; best scores keyed by type × level × length; legacy bests migrate as N=10.",
+      "Drill mode from Training notes: a test on chosen categories (pool draws from the book dataset AND arena/classic boards); type/level filters disabled, length applies, no bests recorded.",
     ],
     s23: "2.3. Guides",
     guides: ["13 guides: rules, a worked example, strategy tips; 'Practice this type' jumps into the workbook."],
@@ -226,8 +228,8 @@ Object.assign(L.ru, {
 
   s4: "4. Тестирование и качество",
   tests: [
-    "Юнит (53): доски, разбиение на части (без потерь и дублей, мультиплаеры 1–3), валидность сетов, пулы воркбука, матчер, сейвы и миграции, статистика, анонимизация.",
-    "E2E (88): командный цикл, тренажёр (включая длину 5/10/20 и сохранение выбора), гайды, переключатель финала, досрочное завершение (отмена/к итогам/к финалу), марафон части 1 с точным счётом 45 000, прохождение всех 26 частей до подиума с независимо вычисленной суммой — на десктопе и мобильном.",
+    "Юнит (57): доски, разбиение на части, drill-пулы, (без потерь и дублей, мультиплаеры 1–3), валидность сетов, пулы воркбука, матчер, сейвы и миграции, статистика, анонимизация.",
+    "E2E (90): командный цикл, сквозной сценарий «промахи → Practice these → drill-тест», тренажёр (включая длину 5/10/20 и сохранение выбора), гайды, переключатель финала, досрочное завершение (отмена/к итогам/к финалу), марафон части 1 с точным счётом 45 000, прохождение всех 26 частей до подиума с независимо вычисленной суммой — на десктопе и мобильном.",
     "Тестовый хук: window.__teamStore доступен только на localhost; в проде его нет.",
   ],
   s41: "4.1. CI/CD",
@@ -279,7 +281,6 @@ Object.assign(L.ru, {
 
   s7: "7. Открытые направления (бэклог)",
   backlog: [
-    "Кнопка «Practice these» из drill list → тест по проваленным категориям.",
     "Подписанный релизный AAB через секреты репозитория; TestFlight-архив для iOS из CI.",
     "Экспорт/импорт статистики (JSON) между устройствами.",
     "Печатные карточки для офлайн-игры (генерация PDF из досок).",
@@ -295,6 +296,7 @@ Object.assign(L.ru, {
     ["Nobody", "Плитка без ответа — сигнал для drill list"],
     ["Drill list", "Категории с наибольшим числом промахов (игра и all-time)"],
     ["Материализация", "Сэмплирование досок микс-игры при старте"],
+    ["Drill-режим", "Тест воркбука по категориям из drill list (подиум → Practice these)"],
     ["Capacitor", "Нативная оболочка над веб-приложением (Android/iOS)"],
   ],
   outro: "Конец документа. Шаблон расширяется: новые разделы добавляются после раздела 6; версии нумеруются.",
@@ -328,8 +330,8 @@ Object.assign(L.en, {
 
   s4: "4. Testing & quality",
   tests: [
-    "Unit (53): boards, part splitting (no losses/dupes, ×1–3 multipliers), set validity, workbook pools, matcher, saves & migrations, stats, content anonymization.",
-    "E2E (88): team loop, workbook (incl. 5/10/20 lengths and persisted choice), guides, final toggle, early finish (cancel/results/final), marathon part 1 with exact 45,000 score, all 26 parts played to the podium with independently computed totals — desktop and mobile.",
+    "Unit (57): boards, part splitting, drill pools, (no losses/dupes, ×1–3 multipliers), set validity, workbook pools, matcher, saves & migrations, stats, content anonymization.",
+    "E2E (90): team loop, misses → Practice these → drill test scenario, workbook (incl. 5/10/20 lengths and persisted choice), guides, final toggle, early finish (cancel/results/final), marathon part 1 with exact 45,000 score, all 26 parts played to the podium with independently computed totals — desktop and mobile.",
     "Test hook: window.__teamStore exists on localhost only; production never ships it.",
   ],
   s41: "4.1. CI/CD",
@@ -381,7 +383,6 @@ Object.assign(L.en, {
 
   s7: "7. Backlog ideas",
   backlog: [
-    "'Practice these' button from the drill list → workbook test on the missed categories.",
     "Signed release AAB via repository secrets; TestFlight archive for iOS from CI.",
     "Export/import stats (JSON) between devices.",
     "Printable cards for offline play (PDF generated from boards).",
@@ -397,6 +398,7 @@ Object.assign(L.en, {
     ["Nobody", "A tile nobody answered — feeds the drill list"],
     ["Drill list", "Categories with the most misses (per game and all-time)"],
     ["Materialization", "Sampling a mix game's boards at start"],
+    ["Drill mode", "A workbook test on drill-list categories (podium → Practice these)"],
     ["Capacitor", "Native shell over the web app (Android/iOS)"],
   ],
   outro: "End of document. The template grows with the project: new sections go after section 6; versions are numbered.",
