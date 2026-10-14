@@ -39,3 +39,8 @@ old_sets.json
 tools/docgen/node_modules/
 tools/docgen/package-lock.json
 tools/docgen/package.json
+
+# local TZ source docs (internal)
+TZ1.docx
+TZ2.docx
+tz2_*.jpg
