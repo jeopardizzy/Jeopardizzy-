@@ -37,10 +37,7 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync ios
 
-      - name: Install CocoaPods dependencies
-        run: cd ios/App && pod install --repo-update
-
-      - name: Build iOS app (unsigned)
+      - name: Build iOS app (unsigned, SPM resolves packages automatically)
         run: |
           cd ios/App
           xcodebuild -workspace App.xcworkspace \
