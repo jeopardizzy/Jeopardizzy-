@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Board, FinalClue } from "../lib/schema";
-import { boardForRound, gameRoundCount, listPlayableGames, materializeGame, pickFinalForGame } from "../lib/board";
-import { randomSeed } from "../lib/random";
+import { boardForRound, buildDailyBoard, gameRoundCount, listPlayableGames, materializeGame, pickFinalForGame } from "../lib/board";
+import { randomSeed, dailySeed } from "../lib/random";
 import type { GameDef } from "../data/games";
 import {
   loadRecords,
@@ -54,7 +54,7 @@ interface TeamGameState {
   finalEnabled: boolean;
   wagers: number[];
   finalMarks: (boolean | null)[];
-  /** the game was ended early via «Завершить игру» */
+  /** the game was ended early via the Finish-game button */
   earlyFinished: boolean;
   /** per-tile outcomes this game (category + awarded/nobody) for training stats */
   outcomes: TileOutcome[];
@@ -138,7 +138,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     if (teams.length === 0) return;
     const seed = randomSeed();
     const game = materializeGame(s.set, seed);
-    const board = boardForRound(game, 0, seed);
+    const board = game.daily ? buildDailyBoard(dailySeed()) : boardForRound(game, 0, seed);
     saveSettings({ ...s.settings, teamNames: teams.map((t) => t.name) });
     sfx.chime();
     set({

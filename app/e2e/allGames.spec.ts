@@ -24,7 +24,7 @@ function expectedBoardTotal(gameId: string): number {
 }
 
 test.describe("every game plays to completion", () => {
-  for (const game of listPlayableGames()) {
+  for (const game of listPlayableGames().filter((g) => !g.daily)) {
     test(`${game.name}: all boards → podium with exact score`, async ({ page }) => {
       const rounds = gameRoundCount(game);
       const boardTotal = expectedBoardTotal(game.id);

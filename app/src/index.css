@@ -45,6 +45,11 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* all buttons inherit the theme font — UA default never overrides it */
+button {
+  font-family: inherit;
+}
+
 /* tactile clue tile — light version */
 .tile {
   background: var(--color-surface);

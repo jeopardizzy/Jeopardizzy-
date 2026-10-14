@@ -21,6 +21,8 @@ export interface GameDef {
   final: boolean;
   /** when true, rounds are sampled from all arena boards at game start */
   mix?: boolean;
+  /** daily game: one board sampled across all pools, seeded by the UTC date */
+  daily?: boolean;
   /** set on auto-generated parts: parent game id, 0-based part index, total parts */
   partOf?: string;
   partIndex?: number;
@@ -230,5 +232,17 @@ export const GAMES: GameDef[] = [
     mix: true,
     final: false,
     series: "Idiom Arenas",
+  },
+  {
+    id: "daily-jeopardy",
+    name: "Daily Jeopardy",
+    emoji: "☀️",
+    blurb: "One quick board of 5 random categories — the same board all day.",
+    level: "Easy",
+    bookRounds: [],
+    boardRounds: [],
+    daily: true,
+    final: false,
+    series: "Book Club",
   },
 ];

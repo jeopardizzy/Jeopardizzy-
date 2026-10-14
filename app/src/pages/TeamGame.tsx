@@ -47,7 +47,7 @@ export default function TeamGame() {
                 disabled={phase !== "board"}
                 className="rounded-lg border border-butter-deep bg-butter px-3 py-1.5 text-sm font-bold text-ink shadow-card transition enabled:hover:brightness-105 disabled:opacity-40"
               >
-                Завершить игру
+                Finish game
               </button>
             )}
           </div>
@@ -115,7 +115,7 @@ function EarlyFinishDialog({ open, onClose }: { open: boolean; onClose: () => vo
           className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm lg:justify-start lg:pl-10"
           role="dialog"
           aria-modal="true"
-          aria-label="Завершить игру досрочно"
+          aria-label="Finish the game early"
         >
           <motion.div
             initial={reduce ? false : { scale: 0.92, opacity: 0 }}
@@ -123,9 +123,9 @@ function EarlyFinishDialog({ open, onClose }: { open: boolean; onClose: () => vo
             exit={reduce ? { opacity: 0 } : { scale: 0.94, opacity: 0 }}
             className="w-full max-w-md rounded-3xl border border-line bg-surface p-8 shadow-pop"
           >
-            <h2 className="font-display mb-2 text-xl text-ink">Завершить игру?</h2>
+            <h2 className="font-display mb-2 text-xl text-ink">Finish the game early?</h2>
             <p className="mb-6 text-sm leading-relaxed text-mute">
-              Очки команд сохранятся. Нераскрытые плитки не попадут в статистику промахов.
+              Team scores are kept. Unplayed tiles won’t count as misses in the training notes.
             </p>
             <div className="flex flex-col gap-3">
               {finalEnabled && (
@@ -136,7 +136,7 @@ function EarlyFinishDialog({ open, onClose }: { open: boolean; onClose: () => vo
                   }}
                   className="rounded-xl bg-butter px-6 py-3 font-display text-lg text-ink transition hover:brightness-105 active:scale-[0.98]"
                 >
-                  К финалу
+                  To the final
                 </button>
               )}
               <button
@@ -146,14 +146,14 @@ function EarlyFinishDialog({ open, onClose }: { open: boolean; onClose: () => vo
                 }}
                 className="rounded-xl bg-sage px-6 py-3 font-display text-lg text-white transition hover:bg-sage-deep active:scale-[0.98]"
               >
-                Сразу к итогам
+                Straight to results
               </button>
               <button
                 onClick={onClose}
                 autoFocus
                 className="rounded-xl border border-line px-6 py-3 font-semibold text-mute transition hover:text-ink"
               >
-                Отмена
+                Cancel
               </button>
             </div>
           </motion.div>

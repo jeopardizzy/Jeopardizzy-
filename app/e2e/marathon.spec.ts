@@ -14,7 +14,7 @@ test.describe("grand marathon, part 1", () => {
     test.setTimeout(180_000);
 
     await page.goto("/#/sets");
-    const card = page.getByRole("button", { name: /Play Grand Marathon · Часть 1 из 5/ });
+    const card = page.getByRole("button", { name: /Play Grand Marathon · Part 1 of 5/ });
     await expect(card).toContainText("3 boards");
     await expect(card).toContainText("75 clues");
     await card.click();
@@ -55,32 +55,32 @@ test.describe("grand marathon, part 1", () => {
     ).toContainText(String(EXPECTED_PART1_TOTAL));
   });
 
-  test("early finish: one tile, then «Сразу к итогам» keeps the score", async ({ page }) => {
+  test("early finish: one tile, then straight to results keeps the score", async ({ page }) => {
     await page.goto("/#/sets");
-    await page.getByRole("button", { name: /Play Grand Marathon · Часть 1 из 5/ }).click();
+    await page.getByRole("button", { name: /Play Grand Marathon · Part 1 of 5/ }).click();
     await page.getByRole("button", { name: "Start the game" }).click();
 
     // play exactly one tile (100 pts) through the UI
     await page.locator("[role='gridcell']:not([disabled])").first().click();
-    // «Завершить игру» is disabled while a clue window is open
-    await expect(page.getByRole("button", { name: "Завершить игру" })).toBeDisabled();
+    // Finish game is disabled while a clue window is open
+    await expect(page.getByRole("button", { name: "Finish game" })).toBeDisabled();
     await page.getByRole("button", { name: "Reveal answer" }).click();
     await page.getByRole("button", { name: "Team Sage" }).click();
 
     // end the game early with confirmation
-    await page.getByRole("button", { name: "Завершить игру" }).click();
-    await expect(page.getByRole("dialog", { name: /Завершить игру досрочно/ })).toBeVisible();
-    await page.getByRole("button", { name: "Отмена" }).click();
+    await page.getByRole("button", { name: "Finish game" }).click();
+    await expect(page.getByRole("dialog", { name: /Finish the game early/ })).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
     // cancel returns to the board, tile count unchanged
     await expect(page.locator("[role='gridcell'][disabled]")).toHaveCount(1);
 
-    await page.getByRole("button", { name: "Завершить игру" }).click();
-    // marathon part has no final: only «Сразу к итогам» and «Отмена»
-    await expect(page.getByRole("button", { name: "К финалу" })).toHaveCount(0);
-    await page.getByRole("button", { name: "Сразу к итогам" }).click();
+    await page.getByRole("button", { name: "Finish game" }).click();
+    // marathon part has no final: only "Straight to results" and "Cancel"
+    await expect(page.getByRole("button", { name: "To the final" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Straight to results" }).click();
 
     await expect(page.getByText(/wins!/)).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Завершено досрочно")).toBeVisible();
+    await expect(page.getByText("Finished early")).toBeVisible();
     await expect(
       page.locator("[role='listitem']", { hasText: "Team Sage" }),
     ).toContainText("100");
@@ -98,8 +98,8 @@ test.describe("grand marathon, part 1", () => {
     await page.getByRole("button", { name: "Reveal answer" }).click();
     await page.getByRole("button", { name: "Team Sage" }).click();
 
-    await page.getByRole("button", { name: "Завершить игру" }).click();
-    await page.getByRole("button", { name: "К финалу" }).click();
+    await page.getByRole("button", { name: "Finish game" }).click();
+    await page.getByRole("button", { name: "To the final" }).click();
 
     await expect(page.getByText(/Final Quizzical/)).toBeVisible();
     await expect(page.getByLabel("Wager for Team Sage")).toHaveValue("100");

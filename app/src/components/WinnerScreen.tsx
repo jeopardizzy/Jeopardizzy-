@@ -43,7 +43,7 @@ export default function WinnerScreen() {
       </p>
       {earlyFinished && (
         <p className="mb-6 -mt-1 inline-block rounded-full bg-coral/15 px-4 py-1 text-xs font-bold uppercase tracking-wider text-coral">
-          Завершено досрочно
+          Finished early
         </p>
       )}
 

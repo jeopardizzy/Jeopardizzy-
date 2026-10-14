@@ -1,18 +1,46 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Quizzical Club", () => {
-  test("home shows the three modes", async ({ page }) => {
+  test("home: sidebar with three sections + Daily Jeopardy card", async ({ page }, testInfo) => {
     await page.goto("/");
-    await expect(page.getByRole("button", { name: /Team Jeopardy/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /✏️ Workbook/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /📖 Guides/ })).toBeVisible();
+    const nav = page.getByRole("navigation", { name: "Main" });
+    await expect(nav.getByRole("link", { name: "Guides" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Workbook" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Jeopardy" })).toBeVisible();
+    // the logo tops the sidebar on desktop; the mobile bottom bar omits it
+    if (testInfo.project.name === "desktop") {
+      await expect(nav.getByRole("button", { name: /Quizzical Club/ })).toBeVisible();
+    } else {
+      await expect(nav.getByRole("button", { name: /Quizzical Club/ })).toBeHidden();
+    }
+    await expect(page.getByRole("heading", { name: "Daily Jeopardy" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Play today’s board/ })).toBeVisible();
+  });
+
+  test("sidebar navigates to all three sections; hidden during a team game", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const nav = page.getByRole("navigation", { name: "Main" });
+    await nav.getByRole("link", { name: "Jeopardy" }).click();
+    await expect(page).toHaveURL(/#\/sets/);
+    await nav.getByRole("link", { name: "Workbook" }).click();
+    await expect(page).toHaveURL(/#\/workbook/);
+    await nav.getByRole("link", { name: "Guides" }).click();
+    await expect(page).toHaveURL(/#\/guides/);
+    // hidden in an active game
+    await nav.getByRole("link", { name: "Jeopardy" }).click();
+    await page.getByRole("button", { name: "Play First Words", exact: true }).click();
+    await page.getByRole("button", { name: "Start the game" }).click();
+    await expect(page.locator("[role='gridcell']").first()).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
   });
 
   test("jeopardy: set select → team setup → board → reveal → award points", async ({
     page,
   }) => {
     await page.goto("/");
-    await page.getByText("Choose a set").click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Jeopardy" }).click();
     await expect(page).toHaveURL(/#\/sets/);
 
     // pick the first set
@@ -77,7 +105,7 @@ test.describe("Quizzical Club", () => {
     const context = await browser.newContext({ reducedMotion: "reduce" });
     const page = await context.newPage();
     await page.goto("/");
-    await page.getByText("Choose a set").click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Jeopardy" }).click();
     await expect(page.getByRole("button", { name: /Championship/ })).toBeVisible();
     await context.close();
   });
@@ -139,5 +167,67 @@ test.describe("Quizzical Club", () => {
     await expect(
       page.getByRole("group", { name: "Test length" }).getByRole("button", { name: "5", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("daily jeopardy: one board from the home card to the podium", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto("/");
+    await page.getByRole("button", { name: /Play today’s board/ }).click();
+    await expect(page).toHaveURL(/#\/setup/);
+    await page.getByRole("button", { name: "Start the game" }).click();
+
+    // exactly one 5x5 board, values 100–500
+    await expect(page.locator("[role='gridcell']")).toHaveCount(25);
+    await expect(page.getByText("Round 1 of 1")).toBeVisible();
+
+    // first tile through the UI, rest via the store hook
+    await page.locator("[role='gridcell']").first().click();
+    await page.getByRole("button", { name: "Reveal answer" }).click();
+    await page.getByRole("button", { name: "Team Sage" }).click();
+    await page.evaluate(() => {
+      const store = (window as unknown as { __teamStore: any }).__teamStore;
+      const ids: string[] = store
+        .getState()
+        .board.tiles.filter((t: any) => !store.getState().playedTileIds.includes(t.id))
+        .map((t: any) => t.id);
+      for (const id of ids) {
+        store.getState().openTile(id);
+        store.getState().revealClue();
+        store.getState().awardTo(0);
+      }
+    });
+
+    // no final by default — straight to the podium with the exact total
+    await expect(page.getByText(/wins!/)).toBeVisible({ timeout: 10_000 });
+    await expect(
+      page.locator("[role='listitem']", { hasText: "Team Sage" }),
+    ).toContainText("7500");
+  });
+
+  test("TZ2: no Cyrillic anywhere in the rendered app", async ({ page }) => {
+    await page.goto("/");
+    const check = async () => {
+      const text = await page.evaluate(() => document.body.innerText);
+      expect(text, "Cyrillic on screen").not.toMatch(/[А-Яа-яЁё]/);
+    };
+    await check();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Jeopardy" }).click();
+    await check();
+    await page.getByRole("button", { name: "Play First Words", exact: true }).click();
+    await check(); // setup screen (incl. finish-game toggle)
+    await page.getByRole("button", { name: "Start the game" }).click();
+    await page.locator("[role='gridcell']").first().click();
+    await check(); // clue window
+    await page.getByRole("button", { name: "Reveal answer" }).click();
+    await check(); // award window
+    // early-finish dialog
+    await page.getByRole("button", { name: "Team Sage" }).click();
+    await page.getByRole("button", { name: "Finish game" }).click();
+    await check();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await page.goto("/#/workbook");
+    await check();
+    await page.goto("/#/guides");
+    await check();
   });
 });

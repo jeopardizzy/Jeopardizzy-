@@ -6,7 +6,7 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"]],
   use: {
-    baseURL: "http://localhost:4173",
+    baseURL: "http://localhost:4917",
     screenshot: "only-on-failure",
   },
   projects: [
@@ -17,8 +17,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run preview -- --port 4173 --strictPort",
-    url: "http://localhost:4173",
+    command: "npm run preview -- --port 4917 --strictPort",
+    url: "http://localhost:4917",
     reuseExistingServer: false,
     timeout: 120_000,
   },

@@ -60,7 +60,7 @@ export function splitGameIntoParts(game: GameDef): GameDef[] {
     parts.push({
       ...game,
       id: `${game.id}-part-${i + 1}`,
-      name: `${game.name} · Часть ${i + 1} из ${partCount}`,
+      name: `${game.name} · Part ${i + 1} of ${partCount}`,
       partOf: game.id,
       partIndex: i,
       partCount,
@@ -82,9 +82,56 @@ export interface RoundCategory {
   clues: { clue: string; answer: string; note?: string }[];
 }
 
-/** Total number of boards in a game (mix games always play 5). */
+/** Total number of boards in a game (mix games always play 3, daily plays 1). */
 export function gameRoundCount(game: GameDef): number {
+  if (game.daily) return 1;
   return game.mix ? game.boardRounds.length || MIX_ROUNDS : game.bookRounds.length + game.boardRounds.length;
+}
+
+/**
+ * Daily Jeopardy: one board of 5 categories sampled across every pool
+ * (books, UoE, classics), seeded by the UTC calendar day — the same board
+ * all day on this device.
+ */
+export function buildDailyBoard(seed: number): Board {
+  const rng = mulberry32(seed);
+  const pool: RoundCategory[] = [];
+  for (const c of quizData.categories) {
+    if (c.clues.length >= 5) pool.push({ id: c.id, name: c.name, clues: [...c.clues] });
+  }
+  for (const g of ALL_BOARDS.values()) {
+    g.categories.forEach((c, i) => pool.push({ id: `${g.id}-${i}`, name: c.name, clues: c.clues }));
+  }
+  shuffle(pool, rng);
+  // distinct category names only — no two same-named columns on the daily board
+  const picked: RoundCategory[] = [];
+  const usedNames = new Set<string>();
+  for (const c of pool) {
+    if (usedNames.has(c.name)) continue;
+    usedNames.add(c.name);
+    picked.push(c);
+    if (picked.length === 5) break;
+  }
+  const tiles: BoardTile[] = [];
+  picked.forEach((cat, ci) => {
+    pickClues(cat.clues, rng).forEach((c, ri) => {
+      tiles.push({
+        id: `daily-${ci}-${ri}`,
+        categoryId: cat.id,
+        categoryName: cat.name,
+        value: BASE_VALUES[ri],
+        clue: c.clue,
+        answer: c.answer,
+        ...(c.note ? { note: c.note } : {}),
+      });
+    });
+  });
+  return {
+    round: 1,
+    cols: 5,
+    categories: picked.map((c) => ({ id: c.id, name: c.name })),
+    tiles,
+  };
 }
 
 /** Resolve a round's categories (book dataset or a standalone board). */

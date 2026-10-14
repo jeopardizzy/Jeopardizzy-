@@ -14,6 +14,7 @@ import {
   type TaskType,
 } from "../data/categoryTypes";
 import { useMotionSafe } from "../lib/useMotionSafe";
+import { getVerdict } from "../lib/verdict";
 import Toggles from "../components/Toggles";
 
 const LEVELS: { id: Level; label: string }[] = [
@@ -56,7 +57,6 @@ export default function Workbook() {
 /* ---------- picker ---------- */
 
 function Picker() {
-  const navigate = useNavigate();
   const type = useWorkbookStore((s) => s.type);
   const level = useWorkbookStore((s) => s.level);
   const questionCount = useWorkbookStore((s) => s.questionCount);
@@ -83,13 +83,7 @@ function Picker() {
       animate={{ opacity: 1 }}
       exit={reduce ? { opacity: 0 } : { opacity: 0 }}
     >
-      <div className="mb-6 flex items-center justify-between">
-        <button
-          onClick={() => navigate("/")}
-          className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-mute shadow-card transition hover:text-ink"
-        >
-          ← Home
-        </button>
+      <div className="mb-6 flex items-center justify-end">
         <Toggles />
       </div>
 
@@ -212,7 +206,7 @@ function Picker() {
       <button
         onClick={startTest}
         disabled={poolSize === 0}
-        className="font-display rounded-2xl bg-butter px-10 py-4 text-xl text-ink shadow-card transition enabled:hover:brightness-105 enabled:active:scale-[0.98] disabled:opacity-40"
+        className="rounded-2xl bg-butter px-10 py-4 text-xl font-bold text-ink shadow-card transition enabled:hover:brightness-105 enabled:active:scale-[0.98] disabled:opacity-40"
       >
         {drillCategories ? "Start drill test" : "Start test"} (
         {poolSize === 0 ? "no clues" : `${Math.min(questionCount, poolSize)} questions`})
@@ -377,14 +371,8 @@ function TestResults() {
         <p className="mb-1 text-sm font-bold uppercase tracking-wider text-butter-deep">
           {percent}% correct
         </p>
-        <p className="mb-6 text-mute">
-          {correct === results.length
-            ? "Perfect score. Try a harder level!"
-            : correct >= 7
-              ? "Strong run — a little polish and it's perfect."
-              : correct >= 4
-                ? "Good practice. Check the misses below."
-                : "Every miss is a new fact learned. Read the guides and try again!"}
+        <p className="mb-6 text-lg font-semibold text-ink" data-testid="verdict">
+          {getVerdict(percent)}
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row">

@@ -7,6 +7,7 @@ import { useMotionSafe } from "../lib/useMotionSafe";
 
 /** Exact clue count across all rounds (handles 4-wide boards and mixes). */
 function gameClueCount(g: GameDef): number {
+  if (g.daily) return 25; // one 5x5 board
   if (g.mix) return gameRoundCount(g) * 25; // randomly drawn 5x5 boards
   let n = 0;
   for (let r = 0; r < gameRoundCount(g); r++) {
@@ -39,12 +40,6 @@ export default function Sets() {
   return (
     <main className="stage-bg min-h-dvh px-4 py-8">
       <div className="mx-auto max-w-4xl">
-        <button
-          onClick={() => navigate("/")}
-          className="mb-6 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-mute shadow-card transition hover:text-ink"
-        >
-          ← Home
-        </button>
 
         <h1 className="font-display mb-1 text-3xl text-ink sm:text-4xl">Choose your jeopardy</h1>
         <p className="mb-8 text-mute">
@@ -53,7 +48,7 @@ export default function Sets() {
         </p>
 
         {SERIES_ORDER.map((series) => {
-          const games = listPlayableGames().filter((g) => g.series === series);
+          const games = listPlayableGames().filter((g) => g.series === series && !g.daily);
           if (games.length === 0) return null;
           return (
             <section key={series} className="mb-8">

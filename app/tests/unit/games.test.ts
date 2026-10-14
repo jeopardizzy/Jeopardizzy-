@@ -134,7 +134,7 @@ describe("games", () => {
   });
 
   it("every uoe round references an existing game, and games do not mix sources in one round", () => {
-    for (const g0 of GAMES) {
+    for (const g0 of GAMES.filter((x) => !x.daily)) {
       const g = materializeGame(g0, 42); // mix games get their sampled rounds
       for (const id of g.boardRounds) {
         expect(boardIds.has(id), `missing board "${id}" in ${g.id}`).toBe(true);
@@ -145,7 +145,7 @@ describe("games", () => {
   });
 
   it("rounds within a game never repeat a category", () => {
-    for (const g0 of GAMES) {
+    for (const g0 of GAMES.filter((x) => !x.daily)) {
       const g = materializeGame(g0, 42);
       const seen: string[] = [];
       for (let r = 0; r < gameRoundCount(g); r++) {
@@ -156,7 +156,7 @@ describe("games", () => {
   });
 
   it("boards build for every round with escalating values", () => {
-    for (const g0 of GAMES) {
+    for (const g0 of GAMES.filter((x) => !x.daily)) {
       const g = materializeGame(g0, 42);
       for (let r = 0; r < gameRoundCount(g); r++) {
         const b = boardForRound(g, r, 42);
@@ -202,7 +202,7 @@ describe("game splitting (max 3 boards per part)", () => {
     const marathon = GAMES.find((g) => g.id === "grand-marathon")!;
     const parts = splitGameIntoParts(marathon);
     expect(parts.map((p) => gameRoundCount(p))).toEqual([3, 3, 3, 3, 2]);
-    expect(parts[0].name).toContain("Часть 1 из 5");
+    expect(parts[0].name).toContain("Part 1 of 5");
     expect(parts[0].partOf).toBe("grand-marathon");
   });
 

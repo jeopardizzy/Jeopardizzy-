@@ -106,13 +106,7 @@ export default function Guides() {
   return (
     <main className="stage-bg min-h-dvh px-4 py-8">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-6 flex items-center justify-between">
-          <button
-            onClick={() => navigate("/")}
-            className="rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-mute shadow-card transition hover:text-ink"
-          >
-            ← Home
-          </button>
+        <div className="mb-6 flex items-center justify-end">
           <Toggles />
         </div>
 

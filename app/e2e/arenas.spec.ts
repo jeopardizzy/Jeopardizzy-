@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test.describe("Idiom arenas", () => {
   test("arena I part 1 offers 3 boards with original category names", async ({ page }) => {
     await page.goto("/#/sets");
-    const arena = page.getByRole("button", { name: /Play Idiom Arena I · Часть 1 из 2/ });
+    const arena = page.getByRole("button", { name: /Play Idiom Arena I · Part 1 of 2/ });
     await expect(arena).toBeVisible();
     await expect(arena).toContainText("3 boards");
     await expect(arena).toContainText("75 clues");
@@ -28,14 +28,14 @@ test.describe("Idiom arenas", () => {
   test("arena II part 1 lists 3 boards", async ({ page }) => {
     await page.goto("/#/sets");
     await expect(
-      page.getByRole("button", { name: /Play Idiom Arena II · Часть 1 из 2/ }),
+      page.getByRole("button", { name: /Play Idiom Arena II · Part 1 of 2/ }),
     ).toContainText("3 boards");
   });
 
   test("final wager can be enabled for an arena (off by default)", async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto("/#/sets");
-    await page.getByRole("button", { name: /Play Idiom Arena I · Часть 1 из 2/ }).click();
+    await page.getByRole("button", { name: /Play Idiom Arena I · Part 1 of 2/ }).click();
 
     // toggle is off for arenas by default; turn it on
     const toggle = page.getByRole("switch", { name: /Final wager round/ });
@@ -73,7 +73,7 @@ test.describe("Idiom arenas", () => {
 
     // preference persisted: next arena keeps the toggle on
     await page.goto("/#/sets");
-    await page.getByRole("button", { name: /Play Idiom Arena II · Часть 1 из 2/ }).click();
+    await page.getByRole("button", { name: /Play Idiom Arena II · Part 1 of 2/ }).click();
     await expect(page.getByRole("switch", { name: /Final wager round/ })).toHaveAttribute(
       "aria-checked",
       "true",
@@ -83,7 +83,7 @@ test.describe("Idiom arenas", () => {
   test("winner screen shows training notes for missed categories", async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto("/#/sets");
-    await page.getByRole("button", { name: /Play Idiom Arena I · Часть 1 из 2/ }).click();
+    await page.getByRole("button", { name: /Play Idiom Arena I · Part 1 of 2/ }).click();
     await page.getByRole("button", { name: "Start the game" }).click();
 
     // play all 5 boards: award most tiles, but "Nobody" every tile of the
@@ -115,7 +115,7 @@ test.describe("Idiom arenas", () => {
   }) => {
     test.setTimeout(120_000);
     await page.goto("/#/sets");
-    await page.getByRole("button", { name: /Play Idiom Arena I · Часть 1 из 2/ }).click();
+    await page.getByRole("button", { name: /Play Idiom Arena I · Part 1 of 2/ }).click();
     await page.getByRole("button", { name: "Start the game" }).click();
 
     // miss every tile of the first category of round 1, award the rest
