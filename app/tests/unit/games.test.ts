@@ -9,8 +9,10 @@ import {
   boardForRound,
   gameRoundCount,
   getRoundCategories,
+  listPlayableGames,
   materializeGame,
   pickFinalForGame,
+  splitGameIntoParts,
 } from "../../src/lib/board";
 
 describe("quiz dataset", () => {
@@ -79,18 +81,18 @@ describe("legacy and arena boards", () => {
     }
   });
 
-  it("arena mix materializes 5 distinct boards deterministically", () => {
+  it("arena mix materializes 3 distinct boards deterministically", () => {
     const mix = GAMES.find((g) => g.id === "arena-mix")!;
     expect(mix.mix).toBe(true);
     const a = materializeGame(mix, 123);
     const b = materializeGame(mix, 123);
     const c = materializeGame(mix, 124);
-    expect(a.boardRounds).toHaveLength(5);
-    expect(new Set(a.boardRounds).size).toBe(5); // no repeats within a game
+    expect(a.boardRounds).toHaveLength(3);
+    expect(new Set(a.boardRounds).size).toBe(3); // no repeats within a game
     expect(a.boardRounds).toEqual(b.boardRounds); // deterministic per seed
     expect(a.boardRounds).not.toEqual(c.boardRounds);
     // every sampled board is buildable
-    for (let r = 0; r < 5; r++) {
+    for (let r = 0; r < 3; r++) {
       const board = boardForRound(a, r, 999);
       expect(board.tiles).toHaveLength(25);
     }
@@ -177,5 +179,43 @@ describe("games", () => {
       expect(g.bookRounds.flat()).not.toContain(f.categoryName);
       expect(f.clue.length).toBeGreaterThan(2);
     }
+  });
+});
+
+describe("game splitting (max 3 boards per part)", () => {
+  it("no playable game has more than 3 boards", () => {
+    for (const g of listPlayableGames()) {
+      expect(gameRoundCount(g), g.id).toBeLessThanOrEqual(3);
+    }
+  });
+
+  it("parts reassemble into the original game without losses or duplicates", () => {
+    for (const g of GAMES.filter((x) => !x.mix)) {
+      const parts = splitGameIntoParts(g);
+      const original = [...g.bookRounds.flat(), ...g.boardRounds];
+      const reassembled = [...parts.flatMap((p) => p.bookRounds.flat()), ...parts.flatMap((p) => p.boardRounds)];
+      expect(reassembled, g.id).toEqual(original);
+    }
+  });
+
+  it("grand marathon splits into 5 parts of 3+3+3+3+2 boards", () => {
+    const marathon = GAMES.find((g) => g.id === "grand-marathon")!;
+    const parts = splitGameIntoParts(marathon);
+    expect(parts.map((p) => gameRoundCount(p))).toEqual([3, 3, 3, 3, 2]);
+    expect(parts[0].name).toContain("Часть 1 из 5");
+    expect(parts[0].partOf).toBe("grand-marathon");
+  });
+
+  it("part values restart at round multipliers 1..3", () => {
+    const marathon = GAMES.find((g) => g.id === "grand-marathon")!;
+    const part2 = splitGameIntoParts(marathon)[1];
+    const b = boardForRound(part2, 0, 42);
+    expect(new Set(b.tiles.map((t) => t.value))).toEqual(new Set([100, 200, 300, 400, 500]));
+  });
+
+  it("arena mix now plays 3 boards (unsplittable)", () => {
+    const mix = GAMES.find((g) => g.id === "arena-mix")!;
+    expect(splitGameIntoParts(mix)).toHaveLength(1);
+    expect(gameRoundCount(mix)).toBe(3);
   });
 });

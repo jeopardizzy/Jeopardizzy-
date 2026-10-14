@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import type { Board, FinalClue } from "../lib/schema";
-import { boardForRound, gameRoundCount, materializeGame, pickFinalForGame } from "../lib/board";
+import { boardForRound, gameRoundCount, listPlayableGames, materializeGame, pickFinalForGame } from "../lib/board";
 import { randomSeed } from "../lib/random";
-import { GAMES, type GameDef } from "../data/games";
+import type { GameDef } from "../data/games";
 import {
   loadRecords,
   loadSettings,
@@ -54,6 +54,8 @@ interface TeamGameState {
   finalEnabled: boolean;
   wagers: number[];
   finalMarks: (boolean | null)[];
+  /** the game was ended early via «Завершить игру» */
+  earlyFinished: boolean;
   /** per-tile outcomes this game (category + awarded/nobody) for training stats */
   outcomes: TileOutcome[];
   settings: Settings;
@@ -71,6 +73,8 @@ interface TeamGameState {
   revealFinal: () => void;
   markFinal: (teamId: number, correct: boolean) => void;
   finishGame: () => void;
+  /** leave the game before the last board: to the final (if enabled) or straight to results */
+  endGameEarly: (mode: "final" | "results") => void;
   playAgain: () => void;
   toggleSound: () => void;
   toggleMotion: () => void;
@@ -97,6 +101,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
   finalEnabled: true,
   wagers: [],
   finalMarks: [],
+  earlyFinished: false,
   outcomes: [],
   settings: initialSettings,
   records: typeof window === "undefined"
@@ -104,7 +109,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     : loadRecords(),
 
   selectSet: (setId) => {
-    const found = GAMES.find((s) => s.id === setId);
+    const found = listPlayableGames().find((s) => s.id === setId);
     if (!found) return;
     sfx.tick();
     // toggle starts at the game's own default, unless the player overrode it before
@@ -149,6 +154,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
       activeTeam: 0,
       wagers: teams.map(() => 0),
       finalMarks: teams.map(() => null),
+      earlyFinished: false,
       outcomes: [],
     });
   },
@@ -235,8 +241,31 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     set({ phase: "winner" });
   },
 
+  endGameEarly: (mode) => {
+    const s = get();
+    // only from the board between clues — never while a clue window is open
+    if (s.phase !== "board" || !s.set) return;
+    if (mode === "final" && s.finalEnabled) {
+      const finalClue = pickFinalForGame(s.set, s.seed);
+      sfx.chime();
+      set({
+        phase: "final-wager",
+        finalClue,
+        earlyFinished: true,
+        currentTileId: null,
+        revealed: false,
+        wagers: s.teams.map((t) => Math.max(0, t.score)),
+      });
+      return;
+    }
+    const records = finalizeRecords(s);
+    saveRecords(records);
+    sfx.fanfare();
+    set({ phase: "winner", earlyFinished: true, currentTileId: null, records });
+  },
+
   playAgain: () => {
-    set({ phase: "sets", set: null, board: null, teams: [], finalClue: null });
+    set({ phase: "sets", set: null, board: null, teams: [], finalClue: null, earlyFinished: false });
   },
 
   toggleSound: () => {

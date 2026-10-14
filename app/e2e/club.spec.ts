@@ -81,4 +81,63 @@ test.describe("Quizzical Club", () => {
     await expect(page.getByRole("button", { name: /Championship/ })).toBeVisible();
     await context.close();
   });
+
+  test("TZ1: clue window hugs the left edge on desktop, full width on mobile", async ({
+    browser,
+  }) => {
+    // desktop 1280x720: window left edge is left of center, width <= 50% viewport
+    const desktop = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+    let page = await desktop.newPage();
+    await page.goto("/#/sets");
+    await page.getByRole("button", { name: "Play First Words", exact: true }).click();
+    await page.getByRole("button", { name: "Start the game" }).click();
+    await page.locator("[role='gridcell']").first().click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    // measure the inner card, not the full-viewport overlay
+    let box = (await dialog.locator("> div").boundingBox())!;
+    expect(box.x + box.width / 2).toBeLessThan(1280 / 2);
+    expect(box.width).toBeLessThanOrEqual(1280 * 0.5 + 4);
+    // all action buttons fully visible
+    await expect(page.getByRole("button", { name: "Reveal answer" })).toBeVisible();
+    await desktop.close();
+
+    // mobile 360x640: window stays within the viewport
+    const mobile = await browser.newContext({ viewport: { width: 360, height: 640 } });
+    page = await mobile.newPage();
+    await page.goto("/#/sets");
+    await page.getByRole("button", { name: "Play First Words", exact: true }).click();
+    await page.getByRole("button", { name: "Start the game" }).click();
+    await page.locator("[role='gridcell']").first().click();
+    box = (await page.getByRole("dialog").locator("> div").boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(360);
+    await expect(page.getByRole("button", { name: "Reveal answer" })).toBeVisible();
+    await mobile.close();
+  });
+
+  test("TZ2: workbook test length 5/10/20, persisted choice", async ({ page }) => {
+    await page.goto("/#/workbook");
+    // length group visible with 5/10/20, default 10
+    const group = page.getByRole("group", { name: "Test length" });
+    await expect(group.getByRole("button", { name: "10", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    // pick 5 and run a short test to results
+    await group.getByRole("button", { name: "5", exact: true }).click();
+    await page.getByRole("button", { name: /Start test/ }).click();
+    for (let i = 0; i < 5; i++) {
+      await page.locator("#wb-answer").fill("zzz wrong");
+      await page.getByRole("button", { name: "Check" }).click();
+      await page.getByRole("button", { name: /Next question|See results/ }).click();
+    }
+    await expect(page.getByText("/5")).toBeVisible();
+    await expect(page.getByText(/% correct/)).toBeVisible();
+    // reload: choice persisted
+    await page.reload();
+    await expect(
+      page.getByRole("group", { name: "Test length" }).getByRole("button", { name: "5", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
 });

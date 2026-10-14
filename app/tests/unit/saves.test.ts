@@ -27,9 +27,16 @@ describe("saves", () => {
   });
 
   it("round-trips records", () => {
-    const r = { ...DEFAULT_RECORDS, gamesPlayed: 4, workbookBests: { "homonyms|easy": 9 } };
+    const r = { ...DEFAULT_RECORDS, gamesPlayed: 4, workbookBests: { "homonyms|easy|10": 9 } };
     saveRecords(r);
     expect(loadRecords()).toEqual(r);
+  });
+
+  it("migrates old best keys (type|level) to length-aware keys (type|level|10)", () => {
+    saveRecords({ ...DEFAULT_RECORDS, workbookBests: { "homonyms|easy": 9 } });
+    const loaded = loadRecords();
+    expect(loaded.workbookBests["homonyms|easy|10"]).toBe(9);
+    expect(loaded.workbookBests["homonyms|easy"]).toBeUndefined();
   });
 
   it("recovers from corrupt JSON", () => {

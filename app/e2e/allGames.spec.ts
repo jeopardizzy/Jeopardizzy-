@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { GAMES } from "../src/data/games";
+import { listPlayableGames } from "../src/lib/board";
 import { gameRoundCount, getRoundCategories } from "../src/lib/board";
 
 /**
@@ -12,7 +13,7 @@ import { gameRoundCount, getRoundCategories } from "../src/lib/board";
 
 /** Expected board total for one team taking everything: sum of all tile values. */
 function expectedBoardTotal(gameId: string): number {
-  const g = GAMES.find((x) => x.id === gameId)!;
+  const g = listPlayableGames().find((x) => x.id === gameId) ?? GAMES.find((x) => x.id === gameId)!;
   let total = 0;
   for (let r = 0; r < gameRoundCount(g); r++) {
     // mix games sample 5-wide boards at start, so 5 columns either way
@@ -23,7 +24,7 @@ function expectedBoardTotal(gameId: string): number {
 }
 
 test.describe("every game plays to completion", () => {
-  for (const game of GAMES) {
+  for (const game of listPlayableGames()) {
     test(`${game.name}: all boards → podium with exact score`, async ({ page }) => {
       const rounds = gameRoundCount(game);
       const boardTotal = expectedBoardTotal(game.id);

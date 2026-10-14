@@ -16,7 +16,7 @@ export default function Scoreboard() {
   const label =
     phase === "final-wager" || phase === "final-clue"
       ? "Final"
-      : `Round ${roundIndex + 1}${total > 1 ? ` of ${total}` : ""}`;
+      : `Round ${roundIndex + 1} of ${total}`;
 
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

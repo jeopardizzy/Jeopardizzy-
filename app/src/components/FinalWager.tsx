@@ -22,7 +22,7 @@ export default function FinalWager() {
       <motion.div
         initial={reduce ? false : { opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto max-w-xl rounded-3xl border border-line bg-surface p-8 shadow-pop"
+        className="mx-auto max-w-xl rounded-3xl border border-line bg-surface p-8 shadow-pop lg:mx-0 lg:ml-10 lg:max-w-[46vw]"
       >
         <p className="mb-1 text-center text-xs font-bold uppercase tracking-[0.3em] text-coral">
           Final Quizzical
@@ -68,7 +68,7 @@ export default function FinalWager() {
     <motion.div
       initial={reduce ? false : { opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="mx-auto max-w-2xl rounded-3xl border border-line bg-surface p-8 shadow-pop sm:p-10"
+      className="mx-auto max-w-2xl rounded-3xl border border-line bg-surface p-8 shadow-pop sm:p-10 lg:mx-0 lg:ml-10 lg:max-w-[46vw]"
     >
       <div className="mb-4 flex items-center justify-between text-xs font-bold uppercase tracking-[0.25em]">
         <span className="text-sage">{finalClue.categoryName}</span>

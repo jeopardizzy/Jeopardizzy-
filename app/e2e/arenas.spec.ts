@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Idiom arenas", () => {
-  test("arena I offers 5 boards with original category names", async ({ page }) => {
+  test("arena I part 1 offers 3 boards with original category names", async ({ page }) => {
     await page.goto("/#/sets");
-    const arena = page.getByRole("button", { name: "Play Idiom Arena I", exact: true });
+    const arena = page.getByRole("button", { name: /Play Idiom Arena I · Часть 1 из 2/ });
     await expect(arena).toBeVisible();
-    await expect(arena).toContainText("5 boards");
-    await expect(arena).toContainText("125 clues");
+    await expect(arena).toContainText("3 boards");
+    await expect(arena).toContainText("75 clues");
 
     await arena.click();
     await page.getByRole("button", { name: "Start the game" }).click();
@@ -15,7 +15,7 @@ test.describe("Idiom arenas", () => {
     await expect(page.getByText("Finish the Saying")).toBeVisible();
     await expect(page.getByText("Hidden Animals")).toBeVisible();
     await expect(page.locator("[role='gridcell']").first()).toHaveText("100");
-    await expect(page.getByText("Round 1 of 5")).toBeVisible();
+    await expect(page.getByText("Round 1 of 3")).toBeVisible();
 
     // play a clue: idiom answer shows with explanation
     await page.locator("[role='gridcell']").first().click();
@@ -25,17 +25,17 @@ test.describe("Idiom arenas", () => {
     await expect(page.locator("[role='gridcell'][disabled]")).toHaveCount(1);
   });
 
-  test("arena II lists 6 boards", async ({ page }) => {
+  test("arena II part 1 lists 3 boards", async ({ page }) => {
     await page.goto("/#/sets");
     await expect(
-      page.getByRole("button", { name: "Play Idiom Arena II", exact: true }),
-    ).toContainText("6 boards");
+      page.getByRole("button", { name: /Play Idiom Arena II · Часть 1 из 2/ }),
+    ).toContainText("3 boards");
   });
 
   test("final wager can be enabled for an arena (off by default)", async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto("/#/sets");
-    await page.getByRole("button", { name: "Play Idiom Arena I", exact: true }).click();
+    await page.getByRole("button", { name: /Play Idiom Arena I · Часть 1 из 2/ }).click();
 
     // toggle is off for arenas by default; turn it on
     const toggle = page.getByRole("switch", { name: /Final wager round/ });
@@ -46,8 +46,8 @@ test.describe("Idiom arenas", () => {
     await page.getByRole("button", { name: "Start the game" }).click();
 
     // play all 5 boards via the store hook
-    for (let round = 1; round <= 5; round++) {
-      await expect(page.getByText(`Round ${round} of 5`)).toBeVisible();
+    for (let round = 1; round <= 3; round++) {
+      await expect(page.getByText(`Round ${round} of 3`)).toBeVisible();
       await page.evaluate(() => {
         const store = (window as unknown as { __teamStore: any }).__teamStore;
         const ids: string[] = store.getState().board.tiles.map((t: any) => t.id);
@@ -73,7 +73,7 @@ test.describe("Idiom arenas", () => {
 
     // preference persisted: next arena keeps the toggle on
     await page.goto("/#/sets");
-    await page.getByRole("button", { name: "Play Idiom Arena II", exact: true }).click();
+    await page.getByRole("button", { name: /Play Idiom Arena II · Часть 1 из 2/ }).click();
     await expect(page.getByRole("switch", { name: /Final wager round/ })).toHaveAttribute(
       "aria-checked",
       "true",
@@ -83,13 +83,13 @@ test.describe("Idiom arenas", () => {
   test("winner screen shows training notes for missed categories", async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto("/#/sets");
-    await page.getByRole("button", { name: "Play Idiom Arena I", exact: true }).click();
+    await page.getByRole("button", { name: /Play Idiom Arena I · Часть 1 из 2/ }).click();
     await page.getByRole("button", { name: "Start the game" }).click();
 
     // play all 5 boards: award most tiles, but "Nobody" every tile of the
     // first category each round — those categories must top the drill list
-    for (let round = 1; round <= 5; round++) {
-      await expect(page.getByText(`Round ${round} of 5`)).toBeVisible();
+    for (let round = 1; round <= 3; round++) {
+      await expect(page.getByText(`Round ${round} of 3`)).toBeVisible();
       await page.evaluate(() => {
         const store = (window as unknown as { __teamStore: any }).__teamStore;
         const tiles: { id: string; categoryName: string }[] = store.getState().board.tiles;

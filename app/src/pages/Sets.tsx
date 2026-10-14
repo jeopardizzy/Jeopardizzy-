@@ -1,13 +1,13 @@
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useTeamStore } from "../store/teamStore";
-import { GAMES, type GameDef } from "../data/games";
-import { gameRoundCount, getRoundCategories } from "../lib/board";
+import type { GameDef } from "../data/games";
+import { gameRoundCount, getRoundCategories, listPlayableGames } from "../lib/board";
 import { useMotionSafe } from "../lib/useMotionSafe";
 
 /** Exact clue count across all rounds (handles 4-wide boards and mixes). */
 function gameClueCount(g: GameDef): number {
-  if (g.mix) return 125; // 5 randomly drawn 5x5 boards
+  if (g.mix) return gameRoundCount(g) * 25; // randomly drawn 5x5 boards
   let n = 0;
   for (let r = 0; r < gameRoundCount(g); r++) {
     n += getRoundCategories(g, r).length * 5;
@@ -53,7 +53,7 @@ export default function Sets() {
         </p>
 
         {SERIES_ORDER.map((series) => {
-          const games = GAMES.filter((g) => g.series === series);
+          const games = listPlayableGames().filter((g) => g.series === series);
           if (games.length === 0) return null;
           return (
             <section key={series} className="mb-8">

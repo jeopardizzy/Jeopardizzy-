@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import {
   useWorkbookStore,
   workbookPool,
+  bestKey,
+  TEST_LENGTHS,
   type Level,
 } from "../store/workbookStore";
 import {
@@ -56,6 +58,8 @@ function Picker() {
   const navigate = useNavigate();
   const type = useWorkbookStore((s) => s.type);
   const level = useWorkbookStore((s) => s.level);
+  const questionCount = useWorkbookStore((s) => s.questionCount);
+  const setQuestionCount = useWorkbookStore((s) => s.setQuestionCount);
   const pick = useWorkbookStore((s) => s.pick);
   const startTest = useWorkbookStore((s) => s.startTest);
   const bests = useWorkbookStore((s) => s.records.workbookBests);
@@ -94,7 +98,7 @@ function Picker() {
         {types.map((t) => {
           const count = workbookPool(t, "all").length;
           const active = type === t;
-          const best = bests[`${t}|${level}`];
+          const best = bests[bestKey(t, level, questionCount)];
           return (
             <button
               key={t}
@@ -110,14 +114,16 @@ function Picker() {
               </div>
               <div className="text-xs text-mute">
                 {count} clues
-                {best !== undefined && <span className="ml-1 text-sage">· best {best}/10</span>}
+                {best !== undefined && (
+                  <span className="ml-1 text-sage">· best {best}/{questionCount}</span>
+                )}
               </div>
             </button>
           );
         })}
       </div>
 
-      <div className="mb-8 flex flex-wrap gap-2" role="group" aria-label="Difficulty level">
+      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Difficulty level">
         {LEVELS.map((l) => (
           <button
             key={l.id}
@@ -134,12 +140,38 @@ function Picker() {
         ))}
       </div>
 
+      <div className="mb-8 flex flex-wrap items-center gap-2" role="group" aria-label="Test length">
+        <span className="mr-1 text-sm font-semibold text-mute">Questions:</span>
+        {TEST_LENGTHS.map((n) => {
+          const tooLong = poolSize < n;
+          const active = questionCount === n;
+          return (
+            <button
+              key={n}
+              onClick={() => setQuestionCount(n)}
+              disabled={tooLong}
+              aria-pressed={active}
+              title={tooLong ? `Only ${poolSize} clues in this pool` : `${n} questions`}
+              className={`rounded-full px-5 py-2 text-sm font-bold shadow-card transition ${
+                active
+                  ? "bg-butter text-ink"
+                  : tooLong
+                    ? "cursor-not-allowed border border-line bg-surface text-mute/40"
+                    : "border border-line bg-surface text-mute hover:text-ink"
+              }`}
+            >
+              {n}
+            </button>
+          );
+        })}
+      </div>
+
       <button
         onClick={startTest}
         disabled={poolSize === 0}
         className="font-display rounded-2xl bg-butter px-10 py-4 text-xl text-ink shadow-card transition enabled:hover:brightness-105 enabled:active:scale-[0.98] disabled:opacity-40"
       >
-        Start test ({poolSize === 0 ? "no clues" : `${Math.min(10, poolSize)} questions`})
+        Start test ({poolSize === 0 ? "no clues" : `${Math.min(questionCount, poolSize)} questions`})
       </button>
     </motion.div>
   );
@@ -276,7 +308,9 @@ function TestResults() {
   const reduce = useMotionSafe();
 
   const correct = results.filter((r) => r.correct).length;
-  const key = `${type}|${level}`;
+  const total = results.length;
+  const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const key = bestKey(type, level, total);
   const isBest = correct > 0 && correct >= (bests[key] ?? 0);
 
   return (
@@ -293,8 +327,11 @@ function TestResults() {
         )}
         <div className="font-display my-3 text-7xl text-sage-deep">
           {correct}
-          <span className="text-3xl text-mute">/{results.length}</span>
+          <span className="text-3xl text-mute">/{total}</span>
         </div>
+        <p className="mb-1 text-sm font-bold uppercase tracking-wider text-butter-deep">
+          {percent}% correct
+        </p>
         <p className="mb-6 text-mute">
           {correct === results.length
             ? "Perfect score. Try a harder level!"

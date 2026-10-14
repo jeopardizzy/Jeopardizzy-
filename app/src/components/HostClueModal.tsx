@@ -30,7 +30,7 @@ export default function HostClueModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: reduce ? 0 : 0.18 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm lg:justify-start lg:pl-10"
           role="dialog"
           aria-modal="true"
           aria-label={`${tile.categoryName} for ${tile.value} points`}
@@ -40,7 +40,7 @@ export default function HostClueModal() {
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={reduce ? { opacity: 0 } : { scale: 0.94, opacity: 0 }}
             transition={{ type: "spring", stiffness: 280, damping: 24 }}
-            className="w-full max-w-2xl rounded-3xl border border-line bg-surface p-6 shadow-pop sm:p-10"
+            className="w-full max-w-2xl rounded-3xl border border-line bg-surface p-6 shadow-pop sm:p-10 lg:max-w-[46vw]"
           >
             <div className="mb-4 flex items-center justify-between text-xs font-bold uppercase tracking-[0.25em]">
               <span className="text-sage">{tile.categoryName}</span>

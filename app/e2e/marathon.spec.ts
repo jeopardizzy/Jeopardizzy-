@@ -1,91 +1,107 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * The Grand Marathon, end to end. The first tiles are played through the
- * real UI (tile → reveal → award); the remaining tiles of all 14 boards are
- * driven through the store test hook (localhost only) — every tile is opened,
- * revealed and awarded via the real game actions, validating all 69
- * categories, the 4-wide final board and exact scoring in one continuous run.
+ * The Grand Marathon, part 1, played end to end (games are split into parts
+ * of at most 3 boards). First tiles go through the real UI; the rest run
+ * through the store test hook (localhost only). Exact score: 3 full boards,
+ * multipliers 1-3 → 5 cols x 1500 x (1+2+3) = 45,000.
  */
 
-// rounds 1..13 are 5-wide (tile values sum = round x 1500 per column),
-// round 14 is 4-wide. total = 1500 * (5*91 + 14*4) = 766500
-const EXPECTED_TOTAL = 766500;
-const UI_TILES = 3;
+const EXPECTED_PART1_TOTAL = 45000;
 
-/** Play N tiles through the UI, then the rest of the board via the store. */
-async function playBoard(
-  page: import("@playwright/test").Page,
-  uiTiles: number,
-): Promise<void> {
-  for (let i = 0; i < uiTiles; i++) {
-    const remaining = page.locator("[role='gridcell']:not([disabled])");
-    await remaining.first().click();
-    await page.getByRole("button", { name: "Reveal answer" }).click();
-    await page.getByRole("button", { name: "Team Sage" }).click();
-  }
-  await page.evaluate(() => {
-    const store = (window as unknown as { __teamStore: any }).__teamStore;
-    const ids: string[] = store
-      .getState()
-      .board.tiles.filter((t: any) => !store.getState().playedTileIds.includes(t.id))
-      .map((t: any) => t.id);
-    for (const id of ids) {
-      store.getState().openTile(id);
-      store.getState().revealClue();
-      store.getState().awardTo(0);
-    }
-  });
-}
-
-test.describe("grand marathon", () => {
-  test("all 14 boards play through to the podium with exact scoring", async ({ page }) => {
-    test.setTimeout(300_000);
+test.describe("grand marathon, part 1", () => {
+  test("3 boards play through to the podium with exact scoring", async ({ page }) => {
+    test.setTimeout(180_000);
 
     await page.goto("/#/sets");
-    const marathonCard = page.getByRole("button", { name: /Grand Marathon/ });
-    await expect(marathonCard).toContainText("14 boards");
-    await marathonCard.click();
+    const card = page.getByRole("button", { name: /Play Grand Marathon · Часть 1 из 5/ });
+    await expect(card).toContainText("3 boards");
+    await expect(card).toContainText("75 clues");
+    await card.click();
     await page.getByRole("button", { name: "Start the game" }).click();
 
-    // ---- Round 1: first tiles through the UI, rest via the store hook
-    await expect(page.getByText("Round 1 of 14")).toBeVisible();
-    await expect(page.locator("[role='gridcell']")).toHaveCount(25);
-    await playBoard(page, UI_TILES);
+    for (let round = 1; round <= 3; round++) {
+      await expect(page.getByText(`Round ${round} of 3`)).toBeVisible();
+      await expect(page.locator("[role='gridcell']")).toHaveCount(25);
 
-    // ---- Rounds 2–14 via the store hook (same actions the UI dispatches)
-    for (let round = 2; round <= 14; round++) {
-      await expect(page.getByText(`Round ${round} of 14`)).toBeVisible();
-      const expectedTiles = round === 14 ? 20 : 25;
-      await expect(page.locator("[role='gridcell']")).toHaveCount(expectedTiles);
+      if (round === 1) {
+        // first tiles through the real UI
+        for (let i = 0; i < 3; i++) {
+          await page.locator("[role='gridcell']:not([disabled])").first().click();
+          await page.getByRole("button", { name: "Reveal answer" }).click();
+          await page.getByRole("button", { name: "Team Sage" }).click();
+        }
+      }
 
-      const result = await page.evaluate(() => {
+      await page.evaluate(() => {
         const store = (window as unknown as { __teamStore: any }).__teamStore;
-        const before = store.getState().roundIndex;
-        const ids: string[] = store.getState().board.tiles.map((t: any) => t.id);
+        const ids: string[] = store
+          .getState()
+          .board.tiles.filter((t: any) => !store.getState().playedTileIds.includes(t.id))
+          .map((t: any) => t.id);
         for (const id of ids) {
           store.getState().openTile(id);
           store.getState().revealClue();
           store.getState().awardTo(0);
         }
-        const after = store.getState();
-        return { before, afterRound: after.roundIndex, phase: after.phase, tiles: ids.length };
       });
-      expect(result.tiles).toBe(expectedTiles);
-      if (round < 14) expect(result.afterRound).toBe(result.before + 1);
-      else expect(result.phase).toBe("winner");
     }
 
-    // no final wager in the marathon — straight to the podium
+    // marathon parts have no final — straight to the podium
     await expect(page.getByText(/wins!/)).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText(/Grand Marathon/)).toBeVisible();
-
-    // exact deterministic score for Team Sage; Team Butter stays at zero
     await expect(
       page.locator("[role='listitem']", { hasText: "Team Sage" }),
-    ).toContainText(String(EXPECTED_TOTAL));
+    ).toContainText(String(EXPECTED_PART1_TOTAL));
+  });
+
+  test("early finish: one tile, then «Сразу к итогам» keeps the score", async ({ page }) => {
+    await page.goto("/#/sets");
+    await page.getByRole("button", { name: /Play Grand Marathon · Часть 1 из 5/ }).click();
+    await page.getByRole("button", { name: "Start the game" }).click();
+
+    // play exactly one tile (100 pts) through the UI
+    await page.locator("[role='gridcell']:not([disabled])").first().click();
+    // «Завершить игру» is disabled while a clue window is open
+    await expect(page.getByRole("button", { name: "Завершить игру" })).toBeDisabled();
+    await page.getByRole("button", { name: "Reveal answer" }).click();
+    await page.getByRole("button", { name: "Team Sage" }).click();
+
+    // end the game early with confirmation
+    await page.getByRole("button", { name: "Завершить игру" }).click();
+    await expect(page.getByRole("dialog", { name: /Завершить игру досрочно/ })).toBeVisible();
+    await page.getByRole("button", { name: "Отмена" }).click();
+    // cancel returns to the board, tile count unchanged
+    await expect(page.locator("[role='gridcell'][disabled]")).toHaveCount(1);
+
+    await page.getByRole("button", { name: "Завершить игру" }).click();
+    // marathon part has no final: only «Сразу к итогам» and «Отмена»
+    await expect(page.getByRole("button", { name: "К финалу" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Сразу к итогам" }).click();
+
+    await expect(page.getByText(/wins!/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Завершено досрочно")).toBeVisible();
     await expect(
-      page.locator("[role='listitem']", { hasText: "Team Butter" }),
-    ).toContainText("0");
+      page.locator("[role='listitem']", { hasText: "Team Sage" }),
+    ).toContainText("100");
+    // no misses were recorded — training notes congratulate instead of listing
+    await expect(page.getByText(/Flawless boards/)).toBeVisible();
+  });
+
+  test("early finish to the final when the final is enabled", async ({ page }) => {
+    await page.goto("/#/sets");
+    await page.getByRole("button", { name: "Play First Words", exact: true }).click();
+    // final is on by default for book sets
+    await page.getByRole("button", { name: "Start the game" }).click();
+
+    await page.locator("[role='gridcell']:not([disabled])").first().click();
+    await page.getByRole("button", { name: "Reveal answer" }).click();
+    await page.getByRole("button", { name: "Team Sage" }).click();
+
+    await page.getByRole("button", { name: "Завершить игру" }).click();
+    await page.getByRole("button", { name: "К финалу" }).click();
+
+    await expect(page.getByText(/Final Quizzical/)).toBeVisible();
+    await expect(page.getByLabel("Wager for Team Sage")).toHaveValue("100");
   });
 });

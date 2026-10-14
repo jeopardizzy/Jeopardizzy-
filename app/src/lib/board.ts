@@ -6,7 +6,7 @@ import { LEGACY_BOARDS } from "../data/legacyBoards";
 import { ARENA3_BOARDS } from "../data/arena3Boards";
 import { ARENA4_BOARDS } from "../data/arena4Boards";
 import type { BoardGame } from "../data/boardGames";
-import type { GameDef } from "../data/games";
+import { GAMES, type GameDef } from "../data/games";
 
 const BASE_VALUES = [100, 200, 300, 400, 500];
 
@@ -17,7 +17,10 @@ const ALL_BOARDS = new Map<string, BoardGame>(
 /** Boards that Arena Mix can draw from: all four idiom arenas (21 boards). */
 const ARENA_MIX_POOL = [...UOE_GAMES, ...ARENA3_BOARDS, ...ARENA4_BOARDS].map((g) => g.id);
 
-export const MIX_ROUNDS = 5;
+export const MIX_ROUNDS = 3;
+
+/** Boards per game part — longer games are split into chunks of this size. */
+export const MAX_PART_ROUNDS = 3;
 
 /**
  * A mix game has no fixed rounds: sample them from the arena pools at game
@@ -28,6 +31,36 @@ export function materializeGame(game: GameDef, seed: number): GameDef {
   const rng = mulberry32(seed ^ 0x51ab3);
   const sampled = shuffle([...ARENA_MIX_POOL], rng).slice(0, MIX_ROUNDS);
   return { ...game, boardRounds: sampled };
+}
+
+/**
+ * Split a game into parts of at most MAX_PART_ROUNDS boards.
+ * Games short enough return unchanged (single-element array).
+ * Parts keep the parent's series/level/final; values restart at ×1 per part.
+ */
+export function splitGameIntoParts(game: GameDef): GameDef[] {
+  const total = gameRoundCount(game);
+  if (total <= MAX_PART_ROUNDS) return [game];
+  const partCount = Math.ceil(total / MAX_PART_ROUNDS);
+  const parts: GameDef[] = [];
+  for (let i = 0; i < partCount; i++) {
+    parts.push({
+      ...game,
+      id: `${game.id}-part-${i + 1}`,
+      name: `${game.name} · Часть ${i + 1} из ${partCount}`,
+      partOf: game.id,
+      partIndex: i,
+      partCount,
+      bookRounds: game.bookRounds.slice(i * MAX_PART_ROUNDS, (i + 1) * MAX_PART_ROUNDS),
+      boardRounds: game.boardRounds.slice(i * MAX_PART_ROUNDS, (i + 1) * MAX_PART_ROUNDS),
+    });
+  }
+  return parts;
+}
+
+/** All games as presented to players: long games appear as several parts. */
+export function listPlayableGames(): GameDef[] {
+  return GAMES.flatMap(splitGameIntoParts);
 }
 
 export interface RoundCategory {

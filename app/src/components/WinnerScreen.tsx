@@ -7,6 +7,7 @@ import { useMotionSafe } from "../lib/useMotionSafe";
 /** Winner celebration with final standings. */
 export default function WinnerScreen() {
   const teams = useTeamStore((s) => s.teams);
+  const earlyFinished = useTeamStore((s) => s.earlyFinished);
   const playAgain = useTeamStore((s) => s.playAgain);
   const set_ = useTeamStore((s) => s.set);
   const navigate = useNavigate();
@@ -36,9 +37,14 @@ export default function WinnerScreen() {
       <h2 className="font-display mb-1 text-3xl text-ink">
         {tied.length > 1 ? "It's a tie!" : `${top.name} wins!`}
       </h2>
-      <p className="mb-8 text-mute">
+      <p className={`text-mute ${earlyFinished ? "mb-2" : "mb-8"}`}>
         {set_?.name} · Final score {top.score}
       </p>
+      {earlyFinished && (
+        <p className="mb-6 -mt-1 inline-block rounded-full bg-coral/15 px-4 py-1 text-xs font-bold uppercase tracking-wider text-coral">
+          Завершено досрочно
+        </p>
+      )}
 
       <div className="mb-8 space-y-2">
         {standings.map((t, i) => (

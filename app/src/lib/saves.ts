@@ -25,6 +25,8 @@ const SettingsSchema = z.object({
   teamNames: z.array(z.string()),
   /** last chosen final-wager preference; undefined = use the game's default */
   finalWager: z.boolean().optional(),
+  /** chosen workbook test length (5/10/20); undefined = default 10 */
+  workbookCount: z.number().optional(),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 
@@ -63,7 +65,15 @@ function safeSave(key: string, value: unknown): void {
   }
 }
 
-export const loadRecords = (): Records => safeLoad(RECORDS_KEY, RecordsSchema, DEFAULT_RECORDS);
+export const loadRecords = (): Records => {
+  const r = safeLoad(RECORDS_KEY, RecordsSchema, DEFAULT_RECORDS);
+  // migration: pre-count keys "type|level" become "type|level|10"
+  const bests: Record<string, number> = {};
+  for (const [k, v] of Object.entries(r.workbookBests)) {
+    bests[k.split("|").length === 3 ? k : `${k}|10`] = v;
+  }
+  return { ...r, workbookBests: bests };
+};
 export const saveRecords = (r: Records): void => safeSave(RECORDS_KEY, r);
 export const loadSettings = (): Settings => safeLoad(SETTINGS_KEY, SettingsSchema, DEFAULT_SETTINGS);
 export const saveSettings = (s: Settings): void => safeSave(SETTINGS_KEY, s);

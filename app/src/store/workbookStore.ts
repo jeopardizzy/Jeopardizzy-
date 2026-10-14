@@ -3,8 +3,13 @@ import { quizData } from "../data/quizData";
 import { CATEGORY_TYPES, type TaskType } from "../data/categoryTypes";
 import { isCorrect } from "../lib/answerMatch";
 import { mulberry32, randomSeed, shuffle } from "../lib/random";
-import { loadRecords, saveRecords, type Records } from "../lib/saves";
+import { loadRecords, loadSettings, saveRecords, saveSettings, type Records, type Settings } from "../lib/saves";
 import { sfx } from "../audio/sound";
+
+const initialSettings: Settings =
+  typeof window === "undefined"
+    ? { version: 1, sound: true, reduceMotion: false, teamNames: [] }
+    : loadSettings();
 
 export type Level = "all" | "easy" | "medium" | "hard";
 export type WorkbookPhase = "pick" | "test" | "results";
@@ -22,18 +27,28 @@ export interface TestResult {
 }
 
 const TEST_LENGTH = 10;
+export const TEST_LENGTHS = [5, 10, 20] as const;
+
+/** Best-score key includes the test length so different lengths never compare. */
+export function bestKey(type: string, level: string, count: number): string {
+  return `${type}|${level}|${count}`;
+}
 
 interface WorkbookState {
   phase: WorkbookPhase;
   type: TaskType | "all";
   level: Level;
+  /** chosen test length (5/10/20) */
+  questionCount: number;
   questions: TestQuestion[];
   index: number;
   results: TestResult[];
   feedback: { correct: boolean; answer: string } | null;
   records: Records;
+  settings: Settings;
 
   pick: (type: TaskType | "all", level: Level) => void;
+  setQuestionCount: (n: number) => void;
   startTest: () => void;
   answerCurrent: (text: string) => void;
   nextQuestion: () => void;
@@ -64,6 +79,7 @@ export const useWorkbookStore = create<WorkbookState>((set, get) => ({
   phase: "pick",
   type: "all",
   level: "all",
+  questionCount: initialSettings.workbookCount ?? TEST_LENGTH,
   questions: [],
   index: 0,
   results: [],
@@ -71,15 +87,24 @@ export const useWorkbookStore = create<WorkbookState>((set, get) => ({
   records: typeof window === "undefined"
     ? { version: 1, gamesPlayed: 0, workbookBests: {} }
     : loadRecords(),
+  settings: initialSettings,
 
   pick: (type, level) => set({ type, level }),
+
+  setQuestionCount: (n) => {
+    if (!TEST_LENGTHS.includes(n as (typeof TEST_LENGTHS)[number])) return;
+    const settings = { ...get().settings, workbookCount: n };
+    saveSettings(settings);
+    set({ questionCount: n, settings });
+  },
 
   startTest: () => {
     const s = get();
     const pool = workbookPool(s.type, s.level);
     if (pool.length === 0) return;
     const rng = mulberry32(randomSeed());
-    const questions = shuffle([...pool], rng).slice(0, TEST_LENGTH);
+    const count = Math.min(s.questionCount, pool.length);
+    const questions = shuffle([...pool], rng).slice(0, count);
     sfx.chime();
     set({ phase: "test", questions, index: 0, results: [], feedback: null });
   },
@@ -106,9 +131,9 @@ export const useWorkbookStore = create<WorkbookState>((set, get) => ({
       set({ index: nextIndex, feedback: null });
       return;
     }
-    // test finished — persist best score
+    // test finished — persist best score (keyed by type × level × length)
     const correctCount = s.results.filter((r) => r.correct).length;
-    const key = `${s.type}|${s.level}`;
+    const key = bestKey(s.type, s.level, s.questions.length);
     const best = Math.max(s.records.workbookBests[key] ?? 0, correctCount);
     const records = { ...s.records, workbookBests: { ...s.records.workbookBests, [key]: best } };
     saveRecords(records);

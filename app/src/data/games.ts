@@ -21,6 +21,10 @@ export interface GameDef {
   final: boolean;
   /** when true, rounds are sampled from all arena boards at game start */
   mix?: boolean;
+  /** set on auto-generated parts: parent game id, 0-based part index, total parts */
+  partOf?: string;
+  partIndex?: number;
+  partCount?: number;
 }
 
 export const GAMES: GameDef[] = [
