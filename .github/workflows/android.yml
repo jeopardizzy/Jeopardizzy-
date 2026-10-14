@@ -43,7 +43,7 @@ jobs:
         run: npx cap sync android
 
       - name: Assemble debug APK
-        run: cd android && ./gradlew assembleDebug --no-daemon
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
 
       - name: Assemble release bundle (unsigned AAB)
         run: cd android && ./gradlew bundleRelease --no-daemon
