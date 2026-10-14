@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   useWorkbookStore,
   workbookPool,
+  drillPool,
   bestKey,
   TEST_LENGTHS,
   type Level,
@@ -59,7 +60,9 @@ function Picker() {
   const type = useWorkbookStore((s) => s.type);
   const level = useWorkbookStore((s) => s.level);
   const questionCount = useWorkbookStore((s) => s.questionCount);
+  const drillCategories = useWorkbookStore((s) => s.drillCategories);
   const setQuestionCount = useWorkbookStore((s) => s.setQuestionCount);
+  const clearDrill = useWorkbookStore((s) => s.clearDrill);
   const pick = useWorkbookStore((s) => s.pick);
   const startTest = useWorkbookStore((s) => s.startTest);
   const bests = useWorkbookStore((s) => s.records.workbookBests);
@@ -70,7 +73,9 @@ function Picker() {
     ...(Object.keys(TASK_TYPE_LABELS) as TaskType[]),
   ];
 
-  const poolSize = workbookPool(type, level).length;
+  const poolSize = drillCategories
+    ? drillPool(drillCategories).length
+    : workbookPool(type, level).length;
 
   return (
     <motion.div
@@ -94,7 +99,41 @@ function Picker() {
         scores are kept on this device.
       </p>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {drillCategories && (
+        <div className="mb-6 rounded-2xl border border-sage bg-sage-soft p-4 shadow-card">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="font-display text-sm uppercase tracking-wider text-sage-deep">
+              🎯 Drill mode — from the podium's training notes
+            </p>
+            <button
+              onClick={clearDrill}
+              className="rounded-lg px-2 py-1 text-sm font-semibold text-mute transition hover:text-ink"
+            >
+              ✕ Cancel
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {drillCategories.map((c) => (
+              <span
+                key={c}
+                className="rounded-full bg-surface px-3 py-1 text-xs font-bold text-sage-deep"
+              >
+                {c}
+              </span>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-mute">
+            {poolSize} clues from these categories (boards included). Type/level filters don't apply
+            in drill mode.
+          </p>
+        </div>
+      )}
+
+      <div
+        className={`mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 ${
+          drillCategories ? "pointer-events-none opacity-40" : ""
+        }`}
+      >
         {types.map((t) => {
           const count = workbookPool(t, "all").length;
           const active = type === t;
@@ -123,7 +162,11 @@ function Picker() {
         })}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Difficulty level">
+      <div
+        className={`mb-4 flex flex-wrap gap-2 ${drillCategories ? "pointer-events-none opacity-40" : ""}`}
+        role="group"
+        aria-label="Difficulty level"
+      >
         {LEVELS.map((l) => (
           <button
             key={l.id}
@@ -171,7 +214,8 @@ function Picker() {
         disabled={poolSize === 0}
         className="font-display rounded-2xl bg-butter px-10 py-4 text-xl text-ink shadow-card transition enabled:hover:brightness-105 enabled:active:scale-[0.98] disabled:opacity-40"
       >
-        Start test ({poolSize === 0 ? "no clues" : `${Math.min(questionCount, poolSize)} questions`})
+        {drillCategories ? "Start drill test" : "Start test"} (
+        {poolSize === 0 ? "no clues" : `${Math.min(questionCount, poolSize)} questions`})
       </button>
     </motion.div>
   );
@@ -310,8 +354,9 @@ function TestResults() {
   const correct = results.filter((r) => r.correct).length;
   const total = results.length;
   const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const isDrill = useWorkbookStore((s) => s.drillCategories !== null);
   const key = bestKey(type, level, total);
-  const isBest = correct > 0 && correct >= (bests[key] ?? 0);
+  const isBest = !isDrill && correct > 0 && correct >= (bests[key] ?? 0);
 
   return (
     <motion.div

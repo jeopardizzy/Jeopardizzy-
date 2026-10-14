@@ -17,6 +17,19 @@ const ALL_BOARDS = new Map<string, BoardGame>(
 /** Boards that Arena Mix can draw from: all four idiom arenas (21 boards). */
 const ARENA_MIX_POOL = [...UOE_GAMES, ...ARENA3_BOARDS, ...ARENA4_BOARDS].map((g) => g.id);
 
+/** All clues for a category name across every standalone board (UoE/legacy/arenas). */
+export function boardCluesForCategory(
+  name: string,
+): { clue: string; answer: string; note?: string }[] {
+  const out: { clue: string; answer: string; note?: string }[] = [];
+  for (const g of ALL_BOARDS.values()) {
+    for (const c of g.categories) {
+      if (c.name === name) out.push(...c.clues);
+    }
+  }
+  return out;
+}
+
 export const MIX_ROUNDS = 3;
 
 /** Boards per game part — longer games are split into chunks of this size. */

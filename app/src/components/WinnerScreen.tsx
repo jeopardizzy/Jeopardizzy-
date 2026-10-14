@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { useTeamStore } from "../store/teamStore";
+import { useWorkbookStore } from "../store/workbookStore";
 import { aggregateCategoryStats, weakestCategories } from "../lib/stats";
 import { useMotionSafe } from "../lib/useMotionSafe";
 
@@ -98,11 +99,17 @@ function TrainingNotes() {
   const outcomes = useTeamStore((s) => s.outcomes);
   const categoryStats = useTeamStore((s) => s.records.categoryStats);
   const reduce = useMotionSafe();
+  const navigate = useNavigate();
 
   const gameWeak = weakestCategories(aggregateCategoryStats(outcomes), 5);
   const allTimeWeak = weakestCategories(categoryStats ?? {}, 3);
 
   if (outcomes.length === 0) return null;
+
+  const practiceThese = () => {
+    useWorkbookStore.getState().startDrill(gameWeak.map((w) => w.name));
+    navigate("/workbook");
+  };
 
   return (
     <motion.div
@@ -133,6 +140,12 @@ function TrainingNotes() {
               </li>
             ))}
           </ul>
+          <button
+            onClick={practiceThese}
+            className="mb-3 w-full rounded-xl bg-sage px-4 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-sage-deep active:scale-[0.98]"
+          >
+            Practice these →
+          </button>
         </>
       )}
       {allTimeWeak.length > 0 && (

@@ -109,4 +109,43 @@ test.describe("Idiom arenas", () => {
     await expect(page.getByText("5/5 missed").first()).toBeVisible();
     await expect(page.getByText(/All-time drill list/)).toBeVisible();
   });
+
+  test("practice these: drill list opens a workbook test on missed categories", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await page.goto("/#/sets");
+    await page.getByRole("button", { name: /Play Idiom Arena I · Часть 1 из 2/ }).click();
+    await page.getByRole("button", { name: "Start the game" }).click();
+
+    // miss every tile of the first category of round 1, award the rest
+    await page.evaluate(() => {
+      const store = (window as unknown as { __teamStore: any }).__teamStore;
+      const tiles: { id: string; categoryName: string }[] = store.getState().board.tiles;
+      const firstCat = tiles[0].categoryName;
+      for (const t of tiles) {
+        store.getState().openTile(t.id);
+        store.getState().revealClue();
+        if (t.categoryName === firstCat) store.getState().noAward();
+        else store.getState().awardTo(0);
+      }
+      store.getState().endGameEarly("results");
+    });
+
+    await expect(page.getByText(/Training notes/)).toBeVisible({ timeout: 10_000 });
+    await page.getByRole("button", { name: "Practice these →" }).click();
+
+    // workbook opens in drill mode
+    await expect(page).toHaveURL(/#\/workbook/);
+    await expect(page.getByText(/Drill mode/)).toBeVisible();
+    // type grid is disabled in drill mode
+    await expect(page.getByRole("button", { name: /Start drill test/ })).toBeVisible();
+    await page.getByRole("button", { name: /Start drill test/ }).click();
+
+    // answer one question and check the flow works
+    await expect(page.locator("#wb-answer")).toBeVisible();
+    await page.locator("#wb-answer").fill("zzz wrong");
+    await page.getByRole("button", { name: "Check" }).click();
+    await expect(page.getByText(/Not quite|Correct!/)).toBeVisible();
+  });
 });
