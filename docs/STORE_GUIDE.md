@@ -39,6 +39,8 @@ npx cap open ios       # открыть проект в Xcode (только macO
    и соберите `./gradlew bundleRelease` с прописанным signingConfig, либо
    подпишите AAB через `jarsigner`. Keystore храните в безопасности —
    потеря = невозможность обновлять приложение (если не включён Play App Signing).
+   ✅ Уже сделано: подписанный AAB собирается CI (секреты KEYSTORE_* в
+   репозитории); локальная копия — `signing-local/` (gitignored, backup!).
 2. **Play Console** → Create app → загрузите подписанный AAB в Internal testing.
    Подписанный AAB собирается CI автоматически (секреты KEYSTORE_* уже в
    репозитории) — скачайте артефакт `quizzical-club-android` последнего прогона
@@ -55,6 +57,27 @@ npx cap open ios       # открыть проект в Xcode (только macO
    скриншотов (`shot-1-home` … `shot-6-workbook`) и тексты
    `description-en.txt` / `description-ru.txt` (short + full описания по
    правилам Play Console).
+
+### Автозагрузка в Play Console из CI (internal track)
+
+Workflow `play-upload.yml` (ручной запуск) собирает подписанный AAB и
+загружает его в трек Internal через `r0adkll/upload-google-play`. Разовая
+настройка:
+
+1. В Play Console создайте приложение вручную (Create app → «Quizzical Club»,
+   package `com.quizzicalclub.app`) — API не умеет создавать приложения.
+2. Google Cloud Console → проект → включите «Google Play Developer API» →
+   создайте service account → скачайте JSON-ключ.
+3. Play Console → Users and permissions → пригласите email сервис-аккаунта →
+   права «Release apps to testing tracks».
+4. Положите JSON в `signing-local/play/service-account.json` и запустите
+   `node tools/docgen/set-play-secrets.mjs` — секрет `PLAY_SERVICE_ACCOUNT_JSON`
+   и флаг `PLAY_UPLOAD_READY` загрузятся сами.
+5. Actions → «Upload to Google Play (internal)» → Run workflow — AAB уезжает
+   в internal track; тестировщики увидят его по ссылке из консоли.
+
+Локальный запасной путь: свежий подписанный AAB всегда можно скачать из
+артефакта последнего «Android build» и загрузить в консоль вручную.
 
 ## App Store (iOS)
 

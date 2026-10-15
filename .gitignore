@@ -51,3 +51,7 @@ signing-local/
 
 # generated intermediates
 tools/docgen/boards.json
+
+# build artifacts
+dist-play/
+*.aab
