@@ -57,7 +57,7 @@ const L = {
     titleSub: "Командная игра-викторина + тренажёр для олимпиадной подготовки · веб, Android, iOS",
     metaField: "Поле", metaValue: "Значение",
     meta: [
-      ["Версия документа", "2.2 (шаблон для развития)"],
+      ["Версия документа", "2.3 (шаблон для развития)"],
       ["Дата", "14 октября 2026"],
       ["Продакшн", "https://jeopardizzy.github.io/Jeopardizzy-/"],
       ["Репозиторий", "https://github.com/jeopardizzy/Jeopardizzy-"],
@@ -85,7 +85,7 @@ const L = {
       ["Игр на экране выбора", "26 частей (по ≤ 3 доски) + Daily Jeopardy на главной"],
       ["Вопросов в хранилище", "≈ 1 690 (540 книжных + 275 UoE + 870 классических)"],
       ["Тестов", "65 юнит (vitest) + 96 e2e (playwright, десктоп + мобильный)"],
-      ["CI/CD", "Pages-деплой с e2e-гейтом · Android APK+AAB · iOS build check (macOS)"],
+      ["CI/CD", "Pages-деплой с e2e-гейтом · Android: подписанный AAB · iOS: .ipa по готовности секретов"],
     ],
 
     s2: "2. Текущая функциональность (что уже сделано)",
@@ -128,8 +128,8 @@ const L = {
     mob: [
       "Capacitor 8: нативные проекты android/ и ios/ поверх общей кодовой базы; appId com.quizzicalclub.app (смена задокументирована).",
       "Брендовые иконки (шалфейная плитка Q) сгенерированы для обеих платформ; safe-area отступы для чёлок.",
-      "CI: android.yml собирает debug APK + release AAB артефактами; ios.yml проверяет сборку на macOS (unsigned).",
-      "Гайд по сторам и монетизации: docs/STORE_GUIDE.md (подпись, Data safety = no data collected, рейтинг, варианты монетизации).",
+      "CI: android.yml собирает debug APK и ПОДПИСАННЫЙ release AAB (keystore из Secrets, проверка jarsigner); ios.yml — подписанный App Store .ipa, как только загружены Apple-секреты (set-ios-secrets.mjs).",
+      "Подписание без Mac: Android keystore уже в Secrets; для iOS — dist.p12 + provisioning profile через tools/docgen/set-ios-secrets.mjs (гайд в docs/STORE_GUIDE.md). Data safety: no data collected.",
     ],
   },
   en: {
@@ -139,7 +139,7 @@ const L = {
     titleSub: "Team trivia game + olympiad training workbook · web, Android, iOS",
     metaField: "Field", metaValue: "Value",
     meta: [
-      ["Document version", "2.2 (living template)"],
+      ["Document version", "2.3 (living template)"],
       ["Date", "October 14, 2026"],
       ["Production", "https://jeopardizzy.github.io/Jeopardizzy-/"],
       ["Repository", "https://github.com/jeopardizzy/Jeopardizzy-"],
@@ -167,7 +167,7 @@ const L = {
       ["Playable entries", "26 parts (≤ 3 boards each) + Daily Jeopardy on the home screen"],
       ["Clue vault", "≈ 1,690 (540 book + 275 UoE + 870 classic)"],
       ["Tests", "65 unit (vitest) + 96 e2e (playwright, desktop + mobile)"],
-      ["CI/CD", "Pages deploy with e2e gate · Android APK+AAB · iOS build check (macOS)"],
+      ["CI/CD", "Pages deploy with e2e gate · Android: signed AAB · iOS: .ipa when secrets are set"],
     ],
 
     s2: "2. Current functionality",
@@ -210,8 +210,8 @@ const L = {
     mob: [
       "Capacitor 8: native android/ and ios/ projects over the shared codebase; appId com.quizzicalclub.app (renaming documented).",
       "Brand icons (sage Q tile) generated for both platforms; safe-area insets for notches.",
-      "CI: android.yml builds debug APK + release AAB artifacts; ios.yml verifies the build compiles on macOS (unsigned).",
-      "Store & monetization guide: docs/STORE_GUIDE.md (signing, Data safety = no data collected, ratings, pricing options).",
+      "CI: android.yml builds a debug APK and a SIGNED release AAB (keystore from Secrets, jarsigner-verified); ios.yml produces a signed App Store .ipa once the Apple secrets are uploaded (set-ios-secrets.mjs).",
+      "No-Mac signing: Android keystore already in Secrets; for iOS — dist.p12 + provisioning profile via tools/docgen/set-ios-secrets.mjs (guide in docs/STORE_GUIDE.md). Data safety: no data collected.",
     ],
   },
 };
@@ -249,7 +249,7 @@ Object.assign(L.ru, {
     "Тестовый хук: window.__teamStore доступен только на localhost; в проде его нет.",
   ],
   s41: "4.1. CI/CD",
-  cicd: "Пуш в main: npm ci → tsc → vitest → playwright (десктоп-гейт) → vite build → deploy-pages. Отдельно: android.yml (APK+AAB артефакты) и ios.yml (проверка сборки на macos-latest). Регрессия правил или контента блокирует деплой.",
+  cicd: "Пуш в main: npm ci → tsc → vitest → playwright (десктоп-гейт) → vite build → deploy-pages. Отдельно: android.yml (debug APK + подписанный release AAB из Secrets, проверка подписи) и ios.yml (компиляция всегда; подписанный .ipa при наличии Apple-секретов). Регрессия правил или контента блокирует деплой.",
   cicdCode: ".github/workflows/: deploy.yml (Pages+e2e), android.yml, ios.yml",
 
   s5: "5. Как добавлять фичи (руководство разработчика)",
@@ -265,17 +265,23 @@ Object.assign(L.ru, {
     "Зарегистрируйте в ALL_BOARDS в app/src/lib/board.ts; проверьте пересечения вопросов с существующими аренами.",
     "Для мобильных артефактов после правок: npm run sync; сборка нативных проектов — в CI.",
   ],
-  s53: "5.3. Новый тип задания для воркбука",
+  s5sign: "5.3. Подписание и секреты",
+  signing: [
+    "Android: keystore и пароли лежат в Secrets (KEYSTORE_*); ротация — обновить секреты тем же set-secrets.mjs, локальная копия в signing-local/ (gitignored).",
+    "iOS: dist.p12 + app.mobileprovision + Team ID в signing-local/apple/ → node tools/docgen/set-ios-secrets.mjs → флаг IOS_SIGNING_READY включает подписные шаги.",
+    "НИКОГДА не коммитить ключи и пароли; signing-local/ и *.keystore в .gitignore.",
+  ],
+  s53: "5.4. Новый тип задания для воркбука",
   newType: [
     "TaskType + TASK_TYPE_LABELS (categoryTypes.ts), разметка CATEGORY_TYPES; гайд в guides.ts с тем же type.",
     "Тесты покрытия типов и пулов — в tests/unit/workbook.test.ts.",
   ],
-  s54: "5.4. Новая механика движка",
+  s54: "5.5. Новая механика движка",
   newMech: [
     "Логика — в store (действия) или lib (чистые функции), не в компонентах.",
     "Сначала юнит-тест, затем e2e; CI повторит оба на пуше (деплой блокируется при падении).",
   ],
-  s55: "5.5. Правила кода",
+  s55: "5.6. Правила кода",
   codeRules: [
     "TypeScript strict + verbatimModuleSyntax (import type для типов).",
     "Цвета — только из темы (src/index.css); новые окна активностей — левое позиционирование на lg по образцу HostClueModal.",
@@ -297,7 +303,7 @@ Object.assign(L.ru, {
 
   s7: "7. Открытые направления (бэклог)",
   backlog: [
-    "Подписанный релизный AAB через секреты репозитория; TestFlight-архив для iOS из CI.",
+    "Загрузить Apple-сертификаты в Secrets (по гайду) → подписанный .ipa из CI → TestFlight.",
     "Экспорт/импорт статистики (JSON) между устройствами.",
     "Печатные карточки для офлайн-игры (генерация PDF из досок).",
     "Таймер на ответ в командном режиме (опционально).",
@@ -314,6 +320,8 @@ Object.assign(L.ru, {
     ["Материализация", "Сэмплирование досок микс-игры при старте"],
     ["Drill-режим", "Тест воркбука по категориям из drill list (подиум → Practice these)"],
     ["Daily Jeopardy", "Одна доска дня из всех пулов, сид = дата UTC, без финала по умолчанию"],
+    ["Play App Signing", "Google хранит ключ приложения; upload-ключ в CI лишь подписывает загрузки"],
+    ["Provisioning profile", "Apple-разрешение на установку/публикацию приложения для bundle id"],
     ["Capacitor", "Нативная оболочка над веб-приложением (Android/iOS)"],
   ],
   outro: "Конец документа. Шаблон расширяется: новые разделы добавляются после раздела 6; версии нумеруются.",
@@ -352,7 +360,7 @@ Object.assign(L.en, {
     "Test hook: window.__teamStore exists on localhost only; production never ships it.",
   ],
   s41: "4.1. CI/CD",
-  cicd: "Push to main: npm ci → tsc → vitest → playwright (desktop gate) → vite build → deploy-pages. Separately: android.yml (APK+AAB artifacts) and ios.yml (macOS build check). Rule or content regressions block deploys.",
+  cicd: "Push to main: npm ci → tsc → vitest → playwright (desktop gate) → vite build → deploy-pages. Separately: android.yml (debug APK + signed release AAB from Secrets, signature verified) and ios.yml (compile always; signed .ipa once Apple secrets exist). Rule or content regressions block deploys.",
   cicdCode: ".github/workflows/: deploy.yml (Pages+e2e), android.yml, ios.yml",
 
   s5: "5. How to add features",
@@ -368,17 +376,23 @@ Object.assign(L.en, {
     "Register it in ALL_BOARDS in app/src/lib/board.ts; check clue overlap with existing arenas.",
     "For mobile artifacts after edits: npm run sync; native builds run in CI.",
   ],
-  s53: "5.3. New workbook puzzle type",
+  s5sign: "5.3. Signing & secrets",
+  signing: [
+    "Android: keystore and passwords live in Secrets (KEYSTORE_*); rotate by re-running set-secrets.mjs, local copy in signing-local/ (gitignored).",
+    "iOS: dist.p12 + app.mobileprovision + Team ID in signing-local/apple/ → node tools/docgen/set-ios-secrets.mjs → IOS_SIGNING_READY enables the signing steps.",
+    "NEVER commit keys or passwords; signing-local/ and *.keystore are gitignored.",
+  ],
+  s53: "5.4. New workbook puzzle type",
   newType: [
     "TaskType + TASK_TYPE_LABELS (categoryTypes.ts), tag CATEGORY_TYPES; add a guide in guides.ts with the same type.",
     "Type/pool coverage tests live in tests/unit/workbook.test.ts.",
   ],
-  s54: "5.4. New engine mechanic",
+  s54: "5.5. New engine mechanic",
   newMech: [
     "Logic goes into a store (actions) or lib (pure functions) — never components.",
     "Unit test first, then e2e; CI repeats both on push (deploys block on failure).",
   ],
-  s55: "5.5. Code rules",
+  s55: "5.6. Code rules",
   codeRules: [
     "TypeScript strict + verbatimModuleSyntax (import type for types).",
     "Colors only from the theme (src/index.css); new activity windows follow HostClueModal's left alignment on lg.",
@@ -400,7 +414,7 @@ Object.assign(L.en, {
 
   s7: "7. Backlog ideas",
   backlog: [
-    "Signed release AAB via repository secrets; TestFlight archive for iOS from CI.",
+    "Upload the Apple certificates to Secrets (see the guide) → signed .ipa from CI → TestFlight.",
     "Export/import stats (JSON) between devices.",
     "Printable cards for offline play (PDF generated from boards).",
     "Optional answer timer in team mode.",
@@ -417,6 +431,8 @@ Object.assign(L.en, {
     ["Materialization", "Sampling a mix game's boards at start"],
     ["Drill mode", "A workbook test on drill-list categories (podium → Practice these)"],
     ["Daily Jeopardy", "One board of the day from all pools, UTC-date seed, no final by default"],
+    ["Play App Signing", "Google holds the app key; the CI upload key only signs uploads"],
+    ["Provisioning profile", "Apple's authorization to install/publish an app for a bundle id"],
     ["Capacitor", "Native shell over the web app (Android/iOS)"],
   ],
   outro: "End of document. The template grows with the project: new sections go after section 6; versions are numbered.",
@@ -500,6 +516,7 @@ function build(t) {
           H1(t.s5),
           H2(t.s51), ...t.newGame.map(num),
           H2(t.s52), ...t.newContent.map(num),
+          H2(t.s5sign), ...t.signing.map(num),
           H2(t.s53), ...t.newType.map(num),
           H2(t.s54), ...t.newMech.map(num),
           H2(t.s55), ...t.codeRules.map(bullet),
