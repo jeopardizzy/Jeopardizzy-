@@ -40,6 +40,9 @@ npx cap open ios       # открыть проект в Xcode (только macO
    подпишите AAB через `jarsigner`. Keystore храните в безопасности —
    потеря = невозможность обновлять приложение (если не включён Play App Signing).
 2. **Play Console** → Create app → загрузите подписанный AAB в Internal testing.
+   Подписанный AAB собирается CI автоматически (секреты KEYSTORE_* уже в
+   репозитории) — скачайте артефакт `quizzical-club-android` последнего прогона
+   Android build.
 3. **Анкета данных (Data safety)**: приложение НЕ собирает и НЕ передаёт
    никаких данных — все сейвы локальные (localStorage). Отвечайте «No data
    collected» — это сильно упрощает ревью.
@@ -47,6 +50,11 @@ npx cap open ios       # открыть проект в Xcode (только macO
    пройдите анкету IARC, ожидаемо «Everyone».
 5. **Контент**: скриншоты 2+ (телефон), иконка 512, feature graphic 1024×500,
    описание. Приложение без рекламы и без IAP в базовой конфигурации.
+   Готовые материалы листинга лежат в `docs/listing/`:
+   `play-icon-512.png`, `feature-graphic-1024x500.png`, шесть телефонных
+   скриншотов (`shot-1-home` … `shot-6-workbook`) и тексты
+   `description-en.txt` / `description-ru.txt` (short + full описания по
+   правилам Play Console).
 
 ## App Store (iOS)
 
