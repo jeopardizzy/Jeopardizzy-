@@ -48,6 +48,30 @@ jobs:
       - name: Assemble release bundle (unsigned AAB)
         run: cd android && ./gradlew bundleRelease --no-daemon
 
+      - name: Decode upload keystore from secrets
+        if: vars.ANDROID_SIGNING_READY == 'true'
+        run: |
+          mkdir -p android/keystore-out
+          echo "$KEYSTORE_BASE64" | base64 -d > android/keystore-out/upload.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Assemble signed release bundle
+        if: vars.ANDROID_SIGNING_READY == 'true'
+        run: cd android && ./gradlew bundleRelease --no-daemon
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/app/android/keystore-out/upload.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Verify AAB signature
+        if: vars.ANDROID_SIGNING_READY == 'true'
+        run: |
+          AAB=$(ls app/android/app/build/outputs/bundle/release/app-release.aab)
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$AAB" || \
+          "$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs "$AAB"
+
       - uses: actions/upload-artifact@v4
         with:
           name: quizzical-club-android

@@ -44,3 +44,7 @@ tools/docgen/package.json
 TZ1.docx
 TZ2.docx
 tz2_*.jpg
+
+# local signing material (NEVER commit)
+signing-local/
+*.keystore
