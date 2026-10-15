@@ -57,7 +57,7 @@ const L = {
     titleSub: "Командная игра-викторина + тренажёр для олимпиадной подготовки · веб, Android, iOS",
     metaField: "Поле", metaValue: "Значение",
     meta: [
-      ["Версия документа", "2.3 (шаблон для развития)"],
+      ["Версия документа", "2.4 (шаблон для развития)"],
       ["Дата", "14 октября 2026"],
       ["Продакшн", "https://jeopardizzy.github.io/Jeopardizzy-/"],
       ["Репозиторий", "https://github.com/jeopardizzy/Jeopardizzy-"],
@@ -84,6 +84,7 @@ const L = {
       ["Игр (источники)", "18 — арены I–IV, Arena Mix, Daily Jeopardy, 5 книжных сетов, 7 классических"],
       ["Игр на экране выбора", "26 частей (по ≤ 3 доски) + Daily Jeopardy на главной"],
       ["Вопросов в хранилище", "≈ 1 690 (540 книжных + 275 UoE + 870 классических)"],
+      ["Печатные пакеты", "29 PDF в docs/print/ (по одному на каждую часть)"],
       ["Тестов", "65 юнит (vitest) + 96 e2e (playwright, десктоп + мобильный)"],
       ["CI/CD", "Pages-деплой с e2e-гейтом · Android: подписанный AAB · iOS: .ipa по готовности секретов"],
     ],
@@ -123,6 +124,7 @@ const L = {
       ["Book Club", "5 сетов (2 доски + финал)", "Книжный датасет (63 категории, 540 вопросов)"],
       ["Classic Vault", "7 сетов → части по ≤ 3 доски; Grand Marathon → 5 частей", "Классические сеты (38 досок, 174 категории)"],
     ],
+    printables: "Печатные пакеты: docs/print/ — PDF на каждую часть игры (обложка, страница доски, страницы подсказок ведущего); генератор tools/docgen/print_cards.py из boards.json (dump-boards.mjs).",
     anon: "Весь контент анонимизирован: названия и авторы исходных книг в приложении не упоминаются (регрессионный тест).",
     s25: "2.6. Мобильное приложение",
     mob: [
@@ -139,7 +141,7 @@ const L = {
     titleSub: "Team trivia game + olympiad training workbook · web, Android, iOS",
     metaField: "Field", metaValue: "Value",
     meta: [
-      ["Document version", "2.3 (living template)"],
+      ["Document version", "2.4 (living template)"],
       ["Date", "October 14, 2026"],
       ["Production", "https://jeopardizzy.github.io/Jeopardizzy-/"],
       ["Repository", "https://github.com/jeopardizzy/Jeopardizzy-"],
@@ -166,6 +168,7 @@ const L = {
       ["Games (source)", "18 — arenas I–IV, Arena Mix, Daily Jeopardy, 5 book sets, 7 classic sets"],
       ["Playable entries", "26 parts (≤ 3 boards each) + Daily Jeopardy on the home screen"],
       ["Clue vault", "≈ 1,690 (540 book + 275 UoE + 870 classic)"],
+      ["Printable packs", "29 PDFs in docs/print/ (one per part)"],
       ["Tests", "65 unit (vitest) + 96 e2e (playwright, desktop + mobile)"],
       ["CI/CD", "Pages deploy with e2e gate · Android: signed AAB · iOS: .ipa when secrets are set"],
     ],
@@ -205,6 +208,7 @@ const L = {
       ["Book Club", "5 sets (2 boards + final)", "Book dataset (63 categories, 540 clues)"],
       ["Classic Vault", "7 sets → parts of ≤ 3 boards; Grand Marathon → 5 parts", "Classic sets (38 boards, 174 categories)"],
     ],
+    printables: "Printable packs: docs/print/ — one PDF per game part (cover, board page, host clue pages); generator tools/docgen/print_cards.py from boards.json (dump-boards.mjs).",
     anon: "All content is anonymized: no source book titles or author names appear in the app (regression-tested).",
     s25: "2.6. Mobile app",
     mob: [
@@ -305,7 +309,6 @@ Object.assign(L.ru, {
   backlog: [
     "Загрузить Apple-сертификаты в Secrets (по гайду) → подписанный .ipa из CI → TestFlight.",
     "Экспорт/импорт статистики (JSON) между устройствами.",
-    "Печатные карточки для офлайн-игры (генерация PDF из досок).",
     "Таймер на ответ в командном режиме (опционально).",
   ],
 
@@ -416,7 +419,6 @@ Object.assign(L.en, {
   backlog: [
     "Upload the Apple certificates to Secrets (see the guide) → signed .ipa from CI → TestFlight.",
     "Export/import stats (JSON) between devices.",
-    "Printable cards for offline play (PDF generated from boards).",
     "Optional answer timer in team mode.",
   ],
 
@@ -499,7 +501,7 @@ function build(t) {
           H2(t.s2home), ...t.home.map(bullet),
           H2(t.s22), ...t.wb.map(bullet),
           H2(t.s23), ...t.guides.map(bullet),
-          H2(t.s24), table(t.seriesHead, t.series, [2400, 3800, 2826]), P(""), P(t.anon),
+          H2(t.s24), table(t.seriesHead, t.series, [2400, 3800, 2826]), P(""), P(t.anon), P(t.printables), P(t.printables),
           H2(t.s25), ...t.mob.map(bullet),
           new Paragraph({ children: [new PageBreak()] }),
 

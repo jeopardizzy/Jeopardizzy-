@@ -48,3 +48,6 @@ tz2_*.jpg
 # local signing material (NEVER commit)
 signing-local/
 *.keystore
+
+# generated intermediates
+tools/docgen/boards.json
