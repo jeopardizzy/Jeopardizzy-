@@ -1,7 +1,10 @@
-name: iOS build check
+name: iOS build
 
-# Verifies the Capacitor iOS wrapper compiles on a macOS runner.
-# Unsigned build only — App Store signing needs your Apple certificates.
+# iOS pipeline: always verifies the app compiles (unsigned, simulator).
+# When IOS_SIGNING_READY=true and the four Apple secrets are present
+# (APPLE_CERTIFICATE_BASE64, APPLE_CERTIFICATE_PASSWORD,
+#  APPLE_PROVISIONING_PROFILE_BASE64, APPLE_TEAM_ID),
+# it also produces a signed App Store .ipa artifact.
 
 on:
   push:
@@ -37,7 +40,7 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync ios
 
-      - name: Build iOS app (unsigned, SPM resolves packages automatically)
+      - name: Build iOS app (unsigned, compile check)
         run: |
           cd ios/App
           xcodebuild -project App.xcodeproj \
@@ -46,3 +49,79 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+      # ---------- signed release (only when secrets are in place) ----------
+
+      - name: Import distribution certificate into a temporary keychain
+        if: vars.IOS_SIGNING_READY == 'true'
+        run: |
+          echo "$APPLE_CERTIFICATE_BASE64" | base64 -d > dist-cert.p12
+          security create-keychain -p "$KEYCHAIN_PASS" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASS" build.keychain
+          security set-keychain-settings -t 3600 -l build.keychain
+          security import dist-cert.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASS" build.keychain
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASS: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+
+      - name: Import provisioning profile and extract its name
+        if: vars.IOS_SIGNING_READY == 'true'
+        run: |
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          echo "$APPLE_PROVISIONING_PROFILE_BASE64" | base64 -d > app.mobileprovision
+          cp app.mobileprovision "$HOME/Library/MobileDevice/Provisioning Profiles/"
+          PROFILE_NAME=$(security cms -D -i app.mobileprovision | plutil -extract Name xml1 -o - - | sed -n 's:.*<string>\(.*\)</string>.*:\1:p')
+          echo "PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
+          echo "Profile: $PROFILE_NAME"
+        env:
+          APPLE_PROVISIONING_PROFILE_BASE64: ${{ secrets.APPLE_PROVISIONING_PROFILE_BASE64 }}
+
+      - name: Archive (signed)
+        if: vars.IOS_SIGNING_READY == 'true'
+        run: |
+          cd ios/App
+          xcodebuild -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath App.xcarchive \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            archive
+
+      - name: Export signed .ipa
+        if: vars.IOS_SIGNING_READY == 'true'
+        run: |
+          cat > ios/App/export.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.quizzicalclub.app</key><string>$PROFILE_NAME</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+          cd ios/App
+          xcodebuild -exportArchive \
+            -archivePath App.xcarchive \
+            -exportPath ipa-out \
+            -exportOptionsPlist export.plist
+          ls -la ipa-out/
+
+      - uses: actions/upload-artifact@v4
+        if: vars.IOS_SIGNING_READY == 'true'
+        with:
+          name: quizzical-club-ios-ipa
+          path: app/ios/App/ipa-out/*.ipa
+          retention-days: 30

@@ -51,15 +51,41 @@ npx cap open ios       # открыть проект в Xcode (только macO
 ## App Store (iOS)
 
 Сборка требует macOS. Варианты:
-- **CI (рекомендуется без Mac)**: workflow `ios.yml` уже проверяет сборку на
-  `macos-latest`. Для релиза добавьте сертификаты компании как secrets и
-  расширьте шаг до `xcodebuild archive` + `xcodebuild -exportArchive`.
+- **CI (рекомендуется без Mac)**: workflow `ios.yml` проверяет сборку на
+  `macos-latest` на каждом пуше, а при наличии секретов собирает **подписанный
+  .ipa** артефактом — готовый для App Store Connect (загрузка через Transporter
+  app или веб-интерфейс).
 - **Свой Mac**: `npx cap open ios` → Xcode → Signing: выберите команду
   разработчика компании → Product → Archive → Upload to App Store Connect.
 
-Дальше: **App Store Connect** → New App → заполните карточку → загрузите билд
-→ TestFlight для внутренней проверки → Submit for review.
-Анкета приватности: «Data Not Collected». Рейтинг: 4+.
+### Подписанный .ipa из CI — что положить в Secrets
+
+CI делает временный keychain, импортирует сертификат и профиль, собирает
+archive и экспортирует .ipa. Нужны 5 секретов (см. ниже как их получить) и
+одна переменная `IOS_SIGNING_READY=true`.
+
+| Секрет | Что это |
+|---|---|
+| `APPLE_CERTIFICATE_BASE64` | Экспортированный .p12 дистрибьюшн-сертификат (base64) |
+| `APPLE_CERTIFICATE_PASSWORD` | Пароль экспорта .p12 |
+| `APPLE_PROVISIONING_PROFILE_BASE64` | App Store provisioning profile (base64) |
+| `APPLE_TEAM_ID` | Team ID компании (10 символов) |
+| `IOS_KEYCHAIN_PASSWORD` | Любой пароль для временного CI-keychain |
+
+**Как получить сертификат и профиль (без Mac):**
+1. Создайте CSR: `openssl req -nodes -newkey rsa:2048 -keyout ios.key -out ios.csr -subj "/CN=Your Company"`.
+2. developer.apple.com → Certificates → «+» → iOS Distribution → загрузите CSR → скачайте .cer.
+3. Конвертируйте в .p12: `openssl x509 -in ios.cer -inform DER -out ios.pem && openssl pkcs12 -export -inkey ios.key -in ios.pem -out dist.p12 -password pass:ВАШ_ПАРОЛЬ`.
+4. developer.apple.com → Profiles → «+» → App Store → App ID `com.quizzicalclub.app` → скачайте `app.mobileprovision`.
+5. Team ID: developer.apple.com → Membership details.
+6. Положите файлы в `signing-local/apple/` (dist.p12, dist-password.txt, app.mobileprovision, team-id.txt) и запустите `node tools/docgen/set-ios-secrets.mjs` — секреты загрузятся сами (gitignored, в репо не попадут).
+
+Дальше: **App Store Connect** → New App → заполните карточку → загрузите .ipa
+(Transporter app, или веб-загрузка билда в разделе TestFlight) → TestFlight для
+внутренней проверки → Submit for review. Анкета приватности: «Data Not
+Collected». Рейтинг: 4+. Каждый новый билд должен иметь больший
+CFBundleVersion — поднимайте `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION` в
+Xcode или через agvtool перед архивом.
 
 ## Монетизация (варианты по возрастанию сложности)
 
