@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { buildBackup, downloadBackup, parseBackup } from "../lib/backup";
+import { loadRecords, loadSettings, saveRecords, saveSettings } from "../lib/saves";
 import {
   useWorkbookStore,
   workbookPool,
@@ -211,6 +213,8 @@ function Picker() {
         {drillCategories ? "Start drill test" : "Start test"} (
         {poolSize === 0 ? "no clues" : `${Math.min(questionCount, poolSize)} questions`})
       </button>
+
+      <ProgressBackup />
     </motion.div>
   );
 }
@@ -415,5 +419,130 @@ function TestResults() {
         ))}
       </div>
     </motion.div>
+  );
+}
+
+/* ---------- backup / restore ---------- */
+
+function ProgressBackup() {
+  const [msg, setMsg] = useState<string | null>(null);
+  const [msgKind, setMsgKind] = useState<"ok" | "err">("ok");
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const flash = (kind: "ok" | "err", text: string) => {
+    setMsgKind(kind);
+    setMsg(text);
+  };
+
+  const doExport = () => {
+    downloadBackup("quizzical-club-backup.json", buildBackup(loadRecords(), loadSettings()));
+    flash("ok", "Backup downloaded — keep it to move progress to another device.");
+  };
+
+  const doCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(buildBackup(loadRecords(), loadSettings()));
+      flash("ok", "Backup copied to clipboard.");
+    } catch {
+      flash("err", "Clipboard unavailable — use the file download instead.");
+    }
+  };
+
+  const doImport = (text: string) => {
+    const parsed = parseBackup(text);
+    if (!parsed) {
+      flash("err", "That file doesn't look like a Quizzical Club backup — nothing was restored.");
+      return;
+    }
+    saveRecords(parsed.records);
+    saveSettings(parsed.settings);
+    flash("ok", "Progress restored. Reloading…");
+    window.setTimeout(() => window.location.reload(), 800);
+  };
+
+  const onFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    f.text().then(doImport);
+    e.target.value = "";
+  };
+
+  return (
+    <section className="mt-10 rounded-2xl border border-line bg-surface p-5 shadow-card" aria-label="Your progress">
+      <h2 className="font-display mb-1 text-lg text-sage-deep">Your progress</h2>
+      <p className="mb-4 text-sm text-mute">
+        Records and settings live only on this device. Back them up to move to another phone or
+        browser.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={doExport}
+          className="rounded-xl bg-sage px-5 py-2.5 text-sm font-bold text-white shadow-card transition hover:bg-sage-deep active:scale-[0.98]"
+        >
+          Back up (file)
+        </button>
+        <button
+          onClick={doCopy}
+          className="rounded-xl border border-line bg-cream px-5 py-2.5 text-sm font-bold text-ink transition hover:bg-butter-soft active:scale-[0.98]"
+        >
+          Copy to clipboard
+        </button>
+        <button
+          onClick={() => fileRef.current?.click()}
+          className="rounded-xl border border-line bg-cream px-5 py-2.5 text-sm font-bold text-ink transition hover:bg-butter-soft active:scale-[0.98]"
+        >
+          Restore from file
+        </button>
+        <button
+          onClick={() => setPasteOpen((v) => !v)}
+          aria-expanded={pasteOpen}
+          className="rounded-xl border border-line bg-cream px-5 py-2.5 text-sm font-bold text-ink transition hover:bg-butter-soft active:scale-[0.98]"
+        >
+          Paste backup text
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={onFile}
+          aria-label="Backup file"
+        />
+      </div>
+      {pasteOpen && (
+        <div className="mt-3">
+          <label htmlFor="backup-paste" className="sr-only">
+            Paste backup JSON
+          </label>
+          <textarea
+            id="backup-paste"
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            rows={4}
+            placeholder='{"kind":"quizzical-club-backup", ...}'
+            className="w-full rounded-xl border border-line bg-cream px-3 py-2 font-mono text-xs text-ink placeholder:text-mute/60"
+          />
+          <button
+            onClick={() => doImport(pasteText)}
+            disabled={!pasteText.trim()}
+            className="mt-2 rounded-xl bg-sage px-5 py-2 text-sm font-bold text-white transition enabled:hover:bg-sage-deep disabled:opacity-40"
+          >
+            Restore pasted backup
+          </button>
+        </div>
+      )}
+      {msg && (
+        <p
+          role="status"
+          className={`mt-3 rounded-xl px-3 py-2 text-sm font-semibold ${
+            msgKind === "ok" ? "bg-sage-soft text-sage-deep" : "bg-coral/15 text-coral"
+          }`}
+        >
+          {msg}
+        </p>
+      )}
+    </section>
   );
 }

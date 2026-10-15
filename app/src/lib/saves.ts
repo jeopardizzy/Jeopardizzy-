@@ -5,7 +5,7 @@ import { z } from "zod";
  * anything that fails schema validation is discarded and rebuilt as defaults.
  */
 
-const RecordsSchema = z.object({
+export const RecordsSchema = z.object({
   version: z.literal(1),
   gamesPlayed: z.number(),
   /** best workbook score per "type|level" key, e.g. "homonyms|easy" */
@@ -17,7 +17,7 @@ const RecordsSchema = z.object({
 });
 export type Records = z.infer<typeof RecordsSchema>;
 
-const SettingsSchema = z.object({
+export const SettingsSchema = z.object({
   version: z.literal(1),
   sound: z.boolean(),
   reduceMotion: z.boolean(),
