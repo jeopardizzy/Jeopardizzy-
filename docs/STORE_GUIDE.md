@@ -95,6 +95,12 @@ Collected». Рейтинг: 4+. Каждый новый билд должен �
 CFBundleVersion — поднимайте `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION` в
 Xcode или через agvtool перед архивом.
 
+Материалы карточки App Store готовы в `docs/listing/`:
+`description-apple-en.txt` / `description-apple-ru.txt` (subtitle ≤ 30,
+promo ≤ 170, description, keywords ≤ 100) и шесть скриншотов 6.9"
+(`shot-*-ios.png`, 1320×2868 — требование iPhone 16 Pro Max). Support URL:
+https://jeopardizzy.github.io/Jeopardizzy-/
+
 ## Монетизация (варианты по возрастанию сложности)
 
 | Модель | Что нужно | Плюсы/минусы |
