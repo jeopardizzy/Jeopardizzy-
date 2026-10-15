@@ -67,10 +67,7 @@ jobs:
 
       - name: Verify AAB signature
         if: vars.ANDROID_SIGNING_READY == 'true'
-        run: |
-          AAB=$(ls app/android/app/build/outputs/bundle/release/app-release.aab)
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$AAB" || \
-          "$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs "$AAB"
+        run: jarsigner -verify -certs app/android/app/build/outputs/bundle/release/app-release.aab | tail -5
 
       - uses: actions/upload-artifact@v4
         with:
