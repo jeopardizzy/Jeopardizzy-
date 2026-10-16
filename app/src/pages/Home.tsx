@@ -19,7 +19,7 @@ export default function Home() {
   const bestCount = Object.keys(bests ?? {}).length;
 
   return (
-    <main className="stage-bg flex min-h-dvh flex-col items-center justify-center px-4 py-10">
+    <main className="stage-bg relative flex min-h-dvh flex-col items-center justify-center px-4 py-10">
       <div className="absolute right-4 top-4">
         <Toggles />
       </div>
