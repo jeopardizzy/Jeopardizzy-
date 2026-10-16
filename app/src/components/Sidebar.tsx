@@ -23,7 +23,7 @@ export default function Sidebar() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-line bg-surface px-2 py-2 lg:inset-y-0 lg:bottom-auto lg:right-auto lg:left-0 lg:w-60 lg:flex-col lg:justify-start lg:border-r lg:border-t-0 lg:px-4 lg:py-6"
+      className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-line bg-surface px-2 py-2 lg:inset-y-0 lg:right-auto lg:left-0 lg:w-60 lg:flex-col lg:justify-start lg:border-r lg:border-t-0 lg:px-4 lg:py-6"
       style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
     >
       <button

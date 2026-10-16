@@ -121,7 +121,11 @@ Xcode или через agvtool перед архивом.
 Материалы карточки App Store готовы в `docs/listing/`:
 `description-apple-en.txt` / `description-apple-ru.txt` (subtitle ≤ 30,
 promo ≤ 170, description, keywords ≤ 100) и шесть скриншотов 6.9"
-(`shot-*-ios.png`, 1320×2868 — требование iPhone 16 Pro Max). Support URL:
+(`shot-*-ios.png`, 1320×2868 — требование iPhone 16 Pro Max). App Store Connect
+сейчас требует слот iPhone 6.1"/6.3" (1206×2622) — это `docs/listing/iphone-6.3/`,
+получены из 6.9" через `magick <in> -resize x2622 -gravity center -crop 1206x2622+0+0`.
+iPad 13" (2064×2752) — `docs/listing/ipad-13/`, снимаются скриптом
+`tools/ipad_shots.mjs` (Playwright по production-сборке). Support URL:
 https://jeopardizzy.github.io/Jeopardizzy-/
 
 ## Монетизация (варианты по возрастанию сложности)
