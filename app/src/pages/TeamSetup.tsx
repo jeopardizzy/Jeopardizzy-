@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { TEAM_COLORS, useTeamStore } from "../store/teamStore";
 import { useMotionSafe } from "../lib/useMotionSafe";
+import { canPlayGame } from "../lib/access";
+import { useEntitlement } from "../store/entitlementStore";
 
 const MAX_TEAMS = 4;
 
@@ -20,8 +22,10 @@ export default function TeamSetup() {
 
   const finalEnabled = useTeamStore((s) => s.finalEnabled);
   const setFinalEnabled = useTeamStore((s) => s.setFinalEnabled);
+  const fullClub = useEntitlement((s) => s.fullClub);
 
-  if (!set_) {
+  // no set chosen, or a Full Club set without the unlock (deep link, refund)
+  if (!set_ || !canPlayGame(set_, fullClub)) {
     navigate("/sets", { replace: true });
     return null;
   }

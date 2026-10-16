@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("Quizzical Club", () => {
   test("home: sidebar with three sections + Daily Jeopardy card", async ({ page }, testInfo) => {
