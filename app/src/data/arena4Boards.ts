@@ -334,9 +334,9 @@ export const ARENA4_BOARDS: BoardGame[] = [
       "note": "Marble: polished white stone; the Taj Mahal is built of it."
      },
      {
-      "clue": "Hemp, ganja, Maryjane, or weed. [starts with MAR]",
-      "answer": "Marijuana",
-      "note": "Marijuana: cannabis, also called hemp, ganja or pot."
+      "clue": "The fourth planet from the Sun, nicknamed the Red Planet. [starts with MAR]",
+      "answer": "Mars",
+      "note": "Mars: red from iron oxide (rust) in its soil."
      },
      {
       "clue": "A bitter jam made from citrus. [starts with MAR]",
@@ -374,9 +374,9 @@ export const ARENA4_BOARDS: BoardGame[] = [
       "note": "Marionette: a puppet worked by strings."
      },
      {
-      "clue": "Gin, vermouth, and an olive. [starts with MAR]",
-      "answer": "Martini",
-      "note": "Martini: a cocktail of gin, vermouth and an olive."
+      "clue": "A tiny South American monkey with claw-like nails. [starts with MAR]",
+      "answer": "Marmoset",
+      "note": "Marmoset: one of the smallest monkeys, living in Amazon treetops."
      }
     ]
    },
@@ -500,9 +500,9 @@ export const ARENA4_BOARDS: BoardGame[] = [
       "note": "Doris Day: actress and singer who starred opposite Rock Hudson in comedies like Pillow Talk."
      },
      {
-      "clue": "Person appointed to make sure everyone gets home safely after a night of drinking. [initials D. D.]",
-      "answer": "Designated Driver",
-      "note": "Designated driver: the person who stays sober to drive friends home."
+      "clue": "A small whirlwind that lifts dust and leaves on a hot, dry day. [initials D. D.]",
+      "answer": "Dust Devil",
+      "note": "Dust devil: a short-lived spinning column of air and dust."
      }
     ]
    },
@@ -577,7 +577,7 @@ export const ARENA4_BOARDS: BoardGame[] = [
      {
       "clue": "____ + beam, shine, walk, light [starts with M]",
       "answer": "Moon",
-      "note": "Moonbeam, moonshine, moonwalk, moonlight. Moonshine: illegally distilled whiskey."
+      "note": "Moonbeam, moonshine, moonwalk, moonlight."
      },
      {
       "clue": "____ + bow, coat, drop, forest [starts with R]",
@@ -643,7 +643,7 @@ export const ARENA4_BOARDS: BoardGame[] = [
      {
       "clue": "What do these have in common? Cliff, Norm, Woody, and Sam",
       "answer": "They are all characters in the television program Cheers.",
-      "note": "Cheers: a sitcom set in a Boston bar; Cliff, Norm, Woody and Sam are regulars/staff."
+      "note": "Cheers: a classic Boston-set sitcom; Cliff, Norm, Woody and Sam are its regulars."
      },
      {
       "clue": "What do these have in common? Chipper, driver, and wood",

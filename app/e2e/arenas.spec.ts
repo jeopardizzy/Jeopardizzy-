@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("Idiom arenas", () => {
   test("arena I part 1 offers 3 boards with original category names", async ({ page }) => {

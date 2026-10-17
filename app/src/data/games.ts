@@ -1,5 +1,5 @@
 /**
- * All playable games, listed on the home of Team Jeopardy.
+ * All playable games, listed on the home of Trivia Night.
  * A game = N rounds (boards) of 5 categories × 5 clues each.
  * Round values escalate: round 1 is 100–500, round 2 200–1000, and so on.
  * Book rounds reference the curated dataset by category name;
@@ -235,7 +235,7 @@ export const GAMES: GameDef[] = [
   },
   {
     id: "daily-jeopardy",
-    name: "Daily Jeopardy",
+    name: "Daily Board",
     emoji: "☀️",
     blurb: "One quick board of 5 random categories — the same board all day.",
     level: "Easy",

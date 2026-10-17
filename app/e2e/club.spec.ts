@@ -1,19 +1,19 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("Quizzical Club", () => {
-  test("home: sidebar with three sections + Daily Jeopardy card", async ({ page }, testInfo) => {
+  test("home: sidebar with three sections + Daily Board card", async ({ page }, testInfo) => {
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Main" });
     await expect(nav.getByRole("link", { name: "Guides" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Workbook" })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Jeopardy" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Trivia Night" })).toBeVisible();
     // the logo tops the sidebar on desktop; the mobile bottom bar omits it
     if (testInfo.project.name === "desktop") {
       await expect(nav.getByRole("button", { name: /Quizzical Club/ })).toBeVisible();
     } else {
       await expect(nav.getByRole("button", { name: /Quizzical Club/ })).toBeHidden();
     }
-    await expect(page.getByRole("heading", { name: "Daily Jeopardy" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Daily Board" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Play today’s board/ })).toBeVisible();
   });
 
@@ -22,25 +22,25 @@ test.describe("Quizzical Club", () => {
   }) => {
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Main" });
-    await nav.getByRole("link", { name: "Jeopardy" }).click();
+    await nav.getByRole("link", { name: "Trivia Night" }).click();
     await expect(page).toHaveURL(/#\/sets/);
     await nav.getByRole("link", { name: "Workbook" }).click();
     await expect(page).toHaveURL(/#\/workbook/);
     await nav.getByRole("link", { name: "Guides" }).click();
     await expect(page).toHaveURL(/#\/guides/);
     // hidden in an active game
-    await nav.getByRole("link", { name: "Jeopardy" }).click();
+    await nav.getByRole("link", { name: "Trivia Night" }).click();
     await page.getByRole("button", { name: "Play First Words", exact: true }).click();
     await page.getByRole("button", { name: "Start the game" }).click();
     await expect(page.locator("[role='gridcell']").first()).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
   });
 
-  test("jeopardy: set select → team setup → board → reveal → award points", async ({
+  test("trivia night: set select → team setup → board → reveal → award points", async ({
     page,
   }) => {
     await page.goto("/");
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Jeopardy" }).click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Trivia Night" }).click();
     await expect(page).toHaveURL(/#\/sets/);
 
     // pick the first set
@@ -105,7 +105,7 @@ test.describe("Quizzical Club", () => {
     const context = await browser.newContext({ reducedMotion: "reduce" });
     const page = await context.newPage();
     await page.goto("/");
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Jeopardy" }).click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Trivia Night" }).click();
     await expect(page.getByRole("button", { name: /Championship/ })).toBeVisible();
     await context.close();
   });
@@ -169,7 +169,7 @@ test.describe("Quizzical Club", () => {
     ).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("daily jeopardy: one board from the home card to the podium", async ({ page }) => {
+  test("daily board: one board from the home card to the podium", async ({ page }) => {
     test.setTimeout(120_000);
     await page.goto("/");
     await page.getByRole("button", { name: /Play today’s board/ }).click();
@@ -211,7 +211,7 @@ test.describe("Quizzical Club", () => {
       expect(text, "Cyrillic on screen").not.toMatch(/[А-Яа-яЁё]/);
     };
     await check();
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Jeopardy" }).click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Trivia Night" }).click();
     await check();
     await page.getByRole("button", { name: "Play First Words", exact: true }).click();
     await check(); // setup screen (incl. finish-game toggle)

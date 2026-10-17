@@ -6,8 +6,8 @@ import { useMotionSafe } from "../lib/useMotionSafe";
 import Toggles from "../components/Toggles";
 
 /**
- * Home: the Daily Jeopardy card, front and center. Sections live in the
- * sidebar (Guides / Workbook / Jeopardy).
+ * Home: the Daily Board card, front and center. Sections live in the
+ * sidebar (Guides / Workbook / Trivia Night).
  */
 export default function Home() {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export default function Home() {
           ☀️ {dailyStamp()}
         </p>
         <h1 id="daily-title" className="font-display mb-3 text-3xl text-ink sm:text-4xl">
-          Daily Jeopardy
+          Daily Board
         </h1>
         <p className="mb-8 text-lg leading-relaxed text-mute">
           One quick board of 5 random categories, 25 clues, values 100–500. Same board all day on

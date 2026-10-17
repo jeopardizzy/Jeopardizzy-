@@ -16,10 +16,12 @@
     "apk": "npm run sync && cd android && gradlew assembleDebug"
   },
   "dependencies": {
+    "@capacitor-community/in-app-review": "8.0.0",
     "@capacitor/android": "^8.5.3",
     "@capacitor/cli": "^8.5.3",
     "@capacitor/core": "^8.5.3",
     "@capacitor/ios": "^8.5.3",
+    "@capgo/native-purchases": "8.9.6",
     "@fontsource-variable/inter": "^5.2.5",
     "@fontsource/archivo-black": "^5.2.5",
     "motion": "^14.1.0",

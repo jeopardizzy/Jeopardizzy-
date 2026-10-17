@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { GAMES } from "../src/data/games";
 import { listPlayableGames } from "../src/lib/board";
 import { gameRoundCount, getRoundCategories } from "../src/lib/board";

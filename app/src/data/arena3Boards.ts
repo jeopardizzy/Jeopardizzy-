@@ -241,9 +241,9 @@ export const ARENA3_BOARDS: BoardGame[] = [
       "note": "On the ball: alert and efficient."
      },
      {
-      "clue": "You've stopped drinking alcohol: you're on the ____",
-      "answer": "Wagon",
-      "note": "On the wagon: not drinking alcohol."
+      "clue": "Everyone's joining the latest craze: they're jumping on the ____",
+      "answer": "Bandwagon",
+      "note": "Jump on the bandwagon: join something because it's popular."
      },
      {
       "clue": "Receiving welfare or food stamps: you're on the ____",
@@ -291,9 +291,9 @@ export const ARENA3_BOARDS: BoardGame[] = [
       "note": "Big Sur coast, Fisherman’s Wharf (San Francisco) and the Getty Museum (Los Angeles)."
      },
      {
-      "clue": "Which state? Grandma took a wine tasting tour in the Finger Lakes, went for a boat ride on the Erie Canal, and bet on a couple of horses at the race track in Saratoga.",
+      "clue": "Which state? Grandma went apple picking in the Finger Lakes, went for a boat ride on the Erie Canal, and bet on a couple of horses at the race track in Saratoga.",
       "answer": "New York",
-      "note": "Finger Lakes wine country, the Erie Canal and Saratoga race track."
+      "note": "The Finger Lakes orchards, the Erie Canal and Saratoga race track."
      },
      {
       "clue": "Which state? Grandma went to the beach at South Padre Island, visited the School Book Depository in Dealey Plaza, and saw a Cowboys football game.",
@@ -301,9 +301,9 @@ export const ARENA3_BOARDS: BoardGame[] = [
       "note": "South Padre Island, Dealey Plaza (JFK assassination site, Dallas) and the Dallas Cowboys."
      },
      {
-      "clue": "Which state? Grandma went to a music festival on Beale Street, watched whiskey being made at the Jack Daniels distillery, and took a guided tour of Graceland.",
+      "clue": "Which state? Grandma went to a music festival on Beale Street, saw a show at the Grand Ole Opry, and took a guided tour of Graceland.",
       "answer": "Tennessee",
-      "note": "Beale Street (Memphis blues), Jack Daniel’s whiskey, Elvis’s Graceland."
+      "note": "Beale Street (Memphis blues), the Grand Ole Opry (Nashville), Elvis’s Graceland."
      },
      {
       "clue": "Which state? Grandma toured the historic sailing ships at Mystic Seaport, played a little blackjack at Foxwoods, and saw a production of Hamlet at the Yale University Theatre.",
@@ -457,9 +457,9 @@ export const ARENA3_BOARDS: BoardGame[] = [
       "note": "Marcel Marceau: world-famous French mime, known for silent performances."
      },
      {
-      "clue": "Mixture of chopped dried fruit, distilled spirits, and spices. (Sometimes beef suet, beef, or venison is included.) [initials M. M.]",
+      "clue": "Mixture of chopped dried fruit, sugar, and spices. (Sometimes beef suet, beef, or venison is included.) [initials M. M.]",
       "answer": "Mince Meat",
-      "note": "Mincemeat: chopped dried fruit, spirits and spices (once with meat) used in pies."
+      "note": "Mincemeat: chopped dried fruit, sugar and spices (once with meat) used in pies."
      },
      {
       "clue": "Evangelical political lobbying organization founded by Jerry Falwell in 1979 (and later dissolved in the late 1980s). [initials M. M.]",
@@ -508,9 +508,9 @@ export const ARENA3_BOARDS: BoardGame[] = [
     "name": "It’s a Kick II",
     "clues": [
      {
-      "clue": "A barrel for doling out beer. [starts with K]",
+      "clue": "A small wooden barrel, as for nails. [starts with K]",
       "answer": "Keg",
-      "note": "Keg: a small barrel, often for beer."
+      "note": "Keg: a small barrel."
      },
      {
       "clue": "A type of long brown seaweed. [starts with K]",
@@ -639,9 +639,9 @@ export const ARENA3_BOARDS: BoardGame[] = [
       "note": "Superman; manpower."
      },
      {
-      "clue": "Drug ____ front [starts with S]",
+      "clue": "Book ____ front [starts with S]",
       "answer": "Store",
-      "note": "Drugstore; storefront."
+      "note": "Bookstore; storefront."
      },
      {
       "clue": "Pawn ____ keeper [starts with S]",

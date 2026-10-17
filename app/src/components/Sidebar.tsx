@@ -2,14 +2,14 @@ import { NavLink, useNavigate } from "react-router-dom";
 
 /**
  * Permanent app navigation (per the home-screen redesign):
- * logo on top, then Guides / Workbook / Jeopardy. One nav element:
+ * logo on top, then Guides / Workbook / Trivia Night. One nav element:
  * bottom bar on mobile, left sidebar on desktop. Hidden during an active
  * team game (the shell drops it).
  */
 const ITEMS = [
   { to: "/guides", emoji: "📖", label: "Guides" },
   { to: "/workbook", emoji: "✏️", label: "Workbook" },
-  { to: "/sets", emoji: "🎯", label: "Jeopardy" },
+  { to: "/sets", emoji: "🎯", label: "Trivia Night" },
 ];
 
 export default function Sidebar() {
