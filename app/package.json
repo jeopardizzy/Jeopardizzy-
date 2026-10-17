@@ -16,6 +16,7 @@
     "apk": "npm run sync && cd android && gradlew assembleDebug"
   },
   "dependencies": {
+    "@capacitor-community/in-app-review": "8.0.0",
     "@capacitor/android": "^8.5.3",
     "@capacitor/cli": "^8.5.3",
     "@capacitor/core": "^8.5.3",

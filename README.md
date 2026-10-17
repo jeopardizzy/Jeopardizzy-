@@ -3,14 +3,14 @@
 [![▶ Play online](https://img.shields.io/badge/%E2%96%B6_Play_online-Quizzical_Club-f5e6a8?style=for-the-badge&logoColor=2e3a33&labelColor=f6f4ec)](https://jeopardizzy.github.io/Jeopardizzy-/)
 [![CI](https://github.com/jeopardizzy/Jeopardizzy-/actions/workflows/deploy.yml/badge.svg)](https://github.com/jeopardizzy/Jeopardizzy-/actions/workflows/deploy.yml)
 
-A light, gentle trivia game for long family sessions: team Jeopardy boards,
+A light, gentle trivia game for long family sessions: team trivia boards,
 a solo practice workbook, and guides for every puzzle type. Static site, no
 backend — **play it live at
 [jeopardizzy.github.io/Jeopardizzy-](https://jeopardizzy.github.io/Jeopardizzy-/)**.
 
 ## The three sections
 
-- **🎯 Team Jeopardy** — pick one of five themed sets, split into 1–4 teams,
+- **🎯 Trivia Night** — pick one of five themed sets, split into 1–4 teams,
   and play two boards (round 2 is doubled) plus a final wager. The host reads
   the clue aloud, reveals the answer, and awards points to a team. All content
   comes from the curated book dataset (63 categories · 540 clues).

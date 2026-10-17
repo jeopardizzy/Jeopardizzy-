@@ -2,16 +2,16 @@ SUBTITLE (30 chars max):
 Team trivia, daily boards
 
 PROMOTIONAL TEXT (170 chars max; editable without a new build):
-A fresh trivia board every day — play with the family tonight. Team Jeopardy with a host, solo practice tests, and guides for every puzzle type.
+A fresh trivia board every day — play with the family tonight. Team trivia night with a host, solo practice tests, and guides for every puzzle type.
 
 DESCRIPTION (4000 chars max):
 
 Quizzical Club turns one iPhone into a full trivia-night setup — and a daily brain workout.
 
-TEAM JEOPARDY
+TEAM TRIVIA NIGHT
 Pick a game, split into 1–4 teams, and play: a host reads the clue aloud, reveals the answer, and awards the points. Boards come in themed sets — wordplay, geography, famous names, idioms — from two quick rounds to the Grand Marathon. Values climb every round, and a wagered final settles close games.
 
-DAILY JEOPARDY
+DAILY BOARD
 One fresh board every day — five random categories, the same board all day on your device. Perfect over breakfast or before bed.
 
 WORKBOOK
@@ -30,9 +30,9 @@ FEATURES
 • No accounts, no ads, no tracking — scores never leave the device
 
 FREE TO PLAY, ONE-TIME UNLOCK
-Free forever: Daily Jeopardy, three full games, every guide and Easy workbook tests. Full Club, a one-time in-app purchase, unlocks all 18 games, every workbook level and the training-note drills. No subscription. Shareable with Family Sharing.
+Free forever: the Daily Board, three full games, every guide and Easy workbook tests. Full Club, a one-time in-app purchase, unlocks all 18 games, every workbook level and the training-note drills. No subscription. Shareable with Family Sharing.
 
 Gather the family. Pick a board. Play.
 
 KEYWORDS (100 chars max, comma-separated):
-trivia,quiz,jeopardy,family,words,idioms,party,brain,board,education
+trivia,quiz,trivia night,family game,word games,idioms,party,brain teaser,host,team

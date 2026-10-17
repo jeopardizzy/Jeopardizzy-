@@ -45,7 +45,7 @@ test.describe("Full Club free tier (web)", () => {
     await expect(page.locator("#wb-answer")).toBeVisible();
   });
 
-  test("Daily Jeopardy stays free", async ({ page }) => {
+  test("Daily Board stays free", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: /Play today’s board/ }).click();
     await expect(page.getByRole("dialog", { name: "Full Club" })).toHaveCount(0);

@@ -1,11 +1,11 @@
-/** Idiom & word-game boards from the Use of English Jeopardy series.
+/** Idiom & word-game boards from the Use of English trivia series.
  *  Each game is one 5x5 round; original (funny) category names preserved. */
 import type { BoardGame } from './boardGames';
 
 export const UOE_GAMES: BoardGame[] = [
  {
   "id": "uoe-ac",
-  "title": "Use of English Jeopardy · Game AC",
+  "title": "Use of English Trivia · Game AC",
   "letter": "AC",
   "categories": [
    {
@@ -137,7 +137,7 @@ export const UOE_GAMES: BoardGame[] = [
  },
  {
   "id": "uoe-ad",
-  "title": "Use of English Jeopardy · Game AD",
+  "title": "Use of English Trivia · Game AD",
   "letter": "AD",
   "categories": [
    {
@@ -269,7 +269,7 @@ export const UOE_GAMES: BoardGame[] = [
  },
  {
   "id": "uoe-h",
-  "title": "Use of English Jeopardy · Game H",
+  "title": "Use of English Trivia · Game H",
   "letter": "H",
   "categories": [
    {
@@ -401,7 +401,7 @@ export const UOE_GAMES: BoardGame[] = [
  },
  {
   "id": "uoe-i",
-  "title": "Use of English Jeopardy · Game I",
+  "title": "Use of English Trivia · Game I",
   "letter": "I",
   "categories": [
    {
@@ -533,7 +533,7 @@ export const UOE_GAMES: BoardGame[] = [
  },
  {
   "id": "uoe-j",
-  "title": "Use of English Jeopardy · Game J",
+  "title": "Use of English Trivia · Game J",
   "letter": "J",
   "categories": [
    {
@@ -665,7 +665,7 @@ export const UOE_GAMES: BoardGame[] = [
  },
  {
   "id": "uoe-k",
-  "title": "Use of English Jeopardy · Game K",
+  "title": "Use of English Trivia · Game K",
   "letter": "K",
   "categories": [
    {
@@ -797,7 +797,7 @@ export const UOE_GAMES: BoardGame[] = [
  },
  {
   "id": "uoe-n",
-  "title": "Use of English Jeopardy · Game N",
+  "title": "Use of English Trivia · Game N",
   "letter": "N",
   "categories": [
    {
@@ -929,7 +929,7 @@ export const UOE_GAMES: BoardGame[] = [
  },
  {
   "id": "uoe-o",
-  "title": "Use of English Jeopardy · Game O",
+  "title": "Use of English Trivia · Game O",
   "letter": "O",
   "categories": [
    {
@@ -1061,7 +1061,7 @@ export const UOE_GAMES: BoardGame[] = [
  },
  {
   "id": "uoe-p",
-  "title": "Use of English Jeopardy · Game P",
+  "title": "Use of English Trivia · Game P",
   "letter": "P",
   "categories": [
    {
@@ -1193,7 +1193,7 @@ export const UOE_GAMES: BoardGame[] = [
  },
  {
   "id": "uoe-q",
-  "title": "Use of English Jeopardy · Game Q",
+  "title": "Use of English Trivia · Game Q",
   "letter": "Q",
   "categories": [
    {
@@ -1325,7 +1325,7 @@ export const UOE_GAMES: BoardGame[] = [
  },
  {
   "id": "uoe-r",
-  "title": "Use of English Jeopardy · Game R",
+  "title": "Use of English Trivia · Game R",
   "letter": "R",
   "categories": [
    {

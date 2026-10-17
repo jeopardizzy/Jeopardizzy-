@@ -89,7 +89,7 @@ export function gameRoundCount(game: GameDef): number {
 }
 
 /**
- * Daily Jeopardy: one board of 5 categories sampled across every pool
+ * Daily Board: one board of 5 categories sampled across every pool
  * (books, UoE, classics), seeded by the UTC calendar day — the same board
  * all day on this device.
  */

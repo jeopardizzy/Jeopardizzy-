@@ -33,7 +33,7 @@ const SERIES_BLURBS: Record<GameDef["series"], string> = {
   "Classic Vault": "The original collection, board by board.",
 };
 
-/** Jeopardy selection — the heart of the site: you choose what to play. */
+/** Trivia Night selection — the heart of the site: you choose what to play. */
 export default function Sets() {
   const navigate = useNavigate();
   const selectSet = useTeamStore((s) => s.selectSet);
@@ -45,7 +45,7 @@ export default function Sets() {
     <main className="stage-bg min-h-dvh px-4 py-8">
       <div className="mx-auto max-w-4xl">
 
-        <h1 className="font-display mb-1 text-3xl text-ink sm:text-4xl">Choose your jeopardy</h1>
+        <h1 className="font-display mb-1 text-3xl text-ink sm:text-4xl">Choose your board</h1>
         <p className="mb-8 text-mute">
           Every game is a list of boards — five categories, five clues each, values climbing with
           every round. Pick the flavor that fits the table.

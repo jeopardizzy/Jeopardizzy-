@@ -3,7 +3,7 @@ import type { Level } from "../store/workbookStore";
 
 /**
  * What the free tier includes; everything else needs the Full Club unlock.
- * Free: Daily Jeopardy, one game per series, all guides, and Easy workbook
+ * Free: the Daily Board, one game per series, all guides, and Easy workbook
  * tests for every puzzle type. Pure rules — no store or platform access here.
  */
 

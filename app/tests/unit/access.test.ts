@@ -11,7 +11,7 @@ import {
 describe("free tier", () => {
   const games = listPlayableGames();
 
-  it("frees exactly one game per series plus Daily Jeopardy", () => {
+  it("frees exactly one game per series plus the Daily Board", () => {
     const free = games.filter((g) => isGameFree(g) && !g.daily);
     expect(free.map((g) => g.series).sort()).toEqual(["Book Club", "Classic Vault", "Idiom Arenas"]);
     expect(games.filter((g) => g.daily && isGameFree(g))).toHaveLength(1);

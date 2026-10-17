@@ -61,7 +61,7 @@ export default function UnlockSheet() {
               ))}
             </ul>
             <p className="mb-6 text-sm text-mute">
-              One-time purchase. No subscription, no ads. Daily Jeopardy, the guides and three
+              One-time purchase. No subscription, no ads. the Daily Board, the guides and three
               games stay free forever.
             </p>
 

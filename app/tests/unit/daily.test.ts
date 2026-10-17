@@ -3,7 +3,7 @@ import { buildDailyBoard, gameRoundCount } from "../../src/lib/board";
 import { GAMES } from "../../src/data/games";
 import { dailySeed } from "../../src/lib/random";
 
-describe("daily jeopardy", () => {
+describe("daily board", () => {
   const daily = GAMES.find((g) => g.id === "daily-jeopardy")!;
 
   it("the game def plays exactly one board and skips the final by default", () => {
