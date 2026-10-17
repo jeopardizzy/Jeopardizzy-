@@ -1040,8 +1040,8 @@ export const UOE_GAMES: BoardGame[] = [
       "answer": "MAN (superman, manpower)"
      },
      {
-      "clue": "Drug ___ front",
-      "answer": "STORE (drugstore, storefront)"
+      "clue": "Book ___ front",
+      "answer": "STORE (bookstore, storefront)"
      },
      {
       "clue": "Turn ___ cloth",

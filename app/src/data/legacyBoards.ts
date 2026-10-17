@@ -917,9 +917,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
     "name": "Letter Play",
     "clues": [
      {
-      "clue": "(What's the Word?) ___B · CI___ · SU___ · ___DEN",
+      "clue": "(What's the Word?) ___B · VINE___ · SU___ · ___DEN",
       "answer": "GAR",
-      "note": "Garb, cigar, sugar, garden. Garb: clothing, especially of a distinctive kind."
+      "note": "Garb, vinegar, sugar, garden. Garb: clothing, especially of a distinctive kind."
      },
      {
       "clue": "(What's the Word?) S___E · C___BER · ___LET · ___STER",
@@ -973,9 +973,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": "Klondike: an ice-cream bar brand."
      },
      {
-      "clue": "“If you've got the time, we've ____.” Name the product.",
-      "answer": "…got the beer. (Miller High Life)",
-      "note": "Miller High Life: an American beer."
+      "clue": "“Melts in your mouth, not in your ____.” Name the product.",
+      "answer": "…hands. (M&M's)",
+      "note": "M&M's: candy-coated chocolates; the slogan dates from 1954."
      }
     ]
    },
@@ -1436,9 +1436,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": ""
      },
      {
-      "clue": "A measure of the percentage of alcohol in whiskey, gin and other hard liquors",
+      "clue": "Evidence that settles the question once and for all",
       "answer": "Proof",
-      "note": "In the U.S., proof is twice the alcohol percentage."
+      "note": "Proof: evidence that shows something is true."
      },
      {
       "clue": "This percussion instrument is popular in grammar school bands",
@@ -2148,7 +2148,7 @@ export const LEGACY_BOARDS: BoardGame[] = [
      {
       "clue": "Qui ___",
       "answer": "Qui9 (Quinine)",
-      "note": "Quinine: a bitter drug once used to treat malaria."
+      "note": "Quinine: a bitter compound once used to treat malaria."
      },
      {
       "clue": "___ est",
@@ -2192,8 +2192,8 @@ export const LEGACY_BOARDS: BoardGame[] = [
      },
      {
       "clue": "Cold ____",
-      "answer": "Duck (fish and turkey also work)",
-      "note": "Cold duck: a sparkling wine drink. Cold fish: an unfriendly person. Cold turkey: quitting abruptly."
+      "answer": "Shoulder (fish and feet also work)",
+      "note": "Cold shoulder: deliberate unfriendliness. Cold fish: an unfriendly person. Cold feet: last-minute nerves."
      }
     ]
    }
@@ -2242,9 +2242,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": "Yardstick, hockey stick."
      },
      {
-      "clue": "Calabash, Wishbone, Corncob, Hookah: which is the odd one out, and why?",
-      "answer": "Wishbone: a chicken bone; the rest are smoking pipes",
-      "note": "Calabash: a gourd-bodied pipe. Hookah: a water pipe."
+      "clue": "Robin, Sparrow, Bat, Eagle: which is the odd one out, and why?",
+      "answer": "Bat: it's a mammal; the rest are birds",
+      "note": "Bats are the only mammals capable of true flight."
      },
      {
       "clue": "Delicious, Paris, Gala, Rome: which is the odd one out, and why?",
@@ -2630,9 +2630,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": "Parsimonious: extremely unwilling to spend money."
      },
      {
-      "clue": "Inebriated animal that emits a bad smell",
-      "answer": "Drunk skunk",
-      "note": "Inebriated: drunk."
+      "clue": "Plump feline (also slang for a rich, powerful person)",
+      "answer": "Fat cat",
+      "note": "Fat cat: a wealthy, influential person."
      },
      {
       "clue": "Former President Clinton's medicine",
@@ -3002,7 +3002,7 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": ""
      },
      {
-      "clue": "To make coffee or beer",
+      "clue": "To make coffee or tea",
       "answer": "Brew",
       "note": ""
      },
@@ -3194,9 +3194,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": "On the ball: alert and efficient."
      },
      {
-      "clue": "You've stopped drinking alcohol: you're on the ____",
-      "answer": "Wagon",
-      "note": "On the wagon: not drinking alcohol."
+      "clue": "Everyone's joining the latest craze: they're jumping on the ____",
+      "answer": "Bandwagon",
+      "note": "Jump on the bandwagon: join something because it's popular."
      },
      {
       "clue": "Receiving welfare or food stamps: you're on the ____",
@@ -3335,9 +3335,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
     "name": "It’s a Kick II",
     "clues": [
      {
-      "clue": "A barrel for doling out beer. [starts with K]",
+      "clue": "A small wooden barrel, as for nails. [starts with K]",
       "answer": "Keg",
-      "note": "Keg: a small barrel, often for beer."
+      "note": "Keg: a small barrel."
      },
      {
       "clue": "A type of long brown seaweed. [starts with K]",
@@ -3541,9 +3541,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": "Doris Day: actress and singer who starred opposite Rock Hudson in comedies like Pillow Talk."
      },
      {
-      "clue": "Person appointed to make sure everyone gets home safely after a night of drinking. [initials D. D.]",
-      "answer": "Designated Driver",
-      "note": "Designated driver: the person who stays sober to drive friends home."
+      "clue": "A small whirlwind that lifts dust and leaves on a hot, dry day. [initials D. D.]",
+      "answer": "Dust Devil",
+      "note": "Dust devil: a short-lived spinning column of air and dust."
      }
     ]
    },
@@ -3586,9 +3586,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": "Superman; manpower."
      },
      {
-      "clue": "Drug ____ front [starts with S]",
+      "clue": "Book ____ front [starts with S]",
       "answer": "Store",
-      "note": "Drugstore; storefront."
+      "note": "Bookstore; storefront."
      },
      {
       "clue": "Pawn ____ keeper [starts with S]",
@@ -3843,9 +3843,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": "Marble: polished white stone; the Taj Mahal is built of it."
      },
      {
-      "clue": "Hemp, ganja, Maryjane, or weed. [starts with MAR]",
-      "answer": "Marijuana",
-      "note": "Marijuana: cannabis, also called hemp, ganja or pot."
+      "clue": "The fourth planet from the Sun, nicknamed the Red Planet. [starts with MAR]",
+      "answer": "Mars",
+      "note": "Mars: red from iron oxide (rust) in its soil."
      },
      {
       "clue": "A bitter jam made from citrus. [starts with MAR]",
@@ -3883,9 +3883,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": "Marionette: a puppet worked by strings."
      },
      {
-      "clue": "Gin, vermouth, and an olive. [starts with MAR]",
-      "answer": "Martini",
-      "note": "Martini: a cocktail of gin, vermouth and an olive."
+      "clue": "A tiny South American monkey with claw-like nails. [starts with MAR]",
+      "answer": "Marmoset",
+      "note": "Marmoset: one of the smallest monkeys, living in Amazon treetops."
      }
     ]
    },
@@ -3974,9 +3974,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": "Marcel Marceau: world-famous French mime, known for silent performances."
      },
      {
-      "clue": "Mixture of chopped dried fruit, distilled spirits, and spices. (Sometimes beef suet, beef, or venison is included.) [initials M. M.]",
+      "clue": "Mixture of chopped dried fruit, sugar, and spices. (Sometimes beef suet, beef, or venison is included.) [initials M. M.]",
       "answer": "Mince Meat",
-      "note": "Mincemeat: chopped dried fruit, spirits and spices (once with meat) used in pies."
+      "note": "Mincemeat: chopped dried fruit, sugar and spices (once with meat) used in pies."
      },
      {
       "clue": "Evangelical political lobbying organization founded by Jerry Falwell in 1979 (and later dissolved in the late 1980s). [initials M. M.]",
@@ -4212,7 +4212,7 @@ export const LEGACY_BOARDS: BoardGame[] = [
      {
       "clue": "____ + beam, shine, walk, light [starts with M]",
       "answer": "Moon",
-      "note": "Moonbeam, moonshine, moonwalk, moonlight. Moonshine: illegally distilled whiskey."
+      "note": "Moonbeam, moonshine, moonwalk, moonlight."
      },
      {
       "clue": "____ + bow, coat, drop, forest [starts with R]",
@@ -4650,7 +4650,7 @@ export const LEGACY_BOARDS: BoardGame[] = [
      {
       "clue": "What do these have in common? Cliff, Norm, Woody, and Sam",
       "answer": "They are all characters in the television program Cheers.",
-      "note": "Cheers: a sitcom set in a Boston bar; Cliff, Norm, Woody and Sam are regulars/staff."
+      "note": "Cheers: a classic Boston-set sitcom; Cliff, Norm, Woody and Sam are its regulars."
      },
      {
       "clue": "What do these have in common? Chipper, driver, and wood",
@@ -4834,9 +4834,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": "Big Sur coast, Fisherman’s Wharf (San Francisco) and the Getty Museum (Los Angeles)."
      },
      {
-      "clue": "Which state? Grandma took a wine tasting tour in the Finger Lakes, went for a boat ride on the Erie Canal, and bet on a couple of horses at the race track in Saratoga.",
+      "clue": "Which state? Grandma went apple picking in the Finger Lakes, went for a boat ride on the Erie Canal, and bet on a couple of horses at the race track in Saratoga.",
       "answer": "New York",
-      "note": "Finger Lakes wine country, the Erie Canal and Saratoga race track."
+      "note": "The Finger Lakes orchards, the Erie Canal and Saratoga race track."
      },
      {
       "clue": "Which state? Grandma went to the beach at South Padre Island, visited the School Book Depository in Dealey Plaza, and saw a Cowboys football game.",
@@ -4844,9 +4844,9 @@ export const LEGACY_BOARDS: BoardGame[] = [
       "note": "South Padre Island, Dealey Plaza (JFK assassination site, Dallas) and the Dallas Cowboys."
      },
      {
-      "clue": "Which state? Grandma went to a music festival on Beale Street, watched whiskey being made at the Jack Daniels distillery, and took a guided tour of Graceland.",
+      "clue": "Which state? Grandma went to a music festival on Beale Street, saw a show at the Grand Ole Opry, and took a guided tour of Graceland.",
       "answer": "Tennessee",
-      "note": "Beale Street (Memphis blues), Jack Daniel’s whiskey, Elvis’s Graceland."
+      "note": "Beale Street (Memphis blues), the Grand Ole Opry (Nashville), Elvis’s Graceland."
      },
      {
       "clue": "Which state? Grandma toured the historic sailing ships at Mystic Seaport, played a little blackjack at Foxwoods, and saw a production of Hamlet at the Yale University Theatre.",

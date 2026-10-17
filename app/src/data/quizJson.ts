@@ -1,4 +1,5 @@
-// AUTO-GENERATED from the curated trivia dataset. Do not edit by hand.
+// Originally generated from the curated trivia dataset; the generator is not in this repo,
+// so this file is now edited directly (e.g. content kept free of alcohol, drug and tobacco references).
 // Content is anonymized: no source titles or author names appear here.
 
 export const quizJson = {
@@ -221,8 +222,8 @@ export const quizJson = {
           "answer": "Nut (doughnut, hazelnut, peanut, chestnut)"
         },
         {
-          "clue": "Eye, fiber, hour, wine (hint: g)",
-          "answer": "Glass (eyeglass, fiberglass, hourglass, wineglass)"
+          "clue": "Eye, fiber, hour, spy (hint: g)",
+          "answer": "Glass (eyeglass, fiberglass, hourglass, spyglass)"
         },
         {
           "clue": "Lady, bed, litter, shutter (hint: b)",
@@ -472,7 +473,7 @@ export const quizJson = {
           "answer": "Plains"
         },
         {
-          "clue": "A county in Ireland or... a wine bottle stopper.",
+          "clue": "A county in Ireland or... a bottle stopper.",
           "answer": "Cork"
         },
         {
@@ -992,7 +993,7 @@ export const quizJson = {
           "answer": "Cedar"
         },
         {
-          "clue": "Most wines are aged in barrels made of wood from this tree.",
+          "clue": "Acorns are the nuts of this mighty tree.",
           "answer": "Oak"
         },
         {
@@ -1577,8 +1578,8 @@ export const quizJson = {
           "answer": "Tide/tied"
         },
         {
-          "clue": "Sicken; and, a bitter beer.",
-          "answer": "Ail/ale"
+          "clue": "A bucket; and, light in color.",
+          "answer": "Pail/pale"
         },
         {
           "clue": "\"Yes\" to a politician or sailor; and, the visual organ.",
@@ -1683,8 +1684,8 @@ export const quizJson = {
           "answer": "Insanity Defense"
         },
         {
-          "clue": "Crack cocaine or LSD.",
-          "answer": "Illegal Drug"
+          "clue": "The profession that shapes everyday products like chairs, kettles and phones.",
+          "answer": "Industrial Design"
         },
         {
           "clue": "The Fourth of July.",
