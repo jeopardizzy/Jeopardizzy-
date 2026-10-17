@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the green behind the trophy icon (store-assets/icon-trophy.png) -->
+    <color name="splash_background">#48785B</color>
+</resources>
