@@ -14,8 +14,9 @@ const mem = new Map<string, string>();
   clear: () => mem.clear(),
 };
 
-function fake(over: Partial<PurchasesAdapter> = {}): PurchasesAdapter & { fire: () => void } {
+function fake(over: Partial<PurchasesAdapter> = {}): PurchasesAdapter & { fire: () => void; resume: () => void } {
   let listener = () => {};
+  let onResume = () => {};
   return {
     kind: "native",
     price: async () => "$4.99",
@@ -25,7 +26,13 @@ function fake(over: Partial<PurchasesAdapter> = {}): PurchasesAdapter & { fire: 
     onPurchased: (cb) => {
       listener = cb;
     },
+    onResume: (cb) => {
+      onResume = cb;
+    },
+    canRedeemCode: false,
+    redeemCode: async () => {},
     fire: () => listener(),
+    resume: () => onResume(),
     ...over,
   };
 }
@@ -120,5 +127,48 @@ describe("Full Club entitlement", () => {
     await useEntitlement.getState().init(fake({ restore: async () => true }));
     await useEntitlement.getState().restore();
     expect(useEntitlement.getState()).toMatchObject({ fullClub: true, notice: "restored" });
+  });
+
+  it("resume: a promo code redeemed in the Play Store unlocks on return", async () => {
+    let owns = false;
+    const a = fake({ owned: async () => owns });
+    await useEntitlement.getState().init(a);
+    useEntitlement.getState().openSheet();
+    owns = true;
+    a.resume();
+    await vi.waitFor(() => expect(useEntitlement.getState().fullClub).toBe(true));
+    expect(useEntitlement.getState().sheetOpen).toBe(false);
+    expect(cached()).toBe(true);
+  });
+
+  it("resume: a refund seen on return revokes; an offline return keeps the unlock", async () => {
+    let answer: () => Promise<boolean> = async () => true;
+    const a = fake({ owned: () => answer() });
+    await useEntitlement.getState().init(a);
+    answer = async () => Promise.reject(new Error("offline"));
+    a.resume();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(useEntitlement.getState().fullClub).toBe(true);
+    answer = async () => false;
+    a.resume();
+    await vi.waitFor(() => expect(useEntitlement.getState().fullClub).toBe(false));
+  });
+
+  it("redeem: shows the store's code sheet; the redeemed code unlocks via the listener", async () => {
+    const redeemCode = vi.fn(async () => {});
+    const a = fake({ canRedeemCode: true, redeemCode });
+    await useEntitlement.getState().init(a);
+    expect(useEntitlement.getState().canRedeem).toBe(true);
+    await useEntitlement.getState().redeem();
+    expect(redeemCode).toHaveBeenCalledOnce();
+    expect(useEntitlement.getState().notice).toBeNull();
+    a.fire();
+    expect(useEntitlement.getState().fullClub).toBe(true);
+  });
+
+  it("redeem: a sheet that fails to open says where else to redeem", async () => {
+    await useEntitlement.getState().init(fake({ redeemCode: async () => Promise.reject(new Error("iOS 15")) }));
+    await useEntitlement.getState().redeem();
+    expect(useEntitlement.getState().notice).toBe("redeem-error");
   });
 });

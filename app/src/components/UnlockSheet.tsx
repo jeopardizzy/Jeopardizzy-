@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import { AnimatePresence, motion } from "motion/react";
 import { useEntitlement } from "../store/entitlementStore";
 import { STORE_LINKS } from "../lib/purchases";
@@ -14,6 +15,7 @@ const NOTICES = {
   "nothing-to-restore": "No Full Club purchase found for this account.",
   pending: "Your purchase is waiting for approval. It unlocks as soon as it clears.",
   error: "The store didn’t answer. Check your connection and try again.",
+  "redeem-error": "The code sheet didn’t open. You can also redeem in the App Store app: tap your photo, then “Redeem Gift Card or Code”.",
 } as const;
 
 /** Full Club offer: buy or restore in the apps, a pointer to the apps on the web. */
@@ -26,8 +28,11 @@ export default function UnlockSheet() {
   const notice = useEntitlement((s) => s.notice);
   const buy = useEntitlement((s) => s.buy);
   const restore = useEntitlement((s) => s.restore);
+  const canRedeem = useEntitlement((s) => s.canRedeem);
+  const redeem = useEntitlement((s) => s.redeem);
   const reduce = useMotionSafe();
   const native = platform === "native";
+  const android = native && Capacitor.getPlatform() === "android";
 
   return (
     <AnimatePresence>
@@ -61,7 +66,7 @@ export default function UnlockSheet() {
               ))}
             </ul>
             <p className="mb-6 text-sm text-mute">
-              One-time purchase. No subscription, no ads. the Daily Board, the guides and three
+              One-time purchase. No subscription, no ads. The Daily Board, the guides and three
               games stay free forever.
             </p>
 
@@ -87,6 +92,20 @@ export default function UnlockSheet() {
                 >
                   {busy === "restoring" ? "Restoring…" : "Restore purchase"}
                 </button>
+                {canRedeem && (
+                  <button
+                    onClick={redeem}
+                    disabled={busy !== "idle"}
+                    className="rounded-xl px-6 py-2 text-sm font-semibold text-sage transition enabled:hover:text-sage-deep disabled:opacity-60"
+                  >
+                    Redeem a code
+                  </button>
+                )}
+                {android && (
+                  <p className="text-center text-xs text-mute">
+                    Have a promo code? Tap Unlock and choose “Redeem code” as the payment method.
+                  </p>
+                )}
               </div>
             ) : (
               <div className="flex flex-col gap-3">

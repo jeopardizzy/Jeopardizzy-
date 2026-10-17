@@ -1,3 +1,4 @@
+import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { NativePurchases, PURCHASE_TYPE, type Transaction } from "@capgo/native-purchases";
 import { FULL_CLUB_PRODUCT_ID } from "./access";
@@ -17,8 +18,13 @@ export interface PurchasesAdapter {
   buy(): Promise<"purchased" | "cancelled" | "pending">;
   /** ask the store to resync, then report ownership */
   restore(): Promise<boolean>;
-  /** purchases that complete outside buy() (Ask to Buy, pending payments) */
+  /** purchases that complete outside buy() (Ask to Buy, pending payments, offer codes) */
   onPurchased(cb: () => void): void;
+  /** app came back to the foreground, e.g. after redeeming a promo code in the Play Store */
+  onResume(cb: () => void): void;
+  /** the store has an in-app code-redemption sheet (iOS; Android takes codes in the purchase sheet) */
+  readonly canRedeemCode: boolean;
+  redeemCode(): Promise<void>;
 }
 
 const INAPP = { productType: PURCHASE_TYPE.INAPP } as const;
@@ -28,6 +34,17 @@ export function grantsFullClub(t: Pick<Transaction, "productIdentifier" | "revoc
   if (t.productIdentifier !== FULL_CLUB_PRODUCT_ID) return false;
   if (t.revocationDate) return false;
   return t.purchaseState === undefined || t.purchaseState === "1";
+}
+
+/**
+ * Play refunds and revokes a purchase nobody acknowledges within 3 days. buy()
+ * acknowledges its own; promo codes redeemed in the Play Store app arrive
+ * outside it, so owned() acknowledges whatever is still open.
+ */
+export function needsAcknowledge(
+  t: Pick<Transaction, "productIdentifier" | "revocationDate" | "purchaseState" | "isAcknowledged" | "purchaseToken">,
+): boolean {
+  return grantsFullClub(t) && t.isAcknowledged === false && !!t.purchaseToken;
 }
 
 function isCancel(err: unknown): boolean {
@@ -46,6 +63,10 @@ const nativeAdapter: PurchasesAdapter = {
   },
   async owned() {
     const { purchases } = await NativePurchases.getPurchases({ ...INAPP, onlyCurrentEntitlements: true });
+    for (const t of purchases.filter(needsAcknowledge)) {
+      // a failed acknowledge is retried on the next check; ownership still stands
+      await NativePurchases.acknowledgePurchase({ purchaseToken: t.purchaseToken! }).catch(() => {});
+    }
     return purchases.some(grantsFullClub);
   },
   async buy() {
@@ -67,6 +88,17 @@ const nativeAdapter: PurchasesAdapter = {
       if (grantsFullClub(t)) cb();
     });
   },
+  onResume(cb) {
+    App.addListener("resume", cb).catch(() => {});
+  },
+  // iPad web views report a Mac user agent, so no version gate: below iOS 16
+  // the sheet fails to open and the app points to the App Store app instead
+  get canRedeemCode() {
+    return Capacitor.getPlatform() === "ios";
+  },
+  async redeemCode() {
+    await NativePurchases.presentOfferCodeRedeemSheet();
+  },
 };
 
 /**
@@ -82,6 +114,9 @@ const webAdapter: PurchasesAdapter = {
   buy: async () => "cancelled",
   restore: async () => false,
   onPurchased: () => {},
+  onResume: () => {},
+  canRedeemCode: false,
+  redeemCode: async () => {},
 };
 
 export function platformAdapter(): PurchasesAdapter {

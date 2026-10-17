@@ -4,8 +4,10 @@ import type { PurchasesAdapter } from "../lib/purchases";
 /**
  * Full Club entitlement. The stores are the source of truth; the device
  * keeps the last answer so the unlock survives offline cold starts.
- * - launch: show the cached answer at once, then ask the store. A definite
- *   "not owned" (e.g. after a refund) revokes; an error or timeout keeps it.
+ * - launch and every return to the foreground: show the cached answer, then
+ *   ask the store. A definite "not owned" (e.g. after a refund) revokes; an
+ *   error or timeout keeps it. The resume check picks up promo codes redeemed
+ *   in the Play Store app.
  * - every store call is time-boxed so the UI can never hang on "Restoring…",
  *   including on accounts that own nothing.
  * Not part of progress backups: a backup must not be able to grant it.
@@ -16,18 +18,21 @@ export const STORE_TIMEOUT_MS = 15_000;
 export const BUY_TIMEOUT_MS = 180_000;
 
 export type Busy = "idle" | "buying" | "restoring";
-export type Notice = "restored" | "nothing-to-restore" | "pending" | "error" | null;
+export type Notice = "restored" | "nothing-to-restore" | "pending" | "error" | "redeem-error" | null;
 
 interface EntitlementState {
   fullClub: boolean;
   price: string | null;
   platform: "native" | "web" | null;
+  canRedeem: boolean;
   busy: Busy;
   notice: Notice;
   sheetOpen: boolean;
   init: (adapter: PurchasesAdapter) => Promise<void>;
   buy: () => Promise<void>;
   restore: () => Promise<void>;
+  /** opens the store's code sheet; a redeemed code unlocks through onPurchased */
+  redeem: () => Promise<void>;
   openSheet: () => void;
   closeSheet: () => void;
 }
@@ -67,25 +72,32 @@ export const useEntitlement = create<EntitlementState>((set, get) => {
     set({ fullClub: true, sheetOpen: false, busy: "idle" });
   };
 
+  const check = async (a: PurchasesAdapter) => {
+    try {
+      const owned = await withTimeout(a.owned(), STORE_TIMEOUT_MS);
+      if (owned && !get().fullClub) return grant();
+      saveCached(owned);
+      set({ fullClub: owned });
+    } catch {
+      /* offline or store unavailable: keep the cached answer */
+    }
+  };
+
   return {
     fullClub: loadCached(),
     price: null,
     platform: null,
+    canRedeem: false,
     busy: "idle",
     notice: null,
     sheetOpen: false,
 
     init: async (a) => {
       adapter = a;
-      set({ platform: a.kind, fullClub: loadCached() });
+      set({ platform: a.kind, canRedeem: a.canRedeemCode, fullClub: loadCached() });
       a.onPurchased(grant);
-      try {
-        const owned = await withTimeout(a.owned(), STORE_TIMEOUT_MS);
-        saveCached(owned);
-        set({ fullClub: owned });
-      } catch {
-        /* offline or store unavailable: keep the cached answer */
-      }
+      a.onResume(() => void check(a));
+      await check(a);
       try {
         set({ price: await withTimeout(a.price(), STORE_TIMEOUT_MS) });
       } catch {
@@ -118,6 +130,16 @@ export const useEntitlement = create<EntitlementState>((set, get) => {
         }
       } catch {
         set({ busy: "idle", notice: "error" });
+      }
+    },
+
+    redeem: async () => {
+      if (!adapter || get().busy !== "idle") return;
+      set({ notice: null });
+      try {
+        await withTimeout(adapter.redeemCode(), STORE_TIMEOUT_MS);
+      } catch {
+        set({ notice: "redeem-error" });
       }
     },
 
