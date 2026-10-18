@@ -15,6 +15,7 @@ import { platformAdapter } from "./lib/purchases";
 import { useEntitlement } from "./store/entitlementStore";
 import PartyHost from "./pages/PartyHost";
 import PartyJoin from "./pages/PartyJoin";
+import AppLinks from "./party/AppLinks";
 
 /** Shell with the permanent sidebar — hidden during an active team game. */
 function AppShell({ children }: { children: ReactNode }) {
@@ -54,6 +55,7 @@ export default function App() {
 
   return (
     <HashRouter>
+      <AppLinks />
       <AppShell>
         <Routes>
           <Route path="/" element={<Home />} />

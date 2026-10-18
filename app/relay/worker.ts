@@ -15,6 +15,24 @@ interface Env {
 
 const SWEEP_MS = 60_000;
 
+/** Join links (https://<relay>/join#CODE/KEY) open the app when it's installed… */
+const APPLE_APP_ID = "5CT93Q4J94.com.quizzicalclub.app";
+const ANDROID_PACKAGE = "com.quizzicalclub.app";
+/** Play App Signing certificate (from .github/workflows/play-signing-cert.yml). */
+const ANDROID_CERT_SHA256 = [
+  "BA:36:83:0F:E4:88:AE:52:88:E6:44:9E:28:7F:21:F2:06:B0:E4:7E:28:F6:86:91:04:B4:74:0C:76:A9:1E:30",
+];
+/** …and the website otherwise. The #CODE/KEY fragment never reaches this server. */
+const WEB_JOIN = "https://jeopardizzy.github.io/Jeopardizzy-/#/join/";
+
+const json = (body: unknown) =>
+  new Response(JSON.stringify(body), { headers: { "content-type": "application/json" } });
+
+const JOIN_PAGE = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<title>Join Quizzical Club</title>
+<script>location.replace(${JSON.stringify(WEB_JOIN)} + location.hash.slice(1))</script>
+<p style="font-family:sans-serif">Opening Quizzical Club…</p>`;
+
 export class PartyRelay {
   private hub = new RelayHub();
 
@@ -62,6 +80,20 @@ export class PartyRelay {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === "/.well-known/apple-app-site-association") {
+      return json({ applinks: { details: [{ appIDs: [APPLE_APP_ID], components: [{ "/": "/join*" }] }] } });
+    }
+    if (url.pathname === "/.well-known/assetlinks.json") {
+      return json([
+        {
+          relation: ["delegate_permission/common.handle_all_urls"],
+          target: { namespace: "android_app", package_name: ANDROID_PACKAGE, sha256_cert_fingerprints: ANDROID_CERT_SHA256 },
+        },
+      ]);
+    }
+    if (url.pathname === "/join") {
+      return new Response(JOIN_PAGE, { headers: { "content-type": "text/html; charset=utf-8" } });
+    }
     if (url.pathname !== "/ws") return new Response("Quizzical Club party relay\n", { status: 200 });
     return env.RELAY.get(env.RELAY.idFromName("party")).fetch(request);
   },

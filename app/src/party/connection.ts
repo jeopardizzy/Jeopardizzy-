@@ -11,16 +11,36 @@ export type HostMsg = { t: "view"; view: PartyView } | { t: "you"; team: number 
 
 export type RoomStatus = "connecting" | "open" | "offline" | "no-room" | "closed";
 
+/** The party relay on Cloudflare Workers (app/relay). */
+export const DEPLOYED_RELAY = "wss://quizzical-club-party-relay.apsftllc.workers.dev/ws";
+
 /**
- * Where the relay lives. Prototype: only on a local dev or preview server
- * (localhost with a port), or wherever VITE_PARTY_RELAY points; never inside
- * the store apps until the relay is deployed.
+ * Where the relay lives: a local one on dev and preview servers (localhost
+ * with a port, e.g. e2e tests), the deployed one on the website and in the
+ * apps (capacitor://localhost, https://localhost: no port), or wherever
+ * VITE_PARTY_RELAY points.
  */
 export const RELAY_URL: string | null =
   (import.meta.env.VITE_PARTY_RELAY as string | undefined) ??
   (typeof location !== "undefined" && location.hostname === "localhost" && location.port
     ? "ws://localhost:8787/ws"
-    : null);
+    : DEPLOYED_RELAY);
+
+/**
+ * The join link for a room. With a deployed relay it is https://<relay>/join#CODE/KEY:
+ * that opens the app when it's installed (universal / app links served by the
+ * relay) and the website otherwise. Locally it points at this page.
+ */
+export function joinLink(relay: string, code: string, key: string): string {
+  if (relay.startsWith("wss://")) return `${relay.replace(/^wss:/, "https:").replace(/\/ws$/, "")}/join#${code}/${key}`;
+  return `${location.origin}${location.pathname}#/join/${code}/${key}`;
+}
+
+/** The in-app route for a join link opened from a QR code, or null if it isn't one. */
+export function joinRouteFor(url: string): string | null {
+  const m = /\/join#([A-Za-z]{4})\/([\w-]{16,})$/.exec(url);
+  return m ? `/join/${m[1].toUpperCase()}/${m[2]}` : null;
+}
 
 /** One WebSocket to the relay that reconnects on its own, calling `hello` after every (re)connect. */
 class RelaySocket {
@@ -128,9 +148,7 @@ export function hostRoom(
 
   return {
     code,
-    link: Promise.all([code, keyP]).then(
-      ([c, k]) => `${location.origin}${location.pathname}#/join/${c}/${k.text}`,
-    ),
+    link: Promise.all([code, keyP]).then(([c, k]) => joinLink(relay, c, k.text)),
     sendAll: (msg) => send("all", msg),
     sendTo: (peer, msg) => send(peer, msg),
     close: () => sock.stop(),

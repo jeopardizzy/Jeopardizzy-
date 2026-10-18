@@ -1,0 +1,46 @@
+name: Show Play signing certificate
+
+# Prints the SHA-256 fingerprint of the key Google Play signs the app with
+# (Play App Signing), for Android app links (assetlinks.json served by the
+# party relay, app/relay/worker.ts). Fingerprints are public; nothing secret
+# is printed.
+
+on:
+  push:
+    paths: [.github/workflows/play-signing-cert.yml]
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: "An uploaded versionCode"
+        required: true
+        default: "13"
+
+permissions:
+  contents: read
+
+jobs:
+  cert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Look up the signing certificate
+        env:
+          SA_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          VERSION_CODE: ${{ inputs.version_code || '13' }}
+        run: |
+          pip install --quiet google-auth requests
+          python - <<'PY'
+          import json, os, requests
+          from google.oauth2 import service_account
+          from google.auth.transport.requests import Request
+          creds = service_account.Credentials.from_service_account_info(
+              json.loads(os.environ["SA_JSON"]),
+              scopes=["https://www.googleapis.com/auth/androidpublisher"])
+          creds.refresh(Request())
+          url = ("https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"
+                 f"com.quizzicalclub.app/generatedApks/{os.environ['VERSION_CODE']}")
+          r = requests.get(url, headers={"Authorization": f"Bearer {creds.token}"})
+          r.raise_for_status()
+          for g in r.json().get("generatedApks", []):
+              h = g.get("certificateSha256Hash", "")
+              print("certificateSha256Hash:", h)
+          PY
