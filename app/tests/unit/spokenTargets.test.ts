@@ -1,5 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { numberWords, phrase, spokenTargets } from "../../src/lib/spokenTargets";
+import { accentVariants, numberWords, phrase, spokenTargets } from "../../src/lib/spokenTargets";
+
+describe("accentVariants", () => {
+  it("respells typical accent sound changes", () => {
+    expect(accentVariants("SLOTH")).toEqual(expect.arrayContaining(["SLOT", "SLOS", "ESLOTH"]));
+    expect(accentVariants("HOARSE")).toContain("OARSE");
+    expect(accentVariants("WEST")).toContain("VEST");
+    expect(accentVariants("JULIENNE")).toEqual(expect.arrayContaining(["YULIENNE", "JULIENNEH"]));
+  });
+
+  it("stays small and never repeats the phrase itself", () => {
+    for (const p of ["THE UNSINKABLE MOLLY BROWN", "MARTIN VAN BUREN", "ATE", "EYE"]) {
+      const v = accentVariants(p);
+      expect(v.length).toBeLessThanOrEqual(5);
+      expect(v).not.toContain(p);
+    }
+    expect(accentVariants("EYE")).toEqual([]);
+  });
+});
 import { quizData } from "../../src/data/quizData";
 
 describe("spokenTargets", () => {

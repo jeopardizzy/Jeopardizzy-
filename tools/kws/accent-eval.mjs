@@ -11,12 +11,17 @@
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 const require = createRequire(path.resolve("app/package.json"));
 const { chromium } = require("@playwright/test");
-const { createServer } = await import(require.resolve("vite"));
+const { createServer } = await import(pathToFileURL(require.resolve("vite")).href);
 
-const leniencies = process.argv.slice(2).map(Number).filter((n) => n > 0);
+// tuning overrides for experiments, e.g. --tune '{"maxActivePaths":8,"boost":3}'
+const argv = process.argv.slice(2);
+const tuneAt = argv.indexOf("--tune");
+const tune = tuneAt >= 0 ? JSON.parse(argv.splice(tuneAt, 2)[1]) : {};
+const leniencies = argv.map(Number).filter((n) => n > 0);
 if (leniencies.length === 0) leniencies.push(1, 0.6);
 
 const DIR = path.resolve("tmp/accent");
@@ -46,32 +51,65 @@ await server.listen();
 const browser = await chromium.launch();
 const page = await browser.newPage();
 await page.goto("http://localhost:4932/");
-await page.evaluate(async () => {
+await page.evaluate(async (tune) => {
   window.__kws = await import("/src/voice/kws.ts");
+  window.__targets = await import("/src/lib/spokenTargets.ts");
+  Object.assign(window.__kws.KWS_TUNING, tune);
   await window.__kws.loadKws();
-});
+}, tune);
+if (Object.keys(tune).length) console.log("tuning:", JSON.stringify(tune));
+
+// what the app listens for: every alternative of the answer ("ATE" or "EIGHT"), like SpokenAnswer.tsx,
+// plus accent respellings depending on --variants always|retry|off (default: off)
+const variantsAt = argv.indexOf("--variants") >= 0 ? argv.splice(argv.indexOf("--variants"), 2)[1] : "off";
+const alternatives = {};
+const variants = {};
+for (const s of index) {
+  if (!alternatives[s.answer]) {
+    const groups = await page.evaluate((a) => window.__targets.spokenTargets(a), s.answer);
+    alternatives[s.answer] = groups[0].filter((p) => tokens[p]);
+    const v = await page.evaluate((ps) => ps.flatMap((p) => window.__targets.accentVariants(p)), alternatives[s.answer]);
+    variants[s.answer] = v.filter((p) => tokens[p]);
+  }
+}
+console.log(`variants: ${variantsAt}`);
+const phraseVariants = {};
+for (const p of phrases) {
+  phraseVariants[p] = (await page.evaluate((q) => window.__targets.accentVariants(q), p)).filter((v) => tokens[v]);
+}
+const useVariants = (leniency) => variantsAt === "always" || (variantsAt === "retry" && leniency < 1);
 
 const rows = [];
 for (const s of index) {
   const samples = readWav(path.join(DIR, `${s.id}.wav`));
   const i = phrases.indexOf(s.phrase);
   const others = [1, 2, 3, 4].map((k) => phrases[(i + k * 7) % phrases.length]).filter((p) => p !== s.phrase);
-  const withAnswer = [{ label: "g0", tokens: tokens[s.phrase] }, ...others.map((p, k) => ({ label: `x${k}`, tokens: tokens[p] }))];
+  const withAnswer = [
+    ...alternatives[s.answer].map((p) => ({ label: "g0", tokens: tokens[p] })),
+    ...others.map((p, k) => ({ label: `x${k}`, tokens: tokens[p] })),
+  ];
   const withoutAnswer = [...others, phrases[(i + 35) % phrases.length]]
     .filter((p) => p !== s.phrase)
-    .map((p, k) => ({ label: `x${k}`, tokens: tokens[p] }));
+    .map((p, k) => ({ label: `x${k}`, tokens: tokens[p], phrase: p }));
   for (const leniency of leniencies) {
+    const extra = useVariants(leniency) ? variants[s.answer].map((p) => ({ label: "g0", tokens: tokens[p] })) : [];
+    const listenFor = [...withAnswer, ...extra];
+    // false alarms: other answers' respellings must not fire on this audio either
+    const alarmTargets = useVariants(leniency)
+      ? [...withoutAnswer, ...withoutAnswer.flatMap((t) => phraseVariants[t.phrase].map((v) => ({ ...t, tokens: tokens[v] })))]
+      : withoutAnswer;
     const r = await page.evaluate(
       async ({ samples, withAnswer, withoutAnswer, leniency }) => {
         const f = Float32Array.from(samples);
         const heard = await window.__kws.spotSamples(withAnswer, f, leniency);
         const alarm = await window.__kws.spotSamples(withoutAnswer, f, leniency);
-        return { first: heard[0] ?? null, alarm: alarm.length > 0 };
+        return { first: heard[0] ?? null, alarm: alarm[0] ?? null };
       },
-      { samples, withAnswer, withoutAnswer, leniency },
+      { samples, withAnswer: listenFor, withoutAnswer: alarmTargets, leniency },
     );
     const outcome = r.first === "g0" ? "hit" : r.first ? "wrong" : "miss";
-    rows.push({ ...s, leniency, outcome, falseAlarm: r.alarm });
+    const alarmPhrase = r.alarm ? withoutAnswer.find((t) => t.label === r.alarm)?.phrase : null;
+    rows.push({ ...s, leniency, outcome, falseAlarm: !!r.alarm, alarmPhrase });
   }
 }
 await browser.close();

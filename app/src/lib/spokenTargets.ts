@@ -69,7 +69,41 @@ export function spokenTargets(answer: string): string[][] {
   return groups.length > 0 ? groups : [[phrase(answer)]].filter((g) => g[0].length > 0);
 }
 
-/** Every distinct phrase the Workbook may listen for (for the token build). */
+/**
+ * Common accent sound changes, as respellings the keyword model can match.
+ * Each rule rewrites one word; a phrase gets at most MAX_VARIANTS of them.
+ */
+const ACCENT_RULES: [RegExp, string][] = [
+  [/TH/, "T"], // "sloth" → "slot" (Russian, French, Spanish, German, Chinese…)
+  [/TH/, "S"], // "cloth" → "clos"
+  [/TH/, "D"], // "the" → "de"
+  [/^S(?=[CKLMNPQTW])/, "ES"], // "sloth" → "esloth" (Spanish, Arabic)
+  [/^H(?=[AEIOU])/, ""], // "hoarse" → "oarse" (French, Spanish)
+  [/^W/, "V"], // "west" → "vest" (German, Russian)
+  [/^V/, "B"], // "valley" → "balley" (Spanish)
+  [/^J/, "Y"], // "julienne" → "yulienne" (German, Arabic)
+  [/(NN|LL|TT|SS)E$/, "$1EH"], // French-style endings said in full: "julienne" → "juliennee"
+];
+const MAX_VARIANTS = 5;
+
+/** Accent respellings of a phrase, e.g. "SLOTH" → ["SLOT", "SLOS", "SLOD", "ESLOTH"]. */
+export function accentVariants(p: string): string[] {
+  const words = p.split(" ");
+  const out = new Set<string>();
+  for (const [re, to] of ACCENT_RULES) {
+    for (let i = 0; i < words.length && out.size < MAX_VARIANTS; i++) {
+      if (words[i].length < 3 || !re.test(words[i])) continue;
+      const v = [...words];
+      v[i] = v[i].replace(re, to);
+      if (v[i].length >= 2) out.add(v.join(" "));
+    }
+  }
+  out.delete(p);
+  return [...out].slice(0, MAX_VARIANTS);
+}
+
+/** Every distinct phrase the Workbook may listen for, with accent variants (for the token build). */
 export function allPhrases(answers: string[]): string[] {
-  return [...new Set(answers.flatMap((a) => spokenTargets(a).flat()))].sort();
+  const base = answers.flatMap((a) => spokenTargets(a).flat());
+  return [...new Set([...base, ...base.flatMap(accentVariants)])].sort();
 }

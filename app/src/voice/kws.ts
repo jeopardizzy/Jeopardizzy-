@@ -38,6 +38,20 @@ declare global {
 
 let engine: Promise<{ mod: SherpaModule; kws: UpstreamKws }> | null = null;
 
+/**
+ * Recognition tuning, measured with tools/kws/accent-eval.mjs on 40 answers
+ * spoken plainly and in eight strong accents. `maxActivePaths` applies when
+ * the engine loads; the others to every question.
+ */
+export const KWS_TUNING = {
+  /** decoder beam: wider keeps unusual (accented) pronunciations alive */
+  maxActivePaths: 4,
+  /** score bonus for the expected phrases' tokens */
+  boost: 2.0,
+  /** bonus on a second try */
+  retryBoost: 2.5,
+};
+
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const s = document.createElement("script");
@@ -62,11 +76,13 @@ function spotterConfig() {
       modelingUnit: "bpe",
       bpeVocab: "",
     },
-    maxActivePaths: 4,
+    maxActivePaths: KWS_TUNING.maxActivePaths,
     numTrailingBlanks: 1,
     keywordsScore: 1.0,
     keywordsThreshold: 0.25,
-    keywords: "▁THE @the",
+    // The spotter needs one keyword to start, and per-question streams keep it.
+    // It must never fire: a hit resets decoding mid-answer ("THE Tigris").
+    keywords: "Z Z Z Z Z Z :0.1 #0.99 @__none",
   };
 }
 
@@ -143,7 +159,7 @@ export function thresholdFor(tokens: string, leniency = 1): number {
 
 /** The keywords string the spotter takes: one "<tokens> :boost #threshold @label" per line. */
 export function keywordsSpec(targets: KeywordTarget[], leniency = 1): string {
-  const boost = leniency < 1 ? 2.5 : 2.0;
+  const boost = leniency < 1 ? KWS_TUNING.retryBoost : KWS_TUNING.boost;
   return targets.map((t) => `${t.tokens} :${boost} #${thresholdFor(t.tokens, leniency)} @${t.label}`).join("\n");
 }
 
@@ -200,8 +216,10 @@ export async function spotSamples(targets: KeywordTarget[], samples: Float32Arra
   try {
     const labels: string[] = [];
     const chunk = 4096;
-    const padded = new Float32Array(samples.length + SAMPLE_RATE); // a second of silence lets the last word finish
-    padded.set(samples);
+    // like a microphone: a moment of silence before speech, and a second after it so the last word finishes
+    const lead = Math.round(SAMPLE_RATE * 0.5);
+    const padded = new Float32Array(lead + samples.length + SAMPLE_RATE);
+    padded.set(samples, lead);
     for (let i = 0; i < padded.length; i += chunk) labels.push(...s.feed(padded.subarray(i, i + chunk)));
     return labels;
   } finally {

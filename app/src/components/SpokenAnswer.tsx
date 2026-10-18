@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { spokenTargets } from "../lib/spokenTargets";
+import { accentVariants, spokenTargets } from "../lib/spokenTargets";
 import { listen, type KeywordTarget, type ListenSession } from "../voice/kws";
 import { stopVoice } from "../audio/voice";
 import { useWorkbookStore } from "../store/workbookStore";
@@ -57,8 +57,9 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
     if (!enabled) return setState("explain");
     stopVoice(); // the quizmaster must not talk into the microphone
     const groups = spokenTargets(answer);
+    // every spelling of the answer, plus accent respellings ("SLOTH" → "SLOT", "ESLOTH"…)
     const targets: KeywordTarget[] = groups.flatMap((g, i) =>
-      g.filter((p) => TOKENS[p]).map((p) => ({ label: `g${i}`, tokens: TOKENS[p] })),
+      [...g, ...g.flatMap(accentVariants)].filter((p) => TOKENS[p]).map((p) => ({ label: `g${i}`, tokens: TOKENS[p] })),
     );
     const wrong = others
       .filter((o) => o !== answer && canSpeak(o))
@@ -103,6 +104,10 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
           The microphone opens only while the button says “Listening”, for a few seconds. Your voice is
           checked on this device and never recorded, saved or sent anywhere. You can always type instead.
         </p>
+        <p className="mb-3 leading-relaxed text-mute">
+          Answer in a short sentence, like “I think it’s Mount Everest”: it’s heard more reliably than a single
+          word, whatever your accent.
+        </p>
         <div className="flex gap-2">
           <button
             type="button"
@@ -137,6 +142,7 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
       {state === "missed" && (
         <div role="status" className="flex flex-col items-center gap-1 text-xs text-mute">
           <p>Didn’t catch that. Try once more (I’ll listen more closely), or type it.</p>
+          <p>Tip: a short sentence works best, like “I think it’s …”.</p>
           <button type="button" onClick={onType} className="rounded-lg px-3 py-1 font-semibold text-sage underline">
             ⌨️ Type it instead
           </button>
