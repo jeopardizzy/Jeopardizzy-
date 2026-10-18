@@ -1,4 +1,4 @@
 {
-  "_comment": "The quizmaster voice used by tools/voice/bake.mjs. Pick it after listening to the audition (node tools/voice/bake.mjs --audition). Changing anything here rebakes every clip.",
-  "voice": { "model": "qwen-audio-3.1-tts-flash", "voice": "Andy_v3.1" }
+  "_comment": "The quizmaster voice used by tools/voice/bake.mjs, chosen from the audition (node tools/voice/bake.mjs --audition) on 2026-10-18: longanhuan_v3.1, no style instruction. Changing anything here rebakes every clip.",
+  "voice": { "model": "qwen-audio-3.1-tts-flash", "voice": "longanhuan_v3.1" }
 }

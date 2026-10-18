@@ -13,8 +13,10 @@ describe("voiceId", () => {
 });
 
 describe("spoken text", () => {
-  it("reads blanks as 'blank'", () => {
-    expect(spokenClue("Birds of a feather ___")).toBe("Birds of a feather blank");
+  it("never says 'blank': the host pauses at a gap", () => {
+    expect(spokenClue("Birds of a feather ___")).toBe("Birds of a feather…");
+    expect(spokenClue("My new laptop is miles ______ of my old one.")).toBe("My new laptop is miles… of my old one.");
+    expect(spokenClue("Top of the ______.")).toBe("Top of the…");
   });
 
   it("reads only the definition of a letter puzzle, and an instruction for letter grids", () => {
@@ -24,7 +26,6 @@ describe("spoken text", () => {
     expect(spokenClue("De __ __ __ __ __ y Items brought to someone.")).toBe("Items brought to someone.");
     expect(spokenClue("C___ ___ ___munk Small rodent with stripes on its back.")).toBe("Small rodent with stripes on its back.");
     expect(spokenClue("VA ___ · COL ___ E · SO ___ · HO ___ AY")).toBe("Fill in the missing letters.");
-    expect(spokenClue("My new laptop is miles ______ of my old one.")).toBe("My new laptop is miles blank of my old one.");
   });
 
   it("reads slash answers as alternatives and caps words as words", () => {

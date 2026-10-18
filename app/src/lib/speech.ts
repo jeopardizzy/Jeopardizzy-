@@ -40,7 +40,20 @@ function speakCaps(s: string): string {
 const LETTER_PATTERN = /^\S*(?:\s*_+\S*)+(?:\s+[a-z]\b)?\s+/;
 
 /**
- * What the quizmaster says for a clue. Gaps in a sentence become "blank".
+ * A gap the players fill is never read out: the host trails off instead
+ * ("Birds of a feather ___" → "Birds of a feather…").
+ */
+function pauseAtGaps(s: string): string {
+  return s
+    .replace(/\s*_{2,}(?:\s+_{2,})*\s*/g, "… ")
+    .replace(/…\s+([.,;:!?)])/g, "…$1")
+    .replace(/…\./g, "…")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * What the quizmaster says for a clue. Gaps in a sentence become a pause.
  * Letter puzzles are on screen, so only their definition is read
  * ("H ___ ___ ___ony Notes sung together" → "Notes sung together"), and
  * letter grids ("VA ___ · COL ___ E") get a short instruction instead.
@@ -49,19 +62,12 @@ export function spokenClue(text: string): string {
   if (/_/.test(text) && /·/.test(text)) return "Fill in the missing letters.";
   const m = LETTER_PATTERN.exec(text);
   if (m && /[A-Za-z]_|_[A-Za-z]|^[A-Za-z]{1,3}\s+_/.test(m[0])) text = text.slice(m[0].length);
-  return speakCaps(text)
-    .replace(/_{2,}/g, " blank ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return pauseAtGaps(speakCaps(text));
 }
 
 /** What the quizmaster says for an answer: "POLE / POLL" → "pole, or poll". */
 export function spokenAnswer(text: string): string {
-  return speakCaps(text)
-    .replace(/\s*\/\s*/g, ", or ")
-    .replace(/_{2,}/g, " blank ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return pauseAtGaps(speakCaps(text).replace(/\s*\/\s*/g, ", or "));
 }
 
 /** Fixed host lines, baked once. Keys are stable; the text can be reworded (it rebakes). */
