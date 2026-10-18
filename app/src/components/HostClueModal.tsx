@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useTeamStore } from "../store/teamStore";
 import { useMotionSafe } from "../lib/useMotionSafe";
+import { isVoiceAvailable } from "../audio/voice";
 
 /**
  * Host-mode clue overlay: read the clue aloud, reveal the answer,
@@ -16,6 +17,8 @@ export default function HostClueModal() {
   const revealClue = useTeamStore((s) => s.revealClue);
   const awardTo = useTeamStore((s) => s.awardTo);
   const noAward = useTeamStore((s) => s.noAward);
+  const repeatClue = useTeamStore((s) => s.repeatClue);
+  const voiceOn = useTeamStore((s) => s.settings.voice !== false) && isVoiceAvailable();
   const reduce = useMotionSafe();
 
   const tile = board?.tiles.find((t) => t.id === currentTileId) ?? null;
@@ -54,9 +57,17 @@ export default function HostClueModal() {
             {!revealed ? (
               <div className="text-center">
                 <p className="mb-4 text-sm text-mute">
-                  Read it aloud.{" "}
+                  {voiceOn ? "The quizmaster reads it." : "Read it aloud."}{" "}
                   <span className="font-semibold text-ink">{teams[activeTeam]?.name}</span> picked
                   this tile.
+                  {voiceOn && (
+                    <button
+                      onClick={repeatClue}
+                      className="ml-2 rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink transition hover:bg-cream"
+                    >
+                      🔁 Read again
+                    </button>
+                  )}
                 </p>
                 <button
                   onClick={revealClue}

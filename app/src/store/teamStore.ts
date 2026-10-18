@@ -12,6 +12,7 @@ import {
   type Settings,
 } from "../lib/saves";
 import { setSoundMuted, sfx } from "../audio/sound";
+import { say, setVoiceEnabled, stopVoice } from "../audio/voice";
 import {
   aggregateCategoryStats,
   mergeCategoryStats,
@@ -78,6 +79,9 @@ interface TeamGameState {
   playAgain: () => void;
   toggleSound: () => void;
   toggleMotion: () => void;
+  toggleVoice: () => void;
+  /** quizmaster reads the open clue again */
+  repeatClue: () => void;
 }
 
 const initialSettings: Settings =
@@ -85,6 +89,7 @@ const initialSettings: Settings =
     ? { version: 1, sound: true, reduceMotion: false, teamNames: ["Team Sage", "Team Butter"] }
     : loadSettings();
 setSoundMuted(!initialSettings.sound);
+setVoiceEnabled(initialSettings.voice !== false);
 
 export const useTeamStore = create<TeamGameState>((set, get) => ({
   phase: "sets",
@@ -141,6 +146,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     const board = game.daily ? buildDailyBoard(dailySeed()) : boardForRound(game, 0, seed);
     saveSettings({ ...s.settings, teamNames: teams.map((t) => t.name) });
     sfx.chime();
+    say({ line: game.daily ? "dailyBoard" : "newGame" });
     set({
       phase: "board",
       seed,
@@ -163,13 +169,28 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     const s = get();
     if (s.phase !== "board" || s.playedTileIds.includes(tileId)) return;
     sfx.flip();
+    const tile = s.board?.tiles.find((t) => t.id === tileId);
+    if (tile) say({ kind: "clue", text: tile.clue });
     set({ phase: "clue", currentTileId: tileId, revealed: false });
   },
 
   revealClue: () => {
-    if (get().phase !== "clue") return;
+    const s = get();
+    if (s.phase !== "clue") return;
     sfx.tick();
+    const tile = s.board?.tiles.find((t) => t.id === s.currentTileId);
+    if (tile) say({ line: "answerIs" }, { kind: "answer", text: tile.answer });
     set({ revealed: true });
+  },
+
+  repeatClue: () => {
+    const s = get();
+    if (s.phase === "clue") {
+      const tile = s.board?.tiles.find((t) => t.id === s.currentTileId);
+      if (tile) say({ kind: "clue", text: tile.clue });
+    } else if (s.phase === "final-clue" && s.finalClue) {
+      say({ kind: "clue", text: s.finalClue.clue });
+    }
   },
 
   awardTo: (teamId) => {
@@ -177,6 +198,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     if (s.phase !== "clue" || !s.revealed || !s.board) return;
     const tile = s.board.tiles.find((t) => t.id === s.currentTileId);
     if (!tile) return;
+    stopVoice();
     sfx.ding();
     const teams = s.teams.map((t) =>
       t.id === teamId ? { ...t, score: t.score + tile.value } : t,
@@ -193,6 +215,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     const s = get();
     if (s.phase !== "clue" || !s.revealed || !s.board) return;
     const tile = s.board.tiles.find((t) => t.id === s.currentTileId);
+    stopVoice();
     sfx.buzz();
     const outcomes = tile
       ? [...s.outcomes, { categoryName: tile.categoryName, value: tile.value, awarded: false }]
@@ -212,8 +235,10 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
   },
 
   revealFinal: () => {
-    if (get().phase !== "final-clue") return;
+    const s = get();
+    if (s.phase !== "final-clue") return;
     sfx.tick();
+    if (s.finalClue) say({ line: "answerIs" }, { kind: "answer", text: s.finalClue.answer });
     set({ revealed: true });
   },
 
@@ -238,6 +263,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     saveRecords(records);
     set({ records });
     sfx.fanfare();
+    say({ line: winnerLine(s.teams) });
     set({ phase: "winner" });
   },
 
@@ -248,6 +274,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     if (mode === "final" && s.finalEnabled) {
       const finalClue = pickFinalForGame(s.set, s.seed);
       sfx.chime();
+      say({ line: "finalRound" });
       set({
         phase: "final-wager",
         finalClue,
@@ -261,6 +288,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     const records = finalizeRecords(s);
     saveRecords(records);
     sfx.fanfare();
+    say({ line: winnerLine(s.teams) });
     set({ phase: "winner", earlyFinished: true, currentTileId: null, records });
   },
 
@@ -281,7 +309,21 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     saveSettings(next);
     set({ settings: next });
   },
+
+  toggleVoice: () => {
+    const on = get().settings.voice === false;
+    const next: Settings = { ...get().settings, voice: on };
+    setVoiceEnabled(on);
+    saveSettings(next);
+    set({ settings: next });
+  },
 }));
+
+/** "And we have a winner!" unless the top score is shared. */
+function winnerLine(teams: Team[]): "winner" | "tie" {
+  const top = Math.max(...teams.map((t) => t.score));
+  return teams.filter((t) => t.score === top).length > 1 ? "tie" : "winner";
+}
 
 type Set = (partial: Partial<TeamGameState>) => void;
 type Get = () => TeamGameState;
@@ -321,6 +363,7 @@ function advanceAfterTile(teams: Team[], activeTeam: number, set: Set, get: Get)
   } else if (s.finalEnabled) {
     const finalClue = pickFinalForGame(s.set, s.seed);
     sfx.chime();
+    say({ line: "finalRound" });
     set({
       teams, activeTeam, playedTileIds, finalClue,
       phase: "final-wager", currentTileId: null, revealed: false,
@@ -331,6 +374,7 @@ function advanceAfterTile(teams: Team[], activeTeam: number, set: Set, get: Get)
     const records = finalizeRecords(s);
     saveRecords(records);
     sfx.fanfare();
+    say({ line: winnerLine(teams) });
     set({ teams, activeTeam, playedTileIds, records, phase: "winner", currentTileId: null });
   }
 }

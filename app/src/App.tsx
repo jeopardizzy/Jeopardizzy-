@@ -10,6 +10,7 @@ import Guides from "./pages/Guides";
 import Sidebar from "./components/Sidebar";
 import UnlockSheet from "./components/UnlockSheet";
 import { unlockAudio } from "./audio/sound";
+import { loadVoice, unlockVoice } from "./audio/voice";
 import { platformAdapter } from "./lib/purchases";
 import { useEntitlement } from "./store/entitlementStore";
 
@@ -31,11 +32,16 @@ export default function App() {
   // Ask the store once per launch whether Full Club is owned.
   useEffect(() => {
     void useEntitlement.getState().init(platformAdapter());
+    // quizmaster voice manifest, so the first tile can speak without waiting
+    void loadVoice();
   }, []);
 
   // Browsers require a user gesture before audio can start.
   useEffect(() => {
-    const unlock = () => unlockAudio();
+    const unlock = () => {
+      unlockAudio();
+      unlockVoice();
+    };
     window.addEventListener("pointerdown", unlock, { once: true });
     window.addEventListener("keydown", unlock, { once: true });
     return () => {

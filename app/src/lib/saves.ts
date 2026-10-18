@@ -27,6 +27,10 @@ export const SettingsSchema = z.object({
   finalWager: z.boolean().optional(),
   /** chosen workbook test length (5/10/20); undefined = default 10 */
   workbookCount: z.number().optional(),
+  /** quizmaster voice reads clues and answers; undefined = on */
+  voice: z.boolean().optional(),
+  /** answer Workbook questions out loud (on-device, opt-in); undefined = off */
+  spokenAnswers: z.boolean().optional(),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 

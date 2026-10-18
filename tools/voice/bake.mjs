@@ -1,0 +1,177 @@
+// Bakes the quizmaster voice: every clue, answer, category and host line is
+// synthesised once with Alibaba Model Studio (Qwen-Audio TTS) and shipped in
+// the app as small MP3s, so the app itself never touches the network.
+//
+// usage (from the repo root; needs ffmpeg on PATH):
+//   node tools/voice/bake.mjs --audition        render tools/voice/audition.json to tmp/voice-audition/
+//   node tools/voice/bake.mjs --dry-run         list what would be (re)baked and the character count
+//   node tools/voice/bake.mjs [--limit N]       bake into app/public/voice/ (incremental)
+//
+// environment (never pass secrets on the command line):
+//   DASHSCOPE_API_KEY        Model Studio API key (Singapore region)
+//   DASHSCOPE_WORKSPACE_ID   workspace id; the endpoint becomes
+//                            https://<id>.ap-southeast-1.maas.aliyuncs.com/...
+//   DASHSCOPE_TTS_URL        optional full endpoint override
+//
+// A clip is rebaked only when its bake key (model, voice, prompt, spoken text,
+// encoding) changes, so editing one clue costs one request.
+import { execFileSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+
+const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1")), "../..");
+const OUT_DIR = path.join(ROOT, "app/public/voice");
+const MANIFEST = path.join(OUT_DIR, "manifest.json");
+const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, "tools/voice/voice.json"), "utf8"));
+const ENCODE = { bitrateK: 40, sampleRate: 24000 }; // mono MP3: plays in every web view
+const CONCURRENCY = 3; // Model Studio allows about 3 requests per second per model
+
+const args = process.argv.slice(2);
+const flag = (f) => args.includes(f);
+const opt = (f) => (args.includes(f) ? args[args.indexOf(f) + 1] : undefined);
+
+function endpoint() {
+  if (process.env.DASHSCOPE_TTS_URL) return process.env.DASHSCOPE_TTS_URL;
+  const ws = process.env.DASHSCOPE_WORKSPACE_ID;
+  if (!ws) throw new Error("set DASHSCOPE_WORKSPACE_ID (or DASHSCOPE_TTS_URL)");
+  return `https://${ws}.ap-southeast-1.maas.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer`;
+}
+
+function apiKey() {
+  const k = process.env.DASHSCOPE_API_KEY;
+  if (!k) throw new Error("set DASHSCOPE_API_KEY in the environment (not on the command line)");
+  return k;
+}
+
+/** Request body for one line. "next" models take a described voice; the others a named voice. */
+export function requestBody(voice, say) {
+  if (voice.model.includes("tts-next")) {
+    return {
+      model: voice.model,
+      input: {
+        text_prompt: `${voice.prompt}: ${say}`,
+        ...(voice.references ? { references: voice.references } : {}),
+        format: "wav",
+        sample_rate: ENCODE.sampleRate,
+        channels: 1,
+        rate: voice.rate ?? 1.0,
+        seed: voice.seed ?? 42,
+      },
+    };
+  }
+  return {
+    model: voice.model,
+    input: {
+      text: say,
+      voice: voice.voice,
+      ...(voice.instruction ? { instruction: voice.instruction } : {}),
+      format: "wav",
+      sample_rate: ENCODE.sampleRate,
+      rate: voice.rate ?? 1.0,
+      language_hints: ["en"],
+      ...(voice.seed !== undefined ? { seed: voice.seed } : {}),
+    },
+  };
+}
+
+async function synthesize(voice, say, attempt = 1) {
+  const res = await fetch(endpoint(), {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey()}`, "Content-Type": "application/json" },
+    body: JSON.stringify(requestBody(voice, say)),
+  });
+  const body = await res.json().catch(() => ({}));
+  const url = body?.output?.audio?.url;
+  if (!res.ok || !url) {
+    if (attempt < 3 && (res.status === 429 || res.status >= 500)) {
+      await new Promise((r) => setTimeout(r, 1500 * attempt));
+      return synthesize(voice, say, attempt + 1);
+    }
+    throw new Error(`TTS ${res.status} ${body?.code ?? ""} ${body?.message ?? ""}`.trim());
+  }
+  const audio = await fetch(url);
+  if (!audio.ok) throw new Error(`audio download ${audio.status}`);
+  return Buffer.from(await audio.arrayBuffer());
+}
+
+/** WAV → loudness-normalised mono MP3; returns duration in seconds. */
+function encode(wav, outFile) {
+  const tmp = outFile + ".wav";
+  fs.writeFileSync(tmp, wav);
+  execFileSync("ffmpeg", [
+    "-loglevel", "error", "-y", "-i", tmp,
+    "-af", "silenceremove=start_periods=1:start_threshold=-50dB,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse,loudnorm=I=-16:TP=-1.5:LRA=11",
+    "-ac", "1", "-ar", String(ENCODE.sampleRate), "-c:a", "libmp3lame", "-b:a", `${ENCODE.bitrateK}k`, outFile,
+  ]);
+  fs.rmSync(tmp);
+  const probe = spawnSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", outFile], { encoding: "utf8" });
+  return Math.round(parseFloat(probe.stdout) * 100) / 100;
+}
+
+const bakeKey = (voice, say) =>
+  createHash("sha256").update(JSON.stringify([voice, say, ENCODE])).digest("hex").slice(0, 16);
+
+function phrases() {
+  const r = spawnSync("npx", ["--prefix", "app", "tsx", "tools/voice/phrases.ts"], { cwd: ROOT, encoding: "utf8", shell: true, maxBuffer: 64 << 20 });
+  if (r.status !== 0) throw new Error(r.stderr);
+  return JSON.parse(r.stdout);
+}
+
+async function pool(items, fn) {
+  let next = 0, done = 0, failed = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const item = items[next++];
+      try { await fn(item); } catch (e) { failed++; console.error(`✗ ${item.id}: ${e.message}`); }
+      if (++done % 25 === 0 || done === items.length) console.log(`${done}/${items.length}${failed ? ` (${failed} failed)` : ""}`);
+    }
+  };
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  return failed;
+}
+
+async function audition() {
+  const a = JSON.parse(fs.readFileSync(path.join(ROOT, "tools/voice/audition.json"), "utf8"));
+  const dir = path.join(ROOT, "tmp/voice-audition");
+  fs.mkdirSync(dir, { recursive: true });
+  const jobs = a.candidates.flatMap((v) => a.lines.map((line, i) => ({ id: `${v.label}-${i + 1}`, v, line })));
+  const failed = await pool(jobs, async ({ id, v, line }) => encode(await synthesize(v, line), path.join(dir, `${id}.mp3`)));
+  const rows = a.candidates.map((v) =>
+    `<h2>${v.label}</h2><p><code>${v.model}</code> ${v.voice ?? ""} ${v.prompt ? `<br><i>${v.prompt}</i>` : ""}</p>` +
+    a.lines.map((l, i) => `<p>${l}<br><audio controls preload="none" src="${v.label}-${i + 1}.mp3"></audio></p>`).join(""));
+  fs.writeFileSync(path.join(dir, "index.html"), `<!doctype html><meta charset=utf-8><title>Quizmaster audition</title><body style="font:16px system-ui;max-width:720px;margin:2em auto">${rows.join("<hr>")}`);
+  console.log(`audition → ${dir}${failed ? ` (${failed} failed)` : ""}`);
+}
+
+async function bake() {
+  const voice = CONFIG.voice;
+  const all = phrases();
+  const manifest = fs.existsSync(MANIFEST) ? JSON.parse(fs.readFileSync(MANIFEST, "utf8")) : { clips: {} };
+  const todo = all.filter((p) => manifest.clips[p.id]?.k !== bakeKey(voice, p.say) || !fs.existsSync(path.join(OUT_DIR, `${p.id}.mp3`)));
+  const chars = todo.reduce((n, p) => n + p.say.length, 0);
+  console.log(`${all.length} lines, ${todo.length} to bake (${chars.toLocaleString()} characters) with ${voice.model} ${voice.voice ?? ""}`);
+  if (flag("--dry-run")) return;
+  const limit = Number(opt("--limit") ?? todo.length);
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  const save = () => fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 0));
+  let sinceSave = 0;
+  const failed = await pool(todo.slice(0, limit), async (p) => {
+    const d = encode(await synthesize(voice, p.say), path.join(OUT_DIR, `${p.id}.mp3`));
+    manifest.clips[p.id] = { d, k: bakeKey(voice, p.say) };
+    if (++sinceSave >= 25) { sinceSave = 0; save(); }
+  });
+  // drop clips for lines that no longer exist
+  const live = new Set(all.map((p) => p.id));
+  for (const id of Object.keys(manifest.clips)) {
+    if (!live.has(id)) { delete manifest.clips[id]; fs.rmSync(path.join(OUT_DIR, `${id}.mp3`), { force: true }); }
+  }
+  manifest.version = 1;
+  manifest.voice = { model: voice.model, voice: voice.voice ?? null };
+  save();
+  console.log(failed ? `done with ${failed} failures — run again to retry` : "done");
+  if (failed) process.exitCode = 1;
+}
+
+if (flag("--audition")) await audition();
+else await bake();

@@ -1,0 +1,23 @@
+{
+  "lines": [
+    "Welcome to Trivia Night! Pick a tile to begin.",
+    "Finish the saying: Birds of a feather blank.",
+    "The answer is… flock together!",
+    "A long slender rod; or, a survey of opinions.",
+    "This word means both a large body of water and the letter C, when you say it out loud.",
+    "It's time for the final round. Make your wagers!",
+    "And we have a winner!"
+  ],
+  "candidates": [
+    { "label": "flash31-andy", "model": "qwen-audio-3.1-tts-flash", "voice": "Andy_v3.1" },
+    { "label": "flash31-brian", "model": "qwen-audio-3.1-tts-flash", "voice": "Brian_v3.1" },
+    { "label": "flash31-david", "model": "qwen-audio-3.1-tts-flash", "voice": "David_v3.1" },
+    { "label": "flash31-ava", "model": "qwen-audio-3.1-tts-flash", "voice": "Ava_v3.1" },
+    { "label": "flash31-abby", "model": "qwen-audio-3.1-tts-flash", "voice": "Abby_v3.1" },
+    { "label": "flash31-eric-uk", "model": "qwen-audio-3.1-tts-flash", "voice": "Eric_v3.1" },
+    { "label": "flash30-john", "model": "qwen-audio-3.0-tts-flash", "voice": "loongjohn" },
+    { "label": "flash30-eva", "model": "qwen-audio-3.0-tts-flash", "voice": "loongeva_v3.6" },
+    { "label": "next31-host-m", "model": "qwen-audio-3.1-tts-next", "prompt": "A warm, upbeat American male game-show host in his forties speaks clearly and with a smile, at a relaxed pace, to a family audience", "seed": 7 },
+    { "label": "next31-host-f", "model": "qwen-audio-3.1-tts-next", "prompt": "A warm, upbeat American female game-show host in her thirties speaks clearly and with a smile, at a relaxed pace, to a family audience", "seed": 7 }
+  ]
+}
