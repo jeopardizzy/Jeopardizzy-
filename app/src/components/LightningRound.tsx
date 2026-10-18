@@ -31,7 +31,7 @@ function LightningClueCard() {
   useEffect(() => {
     if (revealed) return;
     if (left <= 0) {
-      reveal();
+      reveal(true);
       return;
     }
     const t = window.setTimeout(() => setLeft((n) => n - 1), 1000);
@@ -79,7 +79,7 @@ function LightningClueCard() {
               </button>
             ))}
             <button
-              onClick={reveal}
+              onClick={() => reveal()}
               className="rounded-full border border-line px-5 py-2.5 font-semibold text-mute transition hover:bg-cream hover:text-ink"
             >
               Nobody — show it

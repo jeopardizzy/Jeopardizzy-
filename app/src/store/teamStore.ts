@@ -103,7 +103,7 @@ interface TeamGameState {
   /** lightning round: this team got it (shows the answer) */
   lightningAward: (teamId: number) => void;
   /** lightning round: time's up or nobody knows — show the answer */
-  lightningReveal: () => void;
+  lightningReveal: (timeUp?: boolean) => void;
   lightningNext: () => void;
   setWager: (teamId: number, wager: number) => void;
   revealFinal: () => void;
@@ -300,12 +300,13 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     });
   },
 
-  lightningReveal: () => {
+  lightningReveal: (timeUp = false) => {
     const s = get();
     const l = s.lightning;
     if (s.phase !== "lightning" || !l || l.revealed) return;
-    sfx.tick();
-    say({ line: "answerIs" }, { kind: "answer", text: l.clues[l.index].answer });
+    if (timeUp) sfx.buzz();
+    else sfx.tick();
+    say({ line: timeUp ? "timeUp" : "answerIs" }, { kind: "answer", text: l.clues[l.index].answer });
     set({ lightning: { ...l, revealed: true } });
   },
 
@@ -479,7 +480,7 @@ function afterBoards(
     const clues = pickLightningClues(s.set, s.seed);
     if (clues.length > 0) {
       sfx.chime();
-      say({ kind: "clue", text: clues[0].clue });
+      say({ line: "lightningRound" }, { kind: "clue", text: clues[0].clue });
       set({
         teams, activeTeam, playedTileIds,
         phase: "lightning", currentTileId: null, revealed: false,

@@ -79,6 +79,8 @@ export const HOST_LINES = {
   finalClue: "Here is the final clue.",
   winner: "And we have a winner!",
   tie: "It's a tie!",
+  lightningRound: "Lightning round! Shout out the answer — the fastest team scores.",
+  timeUp: "Time's up!",
   dailyBoard: "Welcome to today's Daily Board.",
   newGame: "Welcome to Trivia Night! Pick a tile to begin.",
   workbookCorrect: "That's right!",
