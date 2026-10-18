@@ -46,10 +46,7 @@ export class RelayHub {
   private rooms = new Map<string, Room>();
   private roles = new Map<Conn, Role>();
 
-  constructor(
-    private now: () => number = Date.now,
-    private random: () => number = Math.random,
-  ) {}
+  constructor(private now: () => number = Date.now) {}
 
   get roomCount(): number {
     return this.rooms.size;
@@ -80,7 +77,9 @@ export class RelayHub {
       }
       case "rehost": {
         const room = this.rooms.get(String(m.room ?? "").toUpperCase());
-        if (!room || m.token !== room.token) return reply(conn, { op: "error", code: "no-room" });
+        if (!room || typeof m.token !== "string" || !sameToken(m.token, room.token)) {
+          return reply(conn, { op: "error", code: "no-room" });
+        }
         if (room.host && room.host !== conn) room.host.close();
         room.host = conn;
         room.hostGoneAt = null;
@@ -175,16 +174,34 @@ export class RelayHub {
   private newCode(): string {
     for (;;) {
       let code = "";
-      for (let i = 0; i < 4; i++) code += CODE_LETTERS[Math.floor(this.random() * CODE_LETTERS.length)];
+      // 24 letters: 256 % 24 = 16, so skip bytes ≥ 240 to keep every letter equally likely
+      while (code.length < 4) {
+        const b = randomBytes(1)[0];
+        if (b < 240) code += CODE_LETTERS[b % CODE_LETTERS.length];
+      }
       if (!this.rooms.has(code)) return code;
     }
   }
 
+  /** 144 random bits: only the host that opened the room can take it back. */
   private newToken(): string {
-    let t = "";
-    for (let i = 0; i < 24; i++) t += Math.floor(this.random() * 36).toString(36);
-    return t;
+    let bin = "";
+    for (const b of randomBytes(18)) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_");
   }
+}
+
+/** Secure random bytes (Web Crypto: browsers, Node 20+, serverless runtimes). */
+function randomBytes(n: number): Uint8Array {
+  return globalThis.crypto.getRandomValues(new Uint8Array(n));
+}
+
+/** Compare tokens without leaking how much of a guess was right through timing. */
+function sameToken(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
 }
 
 function reply(conn: Conn, msg: object): void {
