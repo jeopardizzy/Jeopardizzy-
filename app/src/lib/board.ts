@@ -216,3 +216,37 @@ export function pickFinalForGame(game: GameDef, seed: number): FinalClue {
   const clue: Clue = cat.clues[Math.floor(rng() * cat.clues.length)];
   return { categoryName: cat.name, clue: clue.clue, answer: clue.answer };
 }
+
+/** Clues in a lightning round. */
+export const LIGHTNING_CLUES = 8;
+
+/** Seconds on the clock for each lightning clue. */
+export const LIGHTNING_SECONDS = 15;
+
+export interface LightningClue {
+  categoryName: string;
+  clue: string;
+  answer: string;
+}
+
+/**
+ * Lightning round: the easiest clue (curated easy → hard) from each of
+ * several dataset categories this game doesn't use, final category excluded.
+ * Deterministic per seed.
+ */
+export function pickLightningClues(game: GameDef, seed: number, count = LIGHTNING_CLUES): LightningClue[] {
+  const rng = mulberry32(seed ^ 0x7f4a7c15);
+  const used = new Set(game.bookRounds.flat());
+  used.add(pickFinalForGame(game, seed).categoryName);
+  const pool = shuffle(quizData.categories.filter((c) => !used.has(c.name)), rng);
+  return pool.slice(0, count).map((c) => ({
+    categoryName: c.name,
+    clue: c.clues[0].clue,
+    answer: c.clues[0].answer,
+  }));
+}
+
+/** Each lightning clue is worth the cheapest tile of the last board. */
+export function lightningValue(game: GameDef): number {
+  return BASE_VALUES[0] * gameRoundCount(game);
+}

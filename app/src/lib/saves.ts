@@ -31,6 +31,10 @@ export const SettingsSchema = z.object({
   voice: z.boolean().optional(),
   /** answer Workbook questions out loud (on-device, opt-in); undefined = off */
   spokenAnswers: z.boolean().optional(),
+  /** Trivia Night: a wrong answer checked on the card costs the tile value; undefined = off */
+  wrongPenalty: z.boolean().optional(),
+  /** Trivia Night: a timed lightning round after the last board; undefined = off */
+  lightning: z.boolean().optional(),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 

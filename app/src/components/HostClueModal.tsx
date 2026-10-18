@@ -107,6 +107,8 @@ export default function HostClueModal() {
   const awardTo = useTeamStore((s) => s.awardTo);
   const noAward = useTeamStore((s) => s.noAward);
   const repeatClue = useTeamStore((s) => s.repeatClue);
+  const missed = useTeamStore((s) => s.missed);
+  const penaltyOn = useTeamStore((s) => s.settings.wrongPenalty === true);
   const voiceOn = useTeamStore((s) => s.settings.voice !== false) && isVoiceAvailable();
   const reduce = useMotionSafe();
 
@@ -137,14 +139,16 @@ export default function HostClueModal() {
       revealClue();
       return;
     }
+    missed(answeringId);
+    const who = penaltyOn ? `${nameOf(answeringId)} (−${tile?.value ?? 0})` : nameOf(answeringId);
     const nowTried = [...tried, answeringId];
     const next = picker ? nextAnswering(teamIds, picker.id, nowTried) : null;
     setTried(nowTried);
     setAnsweringId(next);
     setMessage(
       next === null
-        ? `Not quite, ${nameOf(answeringId)}. Every team has had a go — reveal the answer.`
-        : `Not quite, ${nameOf(answeringId)}. ${nameOf(next)}, your turn — or reveal it.`,
+        ? `Not quite, ${who}. Every team has had a go — reveal the answer.`
+        : `Not quite, ${who}. ${nameOf(next)}, your turn — or reveal it.`,
     );
   };
   const winner = teams.find((t) => t.id === winnerId) ?? null;
@@ -183,6 +187,7 @@ export default function HostClueModal() {
               <div className="text-center">
                 <p className="mb-4 text-sm text-mute">
                   {voiceOn ? "The quizmaster reads it." : "Read it aloud."}{" "}
+                  {penaltyOn && "Wrong answers cost points. "}
                   <span className="font-semibold text-ink">{teams[activeTeam]?.name}</span> picked
                   this tile.
                   {voiceOn && (

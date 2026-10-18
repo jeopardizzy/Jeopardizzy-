@@ -1,6 +1,17 @@
 import { create } from "zustand";
 import type { Board, FinalClue } from "../lib/schema";
-import { boardForRound, buildDailyBoard, gameRoundCount, listPlayableGames, materializeGame, pickFinalForGame } from "../lib/board";
+import {
+  boardForRound,
+  buildDailyBoard,
+  gameRoundCount,
+  lightningValue,
+  listPlayableGames,
+  materializeGame,
+  pickFinalForGame,
+  pickLightningClues,
+  type LightningClue,
+} from "../lib/board";
+import { awardPoints, missPenalty } from "../lib/scoring";
 import { randomSeed, dailySeed } from "../lib/random";
 import type { GameDef } from "../data/games";
 import {
@@ -24,6 +35,7 @@ export type TeamPhase =
   | "setup"
   | "board"
   | "clue"
+  | "lightning"
   | "final-wager"
   | "final-clue"
   | "winner";
@@ -37,6 +49,17 @@ export interface Team {
 
 export const TEAM_COLORS = ["#4f7a5d", "#c99700", "#d97762", "#6b93c0"];
 
+/** The timed round after the last board (when the Lightning round mode is on). */
+export interface LightningState {
+  clues: LightningClue[];
+  /** points per clue */
+  value: number;
+  index: number;
+  revealed: boolean;
+  /** team that got the current clue, null = nobody yet */
+  winnerId: number | null;
+}
+
 interface TeamGameState {
   phase: TeamPhase;
   set: GameDef | null;
@@ -48,6 +71,9 @@ interface TeamGameState {
   playedTileIds: string[];
   currentTileId: string | null;
   revealed: boolean;
+  /** teams charged the wrong-answer penalty on the open clue */
+  penalized: number[];
+  lightning: LightningState | null;
   teams: Team[];
   /** whose turn it is to pick a tile */
   activeTeam: number;
@@ -65,11 +91,20 @@ interface TeamGameState {
   selectSet: (setId: string) => void;
   backToSets: () => void;
   setFinalEnabled: (v: boolean) => void;
+  setWrongPenalty: (v: boolean) => void;
+  setLightning: (v: boolean) => void;
   startGame: (names: string[]) => void;
   openTile: (tileId: string) => void;
   revealClue: () => void;
   awardTo: (teamId: number) => void;
   noAward: () => void;
+  /** a wrong answer checked on the card; costs the tile value when the penalty mode is on */
+  missed: (teamId: number) => void;
+  /** lightning round: this team got it (shows the answer) */
+  lightningAward: (teamId: number) => void;
+  /** lightning round: time's up or nobody knows — show the answer */
+  lightningReveal: () => void;
+  lightningNext: () => void;
   setWager: (teamId: number, wager: number) => void;
   revealFinal: () => void;
   markFinal: (teamId: number, correct: boolean) => void;
@@ -101,6 +136,8 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
   playedTileIds: [],
   currentTileId: null,
   revealed: false,
+  penalized: [],
+  lightning: null,
   teams: [],
   activeTeam: 0,
   finalEnabled: true,
@@ -131,6 +168,18 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     set({ finalEnabled: v, settings });
   },
 
+  setWrongPenalty: (v) => {
+    const settings: Settings = { ...get().settings, wrongPenalty: v };
+    saveSettings(settings);
+    set({ settings });
+  },
+
+  setLightning: (v) => {
+    const settings: Settings = { ...get().settings, lightning: v };
+    saveSettings(settings);
+    set({ settings });
+  },
+
   startGame: (names) => {
     const s = get();
     if (!s.set) return;
@@ -156,6 +205,8 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
       playedTileIds: [],
       currentTileId: null,
       revealed: false,
+      penalized: [],
+      lightning: null,
       teams,
       activeTeam: 0,
       wagers: teams.map(() => 0),
@@ -171,7 +222,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     sfx.flip();
     const tile = s.board?.tiles.find((t) => t.id === tileId);
     if (tile) say({ kind: "clue", text: tile.clue });
-    set({ phase: "clue", currentTileId: tileId, revealed: false });
+    set({ phase: "clue", currentTileId: tileId, revealed: false, penalized: [] });
   },
 
   revealClue: () => {
@@ -200,9 +251,8 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     if (!tile) return;
     stopVoice();
     sfx.ding();
-    const teams = s.teams.map((t) =>
-      t.id === teamId ? { ...t, score: t.score + tile.value } : t,
-    );
+    const points = awardPoints(tile.value, s.penalized.includes(teamId));
+    const teams = s.teams.map((t) => (t.id === teamId ? { ...t, score: t.score + points } : t));
     const outcomes = [
       ...s.outcomes,
       { categoryName: tile.categoryName, value: tile.value, awarded: true },
@@ -223,6 +273,55 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     set({ outcomes });
     const next = (s.activeTeam + 1) % s.teams.length;
     advanceAfterTile(s.teams, next, set, get);
+  },
+
+  missed: (teamId) => {
+    const s = get();
+    if (s.phase !== "clue" || s.revealed) return;
+    const tile = s.board?.tiles.find((t) => t.id === s.currentTileId);
+    if (!tile) return;
+    const cost = missPenalty(s.settings.wrongPenalty === true, tile.value, s.penalized.includes(teamId));
+    if (cost === 0) return;
+    set({
+      teams: s.teams.map((t) => (t.id === teamId ? { ...t, score: t.score - cost } : t)),
+      penalized: [...s.penalized, teamId],
+    });
+  },
+
+  lightningAward: (teamId) => {
+    const s = get();
+    const l = s.lightning;
+    if (s.phase !== "lightning" || !l || l.winnerId !== null) return;
+    sfx.ding();
+    say({ kind: "answer", text: l.clues[l.index].answer });
+    set({
+      teams: s.teams.map((t) => (t.id === teamId ? { ...t, score: t.score + l.value } : t)),
+      lightning: { ...l, revealed: true, winnerId: teamId },
+    });
+  },
+
+  lightningReveal: () => {
+    const s = get();
+    const l = s.lightning;
+    if (s.phase !== "lightning" || !l || l.revealed) return;
+    sfx.tick();
+    say({ line: "answerIs" }, { kind: "answer", text: l.clues[l.index].answer });
+    set({ lightning: { ...l, revealed: true } });
+  },
+
+  lightningNext: () => {
+    const s = get();
+    const l = s.lightning;
+    if (s.phase !== "lightning" || !l || !l.revealed) return;
+    stopVoice();
+    const index = l.index + 1;
+    if (index < l.clues.length) {
+      sfx.flip();
+      say({ kind: "clue", text: l.clues[index].clue });
+      set({ lightning: { ...l, index, revealed: false, winnerId: null } });
+      return;
+    }
+    afterBoards(s.teams, s.activeTeam, s.playedTileIds, true, set, get);
   },
 
   setWager: (teamId, wager) => {
@@ -360,12 +459,41 @@ function advanceAfterTile(teams: Team[], activeTeam: number, set: Set, get: Get)
       teams, activeTeam, playedTileIds: [], board: nextBoard, roundIndex: nextIndex,
       phase: "board", currentTileId: null, revealed: false,
     });
-  } else if (s.finalEnabled) {
+  } else {
+    afterBoards(teams, activeTeam, playedTileIds, false, set, get);
+  }
+}
+
+/** After the last board: the lightning round (if on and not played yet), the final, or the podium. */
+function afterBoards(
+  teams: Team[],
+  activeTeam: number,
+  playedTileIds: string[],
+  lightningDone: boolean,
+  set: Set,
+  get: Get,
+): void {
+  const s = get();
+  if (!s.set) return;
+  if (!lightningDone && s.settings.lightning === true) {
+    const clues = pickLightningClues(s.set, s.seed);
+    if (clues.length > 0) {
+      sfx.chime();
+      say({ kind: "clue", text: clues[0].clue });
+      set({
+        teams, activeTeam, playedTileIds,
+        phase: "lightning", currentTileId: null, revealed: false,
+        lightning: { clues, value: lightningValue(s.set), index: 0, revealed: false, winnerId: null },
+      });
+      return;
+    }
+  }
+  if (s.finalEnabled) {
     const finalClue = pickFinalForGame(s.set, s.seed);
     sfx.chime();
     say({ line: "finalRound" });
     set({
-      teams, activeTeam, playedTileIds, finalClue,
+      teams, activeTeam, playedTileIds, finalClue, lightning: null,
       phase: "final-wager", currentTileId: null, revealed: false,
       wagers: teams.map((t) => Math.max(0, t.score)),
     });
@@ -375,6 +503,6 @@ function advanceAfterTile(teams: Team[], activeTeam: number, set: Set, get: Get)
     saveRecords(records);
     sfx.fanfare();
     say({ line: winnerLine(teams) });
-    set({ teams, activeTeam, playedTileIds, records, phase: "winner", currentTileId: null });
+    set({ teams, activeTeam, playedTileIds, records, lightning: null, phase: "winner", currentTileId: null });
   }
 }
