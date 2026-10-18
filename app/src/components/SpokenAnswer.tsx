@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { accentVariants, spokenTargets } from "../lib/spokenTargets";
 import { listen, type KeywordTarget, type ListenSession } from "../voice/kws";
+import { preloadAsr, transcribe } from "../voice/asr";
+import { heardIn } from "../lib/spokenMatch";
 import { stopVoice } from "../audio/voice";
 import { useWorkbookStore } from "../store/workbookStore";
 import KWS_TOKENS from "../data/kwsTokens.json";
@@ -17,7 +19,7 @@ function supported(): boolean {
   return typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia && typeof WebAssembly === "object";
 }
 
-type State = "idle" | "explain" | "listening" | "missed" | "no-mic" | "no-engine";
+type State = "idle" | "explain" | "listening" | "checking" | "missed" | "no-mic" | "no-engine";
 
 /** Second and later tries listen more leniently: accents and quiet voices get through. */
 export const RETRY_LENIENCY = 0.6;
@@ -41,14 +43,20 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
   const enabled = useWorkbookStore((s) => s.settings.spokenAnswers === true);
   const enable = useWorkbookStore((s) => s.enableSpokenAnswers);
   const [state, setState] = useState<State>("idle");
+  /** what speech-to-text heard on the last miss, shown so the player knows why */
+  const [heardText, setHeardText] = useState<string | null>(null);
   const tries = useRef(0);
   const session = useRef<ListenSession | null>(null);
 
   // new question or leaving the screen: close the microphone
   useEffect(() => {
     setState("idle");
+    setHeardText(null);
     tries.current = 0;
-    return () => session.current?.stop();
+    return () => {
+      session.current?.stop();
+      session.current = null;
+    };
   }, [answer]);
 
   if (!supported() || !canSpeak(answer)) return null;
@@ -74,16 +82,37 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
     const s = listen(targets, (labels) => allHeard(labels) || labels.some((l) => l.startsWith("x")), { leniency });
     session.current = s;
     setState("listening");
-    void s.result.then(({ labels, error }) => {
+    setHeardText(null);
+    preloadAsr(); // warm the second pass while the player speaks
+    void s.result.then(async ({ labels, error, audio }) => {
       if (session.current !== s) return;
-      session.current = null;
-      if (error === "mic") return setState("no-mic");
-      if (error === "engine") return setState("no-engine");
-      if (allHeard(labels)) return onHeard(answer);
+      if (error === "mic") return done(s, () => setState("no-mic"));
+      if (error === "engine") return done(s, () => setState("no-engine"));
+      if (allHeard(labels)) return done(s, () => onHeard(answer));
       const w = wrong.find((x) => labels.includes(x.label));
-      if (w) return onHeard(w.text);
-      setState("missed");
+      if (w) return done(s, () => onHeard(w.text));
+      // second pass: transcribe what was said and match it like an answer
+      if (audio && audio.length > 0) {
+        setState("checking");
+        try {
+          const text = await transcribe(audio);
+          if (session.current !== s) return;
+          if (heardIn(text, answer)) return done(s, () => onHeard(answer));
+          const other = others.find((o) => o !== answer && heardIn(text, o));
+          if (other) return done(s, () => onHeard(other));
+          setHeardText(text.trim() || null);
+        } catch {
+          /* engine unavailable or slow: fall back to "didn't catch that" */
+        }
+      }
+      done(s, () => setState("missed"));
     });
+  };
+
+  const done = (s: ListenSession, then: () => void) => {
+    if (session.current !== s) return;
+    session.current = null;
+    then();
   };
 
   if (state === "no-mic" || state === "no-engine") {
@@ -132,16 +161,26 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
       <button
         type="button"
         onClick={state === "listening" ? () => session.current?.stop() : start}
+        disabled={state === "checking"}
         aria-pressed={state === "listening"}
-        className={`rounded-xl border px-5 py-2.5 font-semibold transition ${
+        className={`rounded-xl border px-5 py-2.5 font-semibold transition disabled:opacity-60 ${
           state === "listening" ? "animate-pulse border-coral bg-coral text-white" : "border-line bg-surface text-ink hover:bg-cream"
         }`}
       >
-        {state === "listening" ? "🎙️ Listening… (tap to stop)" : state === "missed" ? "🎙️ Say it again" : "🎙️ Say it"}
+        {state === "listening"
+          ? "🎙️ Listening… (tap to stop)"
+          : state === "checking"
+            ? "🎙️ Checking…"
+            : state === "missed"
+              ? "🎙️ Say it again"
+              : "🎙️ Say it"}
       </button>
       {state === "missed" && (
         <div role="status" className="flex flex-col items-center gap-1 text-xs text-mute">
-          <p>Didn’t catch that. Try once more (I’ll listen more closely), or type it.</p>
+          <p>
+            {heardText ? `I heard “${heardText}”. ` : "Didn’t catch that. "}
+            Try once more (I’ll listen more closely), or type it.
+          </p>
           <p>Tip: a short sentence works best, like “I think it’s …”.</p>
           <button type="button" onClick={onType} className="rounded-lg px-3 py-1 font-semibold text-sage underline">
             ⌨️ Type it instead

@@ -3,9 +3,10 @@
  * sherpa-onnx compiled to WebAssembly (tools/kws/build-wasm-kws.sh) with the
  * GigaSpeech 3.3M English keyword model. Audio goes from the microphone into
  * the spotter in memory and is never recorded, stored or sent anywhere; the
- * only output is which expected phrase was heard.
+ * output is which expected phrase was heard, plus the in-memory audio for
+ * the speech-to-text second pass (src/voice/asr.ts) when nothing was.
  *
- * The engine (≈ a few MB) loads only when a player turns spoken answers on.
+ * The engine loads only when a player turns spoken answers on.
  */
 
 const BASE = `${import.meta.env.BASE_URL ?? "/"}kws/`;
@@ -123,7 +124,15 @@ export interface Heard {
   complete: boolean;
   /** why nothing could be heard: no microphone access, or the engine didn't load */
   error?: "mic" | "engine";
+  /**
+   * What the microphone picked up (16 kHz, at most MAX_AUDIO_SECONDS), so a
+   * miss can be checked again by speech-to-text. In memory only: never
+   * stored or sent, and dropped as soon as the answer is checked.
+   */
+  audio?: Float32Array;
 }
+
+const MAX_AUDIO_SECONDS = 10;
 
 export interface ListenSession {
   result: Promise<Heard>;
@@ -244,6 +253,8 @@ export function listen(
 
   void (async () => {
     const labels: string[] = [];
+    const captured: Float32Array[] = [];
+    let capturedLength = 0;
     let media: MediaStream | null = null;
     let ctx: AudioContext | null = null;
     let spotter: Spotter | null = null;
@@ -251,7 +262,17 @@ export function listen(
       media?.getTracks().forEach((t) => t.stop());
       void ctx?.close();
       spotter?.close();
-      finish({ labels, complete, ...(error ? { error } : {}) });
+      let audio: Float32Array | undefined;
+      if (capturedLength > 0) {
+        audio = new Float32Array(capturedLength);
+        let at = 0;
+        for (const c of captured) {
+          audio.set(c, at);
+          at += c.length;
+        }
+      }
+      captured.length = 0;
+      finish({ labels, complete, ...(error ? { error } : {}), ...(audio ? { audio } : {}) });
     };
     try {
       spotter = await openSpotter(targets, leniency);
@@ -273,7 +294,12 @@ export function listen(
     let ended = false;
     proc.onaudioprocess = (e) => {
       if (ended || !spotter) return;
-      labels.push(...spotter.feed(downsample(e.inputBuffer.getChannelData(0), ctx!.sampleRate)));
+      const samples = downsample(e.inputBuffer.getChannelData(0), ctx!.sampleRate);
+      if (capturedLength + samples.length <= SAMPLE_RATE * MAX_AUDIO_SECONDS) {
+        captured.push(samples === e.inputBuffer.getChannelData(0) ? samples.slice() : samples);
+        capturedLength += samples.length;
+      }
+      labels.push(...spotter.feed(samples));
       const isDone = done(labels);
       if (isDone || stopped || performance.now() > deadline) {
         ended = true;

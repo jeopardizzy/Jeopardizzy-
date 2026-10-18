@@ -51,13 +51,19 @@ await server.listen();
 const browser = await chromium.launch();
 const page = await browser.newPage();
 await page.goto("http://localhost:4932/");
+// --second-pass: misses go to the app's speech-to-text worker (src/voice/asr.ts), as SpokenAnswer.tsx does
+const secondPass = argv.includes("--second-pass");
+if (secondPass) argv.splice(argv.indexOf("--second-pass"), 1);
 await page.evaluate(async (tune) => {
   window.__kws = await import("/src/voice/kws.ts");
   window.__targets = await import("/src/lib/spokenTargets.ts");
+  window.__asr = await import("/src/voice/asr.ts");
+  window.__match = await import("/src/lib/spokenMatch.ts");
   Object.assign(window.__kws.KWS_TUNING, tune);
   await window.__kws.loadKws();
 }, tune);
 if (Object.keys(tune).length) console.log("tuning:", JSON.stringify(tune));
+const answerOf = Object.fromEntries(index.map((s) => [s.phrase, s.answer]));
 
 // what the app listens for: every alternative of the answer ("ATE" or "EIGHT"), like SpokenAnswer.tsx,
 // plus accent respellings depending on --variants always|retry|off (default: off)
@@ -109,7 +115,24 @@ for (const s of index) {
     );
     const outcome = r.first === "g0" ? "hit" : r.first ? "wrong" : "miss";
     const alarmPhrase = r.alarm ? withoutAnswer.find((t) => t.label === r.alarm)?.phrase : null;
-    rows.push({ ...s, leniency, outcome, falseAlarm: !!r.alarm, alarmPhrase });
+    let combined = outcome, transcript = null, asrMs = null;
+    if (secondPass && outcome === "miss") {
+      const t = await page.evaluate(
+        async ({ samples, answer, otherAnswers }) => {
+          const t0 = performance.now();
+          const text = await window.__asr.transcribe(Float32Array.from(samples));
+          const ms = Math.round(performance.now() - t0);
+          const right = window.__match.heardIn(text, answer);
+          const wrong = !right && otherAnswers.some((o) => window.__match.heardIn(text, o));
+          return { text, ms, right, wrong };
+        },
+        { samples, answer: s.answer, otherAnswers: others.map((p) => answerOf[p]) },
+      );
+      combined = t.right ? "hit" : t.wrong ? "wrong" : "miss";
+      transcript = t.text;
+      asrMs = t.ms;
+    }
+    rows.push({ ...s, leniency, outcome, falseAlarm: !!r.alarm, alarmPhrase, combined, transcript, asrMs });
   }
 }
 await browser.close();
@@ -119,14 +142,20 @@ const pct = (n, d) => (d ? `${Math.round((100 * n) / d)}%` : "-");
 for (const leniency of leniencies) {
   const at = rows.filter((r) => r.leniency === leniency);
   console.log(`\nleniency ${leniency}`);
-  console.log("accent      hit   wrong  miss  false-alarm");
+  console.log(`accent      hit   wrong  miss  false-alarm${secondPass ? "   both-passes hit  wrong" : ""}`);
   const accents = [...new Set(at.map((r) => r.accent)), "ALL"];
   for (const a of accents) {
     const g = a === "ALL" ? at : at.filter((r) => r.accent === a);
     const c = (o) => g.filter((r) => r.outcome === o).length;
+    const cc = (o) => g.filter((r) => r.combined === o).length;
     console.log(
-      `${a.padEnd(10)} ${pct(c("hit"), g.length).padStart(5)} ${pct(c("wrong"), g.length).padStart(6)} ${pct(c("miss"), g.length).padStart(5)} ${pct(g.filter((r) => r.falseAlarm).length, g.length).padStart(10)}`,
+      `${a.padEnd(10)} ${pct(c("hit"), g.length).padStart(5)} ${pct(c("wrong"), g.length).padStart(6)} ${pct(c("miss"), g.length).padStart(5)} ${pct(g.filter((r) => r.falseAlarm).length, g.length).padStart(10)}` +
+        (secondPass ? `   ${pct(cc("hit"), g.length).padStart(12)} ${pct(cc("wrong"), g.length).padStart(6)}` : ""),
     );
+  }
+  if (secondPass) {
+    const ms = at.filter((r) => r.asrMs !== null).map((r) => r.asrMs).sort((x, y) => x - y);
+    if (ms.length) console.log(`speech-to-text in the browser: ${ms.length} runs, median ${ms[ms.length >> 1]} ms, first ${at.find((r) => r.asrMs !== null).asrMs} ms (includes loading)`);
   }
 }
 fs.writeFileSync(path.join(DIR, "results.json"), JSON.stringify(rows, null, 1));
