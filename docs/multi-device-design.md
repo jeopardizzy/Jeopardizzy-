@@ -63,9 +63,10 @@ Android families, which is exactly who plays together.
 
 1. Host taps **Play on several phones**: the app opens a room and shows a
    4-letter code and a QR code (`…/join#ROOM-KEY`).
-2. Team phones scan the QR code or type the code in the app. **Phones
-   without the app** can join through the website (the web build already
-   runs the whole game), so a guest needs nothing installed.
+2. **Scan and play is the default.** The QR code opens the website's join
+   page in the phone's browser (the web build already runs the whole game),
+   so a guest needs nothing installed. Phones with the app open the app
+   instead; typing the 4-letter code works too.
 3. Each phone picks a team (name and colour from the host's team list;
    free-text names stay on the host's phone, see Privacy).
 4. Reconnecting: a phone that drops (screen lock, network change) rejoins
@@ -118,6 +119,10 @@ Host → one team: `{ t: "yourTurn" }`, `{ t: "result", correct }`.
 - Buzzing is locked until the quizmaster has finished reading the clue (the
   host knows when the clue's audio ends), so nobody buzzes on the first
   word.
+- **Show the order.** After each buzz window the host screen and every team
+  phone show who buzzed and by how much ("Team Sage first, Team Butter
+  +0.12 s"), so nobody argues about who was first. A buzz before the window
+  opens is shown as "too early" and that phone is locked for half a second.
 
 ### Final round
 
@@ -151,13 +156,41 @@ names of people, no device identifiers, nothing stored.
 - The privacy policy gets a "Playing on several phones" section; the
   support page explains the join code and that one-phone mode works offline.
 
+## Monetization
+
+- **One Full Club purchase, guests play free.** Only the host phone needs
+  Full Club to open a room; team phones and browser guests join free.
+- **Join screen nudge.** After a game, guest screens show one line:
+  "Hosting your own? Get Quizzical Club" with store links (in the browser)
+  or the Full Club sheet (in the app). No ads, no tracking of who tapped it.
+- The store pages say "one purchase, guests play free".
+
+## Also for one phone (can ship before multi-device)
+
+These don't need rooms, so they can come first and later work on several
+phones unchanged.
+
+- **Game modes** (picked on Team Setup, saved in the game's settings):
+  - *Wrong answers cost points*: a miss subtracts the tile value, TV-style.
+    Off by default; the award buttons still let the host fix mistakes.
+  - *Lightning round*: a short timed round of the cheapest tiles with a
+    countdown per clue; on one phone the host taps who answered, on several
+    phones the buzz window is shorter.
+- **Themed packs as free Full Club updates**: holiday, school-subject and
+  family-movie boards, written to the same all-ages rules as today's sets.
+  Each pack is a new set group, so it needs voice clips baked
+  (`tools/voice/bake.mjs`) and keyword-spotting phrases regenerated
+  (`tools/kws`). Never a separate purchase, so "one purchase" stays true.
+
 ## Build plan
 
 | Phase | What | Effort (rough) |
 |---|---|---|
+| A. One-phone extras (any time) | Wrong-answer penalty and lightning round | 3–4 days |
+| B. Content (ongoing) | Each themed pack: writing and checking clues, voice bake, KWS phrases | 2–3 days per pack |
 | 0. Spike | Relay with rooms + encryption; web-only host and team screens; buzz + typed answers on a LAN | 3–4 days |
-| 1. MVP | In-app host and team modes, QR join, reconnect, turns and steals, buzz fairness, scores, host overrides, offline-dot | 1.5–2 weeks |
-| 2. Phones shine | Spoken answers on team phones, private final wagers, website join for guests, sounds/haptics on buzz | 1 week |
+| 1. MVP | In-app host and team modes, QR join straight into the browser, reconnect, turns and steals, buzz fairness with the order shown, scores, host overrides, offline-dot | 1.5–2 weeks |
+| 2. Phones shine | Spoken answers on team phones, private final wagers, join screen nudge, sounds/haptics on buzz | 1 week |
 | 3. Ship | Privacy policy and store forms, App Review notes, load test (100 rooms), relay monitoring without content logs, e2e tests with several browser contexts | 3–5 days |
 
 Testing: Playwright already drives the app; several browser contexts in
@@ -172,5 +205,3 @@ gets end-to-end tests like the one-phone game.
   reading.
 - Spectators (grandparents watching on a tablet) — cheap to add once rooms
   exist.
-- A wrong-answer penalty (TV-style) as an option, for one-phone and
-  multi-device modes alike.
