@@ -19,7 +19,7 @@ function supported(): boolean {
   return typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia && typeof WebAssembly === "object";
 }
 
-type State = "idle" | "explain" | "preparing" | "listening" | "checking" | "missed" | "no-mic" | "no-engine";
+type State = "idle" | "explain" | "preparing" | "listening" | "checking" | "missed" | "no-mic" | "no-engine" | "no-audio";
 
 /** Second and later tries listen more leniently: accents and quiet voices get through. */
 export const RETRY_LENIENCY = 0.6;
@@ -45,6 +45,8 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
   const [state, setState] = useState<State>("idle");
   /** what speech-to-text heard on the last miss, shown so the player knows why */
   const [heardText, setHeardText] = useState<string | null>(null);
+  /** technical detail of the last failure, shown small so device problems can be diagnosed */
+  const [problem, setProblem] = useState<string | null>(null);
   const tries = useRef(0);
   const session = useRef<ListenSession | null>(null);
 
@@ -90,10 +92,12 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
     setState("preparing");
     setHeardText(null);
     preloadAsr(); // warm the second pass while the player speaks
-    void s.result.then(async ({ labels, error, audio }) => {
+    void s.result.then(async ({ labels, error, detail, audio }) => {
       if (session.current !== s) return;
+      setProblem(detail ?? null);
       if (error === "mic") return done(s, () => setState("no-mic"));
       if (error === "engine") return done(s, () => setState("no-engine"));
+      if (error === "audio") return done(s, () => setState("no-audio"));
       if (allHeard(labels)) return done(s, () => onHeard(answer));
       const w = wrong.find((x) => labels.includes(x.label));
       if (w) return done(s, () => onHeard(w.text));
@@ -123,11 +127,17 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
 
   if (state === "no-mic" || state === "no-engine") {
     return (
-      <p role="status" className="text-center text-xs text-mute">
-        {state === "no-mic"
-          ? "The microphone is off for Quizzical Club. Type your answer above, or allow the microphone in your device settings."
-          : "Answering out loud isn’t available on this device. Type your answer above."}
-      </p>
+      <div role="status" className="flex flex-col items-center gap-1 text-center text-xs text-mute">
+        <p>
+          {state === "no-mic"
+            ? "The microphone isn’t available to Quizzical Club. Type your answer above, or allow the microphone in Settings › Quizzical Club."
+            : "Answering out loud couldn’t start on this device. Type your answer above."}
+        </p>
+        {problem && <p className="font-mono text-[10px] opacity-70">({problem})</p>}
+        <button type="button" onClick={start} className="rounded-lg px-3 py-1 font-semibold text-sage underline">
+          Try again
+        </button>
+      </div>
     );
   }
 
@@ -180,13 +190,22 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
         {state === "listening"
           ? "🎙️ Listening… (tap to stop)"
           : state === "preparing"
-            ? "🎙️ Getting ready…"
+            ? "🎙️ Getting ready… (tap to cancel)"
             : state === "checking"
             ? "🎙️ Checking…"
-            : state === "missed"
+            : state === "missed" || state === "no-audio"
               ? "🎙️ Say it again"
               : "🎙️ Say it"}
       </button>
+      {state === "no-audio" && (
+        <div role="status" className="flex flex-col items-center gap-1 text-center text-xs text-mute">
+          <p>The microphone opened, but no sound reached the app. Try once more, or type your answer.</p>
+          {problem && <p className="font-mono text-[10px] opacity-70">({problem})</p>}
+          <button type="button" onClick={onType} className="rounded-lg px-3 py-1 font-semibold text-sage underline">
+            ⌨️ Type it instead
+          </button>
+        </div>
+      )}
       {state === "missed" && (
         <div role="status" className="flex flex-col items-center gap-1 text-xs text-mute">
           <p>

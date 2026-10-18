@@ -1,7 +1,7 @@
 {
   "name": "quizzical-club",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Quizzical Club — team trivia boards, practice workbook and puzzle guides. Static, GitHub Pages ready.",
   "scripts": {

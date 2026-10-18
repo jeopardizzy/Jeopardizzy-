@@ -127,6 +127,10 @@ export default function Guides() {
             </div>
           </>
         )}
+
+        <p className="mt-10 text-center text-xs text-mute/70">
+          Quizzical Club {__APP_VERSION__} · build {__APP_BUILD__} · {__APP_COMMIT__}
+        </p>
       </div>
     </main>
   );

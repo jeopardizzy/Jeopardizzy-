@@ -122,8 +122,13 @@ export interface Heard {
   labels: string[];
   /** listening ended because the caller's `done` said so (not by timeout or stop) */
   complete: boolean;
-  /** why nothing could be heard: no microphone access, or the engine didn't load */
-  error?: "mic" | "engine";
+  /**
+   * why nothing could be heard: the engine didn't load, no microphone
+   * access, or the microphone opened but no sound ever arrived
+   */
+  error?: "engine" | "mic" | "audio";
+  /** technical detail for the error (shown small, to diagnose devices) */
+  detail?: string;
   /**
    * What the microphone picked up (16 kHz, at most MAX_AUDIO_SECONDS), so a
    * miss can be checked again by speech-to-text. In memory only: never
@@ -133,6 +138,10 @@ export interface Heard {
 }
 
 const MAX_AUDIO_SECONDS = 10;
+/** start-up deadlines: first engine load fetches ~18 MB; the microphone may wait on a permission prompt */
+const ENGINE_TIMEOUT_MS = 45_000;
+const MIC_TIMEOUT_MS = 30_000;
+const AUDIO_START_TIMEOUT_MS = 3_000;
 
 export interface ListenSession {
   result: Promise<Heard>;
@@ -274,10 +283,11 @@ export function listen(
   const result = new Promise<Heard>((resolve) => (finish = resolve));
 
   /** End the session now, from anywhere: idempotent, never waits on audio. */
-  const close = (complete: boolean, error?: Heard["error"]) => {
+  const close = (complete: boolean, error?: Heard["error"], detail?: string) => {
     if (finished) return;
     finished = true;
     clearTimeout(timer);
+    clearTimeout(watchdog);
     if (proc) proc.onaudioprocess = null;
     proc?.disconnect();
     source?.disconnect();
@@ -295,35 +305,51 @@ export function listen(
       }
     }
     captured.length = 0;
-    finish({ labels, complete, ...(error ? { error } : {}), ...(audio ? { audio } : {}) });
+    finish({ labels, complete, ...(error ? { error, detail } : {}), ...(audio ? { audio } : {}) });
   };
 
+  /** Each start-up step gets a deadline, so "getting ready" can never hang. */
+  const step = <T,>(p: Promise<T>, ms: number, what: string): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error(`${what} timed out`)), ms);
+      p.then(
+        (v) => (clearTimeout(t), resolve(v)),
+        (e) => (clearTimeout(t), reject(e)),
+      );
+    });
+  const why = (e: unknown) => String((e as { message?: string })?.message ?? e).slice(0, 120);
+  let watchdog: ReturnType<typeof setTimeout> | undefined;
+
   void (async () => {
-    if (!ctx) return close(false, "engine");
+    if (!ctx) return close(false, "engine", "no web audio");
     try {
-      const s = await openSpotter(targets, leniency);
+      const s = await step(openSpotter(targets, leniency), ENGINE_TIMEOUT_MS, "loading");
       if (finished) return s.close();
       spotter = s;
-    } catch {
-      return close(false, "engine");
+    } catch (e) {
+      return close(false, "engine", why(e));
     }
     try {
-      const m = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
-      });
+      const m = await step(
+        navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } }),
+        MIC_TIMEOUT_MS,
+        "microphone",
+      );
       if (finished) return m.getTracks().forEach((t) => t.stop());
       media = m;
-    } catch {
-      return close(false, "mic");
+    } catch (e) {
+      return close(false, "mic", why(e));
     }
     try {
-      // the microphone can switch iOS's audio session; make sure the context runs
-      await ctx.resume().catch(() => {});
-      if (finished) return;
+      // The microphone can switch iOS's audio session: nudge the context again,
+      // but never wait for it — outside a tap iOS may never confirm.
+      void ctx.resume().catch(() => {});
       source = ctx.createMediaStreamSource(media);
       proc = ctx.createScriptProcessor(4096, 1, 1);
+      let frames = 0;
       proc.onaudioprocess = (e) => {
         if (finished || !spotter) return;
+        frames++;
         const input = e.inputBuffer.getChannelData(0);
         const samples = downsample(input, ctx!.sampleRate);
         if (capturedLength + samples.length <= SAMPLE_RATE * MAX_AUDIO_SECONDS) {
@@ -335,12 +361,16 @@ export function listen(
       };
       source.connect(proc);
       proc.connect(ctx.destination);
-    } catch {
-      return close(false, "engine");
+      // no sound at all within a few seconds: the platform is blocking web audio
+      watchdog = setTimeout(() => {
+        if (frames === 0) close(false, "audio", `no audio (context ${ctx!.state}, ${ctx!.sampleRate} Hz)`);
+      }, AUDIO_START_TIMEOUT_MS);
+    } catch (e) {
+      return close(false, "audio", why(e));
     }
     timer = setTimeout(() => close(false), timeoutMs);
     onOpen?.();
-  })().catch(() => close(false, "engine")); // whatever fails, the session always ends
+  })().catch((e) => close(false, "engine", why(e))); // whatever fails, the session always ends
 
   return { result, stop: () => close(false) };
 }
