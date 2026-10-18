@@ -18,6 +18,7 @@ import {
 import { useMotionSafe } from "../lib/useMotionSafe";
 import { getVerdict } from "../lib/verdict";
 import Toggles from "../components/Toggles";
+import SpokenAnswer from "../components/SpokenAnswer";
 import { canUseLevel, FREE_WORKBOOK_LEVEL } from "../lib/access";
 import { useEntitlement } from "../store/entitlementStore";
 
@@ -238,6 +239,15 @@ function Picker() {
 
 /* ---------- test runner ---------- */
 
+/** Wrong answers to listen for alongside the right one: same category first. */
+function otherAnswers(questions: { categoryName: string; answer: string }[], index: number): string[] {
+  const q = questions[index];
+  const rest = questions.filter((_, i) => i !== index);
+  return [...rest.filter((o) => o.categoryName === q.categoryName), ...rest.filter((o) => o.categoryName !== q.categoryName)].map(
+    (o) => o.answer,
+  );
+}
+
 function TestRunner() {
   const questions = useWorkbookStore((s) => s.questions);
   const index = useWorkbookStore((s) => s.index);
@@ -324,6 +334,14 @@ function TestRunner() {
             >
               Check
             </button>
+            <SpokenAnswer
+              answer={q.answer}
+              others={otherAnswers(questions, index)}
+              onHeard={(heard) => {
+                setText(heard);
+                answerCurrent(heard);
+              }}
+            />
           </form>
         ) : (
           <motion.div

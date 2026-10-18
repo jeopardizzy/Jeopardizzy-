@@ -10,6 +10,8 @@
         <string>Quizzical Club</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Quizzical Club listens only while the Say it button says Listening, so you can answer Workbook questions out loud. Your voice is checked on this device and never recorded, saved or sent anywhere.</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
