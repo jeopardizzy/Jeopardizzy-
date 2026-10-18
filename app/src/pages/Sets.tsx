@@ -1,9 +1,12 @@
 import { motion } from "motion/react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTeamStore } from "../store/teamStore";
 import type { GameDef } from "../data/games";
 import { gameRoundCount, getRoundCategories, listPlayableGames } from "../lib/board";
 import { useMotionSafe } from "../lib/useMotionSafe";
+import { canPlayGame } from "../lib/access";
+import { RELAY_URL } from "../party/connection";
+import { useEntitlement } from "../store/entitlementStore";
 
 /** Exact clue count across all rounds (handles 4-wide boards and mixes). */
 function gameClueCount(g: GameDef): number {
@@ -24,28 +27,39 @@ const LEVEL_STYLES: Record<string, string> = {
   Expert: "bg-skyblue/15 text-skyblue",
 };
 
-const SERIES_ORDER: GameDef["series"][] = ["Idiom Arenas", "Book Club", "Classic Vault"];
+const SERIES_ORDER: GameDef["series"][] = ["Idiom Arenas", "Book Club", "Seasonal Specials", "Classic Vault"];
 const SERIES_BLURBS: Record<GameDef["series"], string> = {
   "Idiom Arenas": "Pure idiom and saying training — the olympiad workout.",
-  "Book Club": "Curated from the quiz books: trivia and wordplay mixes.",
+  "Book Club": "Trivia and wordplay mixes for the whole table.",
   "Classic Vault": "The original collection, board by board.",
+  "Seasonal Specials": "Themed boards for the time of year — new ones arrive with updates.",
 };
 
-/** Jeopardy selection — the heart of the site: you choose what to play. */
+/** Trivia Night selection — the heart of the site: you choose what to play. */
 export default function Sets() {
   const navigate = useNavigate();
   const selectSet = useTeamStore((s) => s.selectSet);
   const reduce = useMotionSafe();
+  const fullClub = useEntitlement((s) => s.fullClub);
+  const openSheet = useEntitlement((s) => s.openSheet);
 
   return (
     <main className="stage-bg min-h-dvh px-4 py-8">
       <div className="mx-auto max-w-4xl">
 
-        <h1 className="font-display mb-1 text-3xl text-ink sm:text-4xl">Choose your jeopardy</h1>
+        <h1 className="font-display mb-1 text-3xl text-ink sm:text-4xl">Choose your board</h1>
         <p className="mb-8 text-mute">
           Every game is a list of boards — five categories, five clues each, values climbing with
           every round. Pick the flavor that fits the table.
         </p>
+        {RELAY_URL && (
+          <Link
+            to="/party"
+            className="mb-8 block rounded-2xl border border-dashed border-sage px-4 py-3 text-sm font-semibold text-sage-deep"
+          >
+            📱 Play on several phones (preview)
+          </Link>
+        )}
 
         {SERIES_ORDER.map((series) => {
           const games = listPlayableGames().filter((g) => g.series === series && !g.daily);
@@ -57,14 +71,16 @@ export default function Sets() {
               <div className="grid gap-4 sm:grid-cols-2">
                 {games.map((g, i) => {
                   const rounds = gameRoundCount(g);
+                  const locked = !canPlayGame(g, fullClub);
                   return (
                     <motion.button
                       key={g.id}
-                      aria-label={`Play ${g.name}`}
+                      aria-label={`Play ${g.name}${locked ? " — Full Club" : ""}`}
                       initial={reduce ? false : { opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: reduce ? 0 : 0.05 * i }}
                       onClick={() => {
+                        if (locked) return openSheet();
                         selectSet(g.id);
                         navigate("/setup");
                       }}
@@ -72,10 +88,17 @@ export default function Sets() {
                     >
                       <div className="mb-2 flex items-center justify-between">
                         <span className="text-3xl">{g.emoji}</span>
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${LEVEL_STYLES[g.level]}`}
-                        >
-                          {g.level}
+                        <span className="flex items-center gap-2">
+                          {locked && (
+                            <span className="rounded-full bg-ink/5 px-3 py-1 text-xs font-bold text-mute">
+                              🔒 Full Club
+                            </span>
+                          )}
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${LEVEL_STYLES[g.level]}`}
+                          >
+                            {g.level}
+                          </span>
                         </span>
                       </div>
                       <h3 className="font-display mb-1 text-xl text-ink group-hover:text-sage-deep">

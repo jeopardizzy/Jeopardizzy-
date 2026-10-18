@@ -1,0 +1,27 @@
+{
+  "lines": [
+    "Welcome to Trivia Night! Pick a tile to begin.",
+    "Finish the saying: Birds of a feather…",
+    "The answer is… flock together!",
+    "A long slender rod; or, a survey of opinions.",
+    "This word means both a large body of water and the letter C, when you say it out loud.",
+    "It's time for the final round. Make your wagers!",
+    "And we have a winner!"
+  ],
+  "candidates": [
+    { "label": "huan", "model": "qwen-audio-3.1-tts-flash", "voice": "longanhuan_v3.1" },
+    { "label": "huan-cheerful", "model": "qwen-audio-3.1-tts-flash", "voice": "longanhuan_v3.1", "instruction": "Bright, cheerful quiz host with a smile in her voice; clear and lively for a family audience." },
+    { "label": "huan-warm", "model": "qwen-audio-3.1-tts-flash", "voice": "longanhuan_v3.1", "instruction": "Warm, friendly quiz host for a family audience; unhurried, clear and kind." },
+    { "label": "huan-urban", "model": "qwen-audio-3.1-tts-flash", "voice": "longanhuan_v3.1", "instruction": "Confident, playful quiz host with a light grin; upbeat pace, crisp and clear." },
+    { "label": "lingxin", "model": "qwen-audio-3.1-tts-flash", "voice": "longanlingxin_v3.1" },
+    { "label": "lingxin-cheerful", "model": "qwen-audio-3.1-tts-flash", "voice": "longanlingxin_v3.1", "instruction": "Bright, cheerful quiz host with a smile in her voice; clear and lively for a family audience." },
+    { "label": "lingxin-warm", "model": "qwen-audio-3.1-tts-flash", "voice": "longanlingxin_v3.1", "instruction": "Warm, friendly quiz host for a family audience; unhurried, clear and kind." },
+    { "label": "lingxin-urban", "model": "qwen-audio-3.1-tts-flash", "voice": "longanlingxin_v3.1", "instruction": "Confident, playful quiz host with a light grin; upbeat pace, crisp and clear." },
+    { "label": "fengyue", "model": "qwen-audio-3.1-tts-flash", "voice": "longanfengyue_v3.1" },
+    { "label": "fengyue-cheerful", "model": "qwen-audio-3.1-tts-flash", "voice": "longanfengyue_v3.1", "instruction": "Bright, cheerful quiz host with a smile in her voice; clear and lively for a family audience." },
+    { "label": "fengyue-warm", "model": "qwen-audio-3.1-tts-flash", "voice": "longanfengyue_v3.1", "instruction": "Warm, friendly quiz host for a family audience; unhurried, clear and kind." },
+    { "label": "fengyue-urban", "model": "qwen-audio-3.1-tts-flash", "voice": "longanfengyue_v3.1", "instruction": "Confident, playful quiz host with a light grin; upbeat pace, crisp and clear." },
+    { "label": "en-andy", "model": "qwen-audio-3.1-tts-flash", "voice": "Andy_v3.1" },
+    { "label": "en-ava", "model": "qwen-audio-3.1-tts-flash", "voice": "Ava_v3.1" }
+  ]
+}

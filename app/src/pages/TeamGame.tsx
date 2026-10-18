@@ -6,6 +6,7 @@ import BoardGrid from "../components/BoardGrid";
 import HostClueModal from "../components/HostClueModal";
 import FinalWager from "../components/FinalWager";
 import WinnerScreen from "../components/WinnerScreen";
+import LightningRound from "../components/LightningRound";
 import Scoreboard from "../components/Scoreboard";
 import Toggles from "../components/Toggles";
 import { useMotionSafe } from "../lib/useMotionSafe";
@@ -69,6 +70,18 @@ export default function TeamGame() {
               <p className="mt-4 text-center text-sm text-mute">
                 The highlighted team picks a tile. Read the clue aloud, reveal, award the points.
               </p>
+            </motion.div>
+          )}
+
+          {phase === "lightning" && (
+            <motion.div
+              key="lightning"
+              initial={reduce ? false : { opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0 }}
+              className="pt-6"
+            >
+              <LightningRound />
             </motion.div>
           )}
 

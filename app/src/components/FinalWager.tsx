@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { useTeamStore } from "../store/teamStore";
 import { useMotionSafe } from "../lib/useMotionSafe";
+import { say } from "../audio/voice";
 
 /** Final Quizzical for teams: per-team wagers, reveal, per-team grading. */
 export default function FinalWager() {
@@ -149,7 +150,11 @@ export default function FinalWager() {
 }
 
 function LockInButton() {
-  const go = () => useTeamStore.setState({ phase: "final-clue" });
+  const go = () => {
+    const clue = useTeamStore.getState().finalClue;
+    if (clue) say({ line: "finalClue" }, { kind: "clue", text: clue.clue });
+    useTeamStore.setState({ phase: "final-clue" });
+  };
   return (
     <button
       onClick={go}

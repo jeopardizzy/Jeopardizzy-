@@ -8,7 +8,13 @@ import TeamGame from "./pages/TeamGame";
 import Workbook from "./pages/Workbook";
 import Guides from "./pages/Guides";
 import Sidebar from "./components/Sidebar";
+import UnlockSheet from "./components/UnlockSheet";
 import { unlockAudio } from "./audio/sound";
+import { loadVoice, unlockVoice } from "./audio/voice";
+import { platformAdapter } from "./lib/purchases";
+import { useEntitlement } from "./store/entitlementStore";
+import PartyHost from "./pages/PartyHost";
+import PartyJoin from "./pages/PartyJoin";
 
 /** Shell with the permanent sidebar — hidden during an active team game. */
 function AppShell({ children }: { children: ReactNode }) {
@@ -19,14 +25,25 @@ function AppShell({ children }: { children: ReactNode }) {
       {!inGame && <Sidebar />}
       {/* clear the sidebar on desktop and the bottom bar on mobile */}
       <div className={inGame ? "" : "pb-20 lg:pb-0 lg:pl-60"}>{children}</div>
+      <UnlockSheet />
     </div>
   );
 }
 
 export default function App() {
+  // Ask the store once per launch whether Full Club is owned.
+  useEffect(() => {
+    void useEntitlement.getState().init(platformAdapter());
+    // quizmaster voice manifest, so the first tile can speak without waiting
+    void loadVoice();
+  }, []);
+
   // Browsers require a user gesture before audio can start.
   useEffect(() => {
-    const unlock = () => unlockAudio();
+    const unlock = () => {
+      unlockAudio();
+      unlockVoice();
+    };
     window.addEventListener("pointerdown", unlock, { once: true });
     window.addEventListener("keydown", unlock, { once: true });
     return () => {
@@ -45,6 +62,8 @@ export default function App() {
           <Route path="/game" element={<TeamGame />} />
           <Route path="/workbook" element={<Workbook />} />
           <Route path="/guides" element={<Guides />} />
+          <Route path="/party" element={<PartyHost />} />
+          <Route path="/join/:code/:key" element={<PartyJoin />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppShell>

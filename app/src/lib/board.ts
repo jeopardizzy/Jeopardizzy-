@@ -5,13 +5,14 @@ import { UOE_GAMES } from "../data/uoeGames";
 import { LEGACY_BOARDS } from "../data/legacyBoards";
 import { ARENA3_BOARDS } from "../data/arena3Boards";
 import { ARENA4_BOARDS } from "../data/arena4Boards";
+import { SEASONAL_BOARDS } from "../data/seasonalBoards";
 import type { BoardGame } from "../data/boardGames";
 import { GAMES, type GameDef } from "../data/games";
 
 const BASE_VALUES = [100, 200, 300, 400, 500];
 
 const ALL_BOARDS = new Map<string, BoardGame>(
-  [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS].map((g) => [g.id, g]),
+  [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS, ...SEASONAL_BOARDS].map((g) => [g.id, g]),
 );
 
 /** Boards that Arena Mix can draw from: all four idiom arenas (21 boards). */
@@ -89,7 +90,7 @@ export function gameRoundCount(game: GameDef): number {
 }
 
 /**
- * Daily Jeopardy: one board of 5 categories sampled across every pool
+ * Daily Board: one board of 5 categories sampled across every pool
  * (books, UoE, classics), seeded by the UTC calendar day — the same board
  * all day on this device.
  */
@@ -215,4 +216,38 @@ export function pickFinalForGame(game: GameDef, seed: number): FinalClue {
   const cat = shuffled[0] ?? quizData.categories[0];
   const clue: Clue = cat.clues[Math.floor(rng() * cat.clues.length)];
   return { categoryName: cat.name, clue: clue.clue, answer: clue.answer };
+}
+
+/** Clues in a lightning round. */
+export const LIGHTNING_CLUES = 8;
+
+/** Seconds on the clock for each lightning clue. */
+export const LIGHTNING_SECONDS = 15;
+
+export interface LightningClue {
+  categoryName: string;
+  clue: string;
+  answer: string;
+}
+
+/**
+ * Lightning round: the easiest clue (curated easy → hard) from each of
+ * several dataset categories this game doesn't use, final category excluded.
+ * Deterministic per seed.
+ */
+export function pickLightningClues(game: GameDef, seed: number, count = LIGHTNING_CLUES): LightningClue[] {
+  const rng = mulberry32(seed ^ 0x7f4a7c15);
+  const used = new Set(game.bookRounds.flat());
+  used.add(pickFinalForGame(game, seed).categoryName);
+  const pool = shuffle(quizData.categories.filter((c) => !used.has(c.name)), rng);
+  return pool.slice(0, count).map((c) => ({
+    categoryName: c.name,
+    clue: c.clues[0].clue,
+    answer: c.clues[0].answer,
+  }));
+}
+
+/** Each lightning clue is worth the cheapest tile of the last board. */
+export function lightningValue(game: GameDef): number {
+  return BASE_VALUES[0] * gameRoundCount(game);
 }

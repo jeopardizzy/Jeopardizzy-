@@ -51,10 +51,10 @@ npx cap open ios       # открыть проект в Xcode (только macO
 4. **Возрастной рейтинг**: контент подходит всем (викторина без жестокости) —
    пройдите анкету IARC, ожидаемо «Everyone».
 5. **Контент**: скриншоты 2+ (телефон), иконка 512, feature graphic 1024×500,
-   описание. Приложение без рекламы и без IAP в базовой конфигурации.
+   описание. Без рекламы; одна разовая покупка Full Club (`full_club`).
    Готовые материалы листинга лежат в `docs/listing/`:
-   `play-icon-512.png`, `feature-graphic-1024x500.png`, шесть телефонных
-   скриншотов (`shot-1-home` … `shot-6-workbook`) и тексты
+   `play-icon-512.png`, `feature-graphic-1024x500.png`, семь телефонных
+   скриншотов `play-phone/` (1082×2402), для планшетов — `ipad-13/`, и тексты
    `description-en.txt` / `description-ru.txt` (short + full описания по
    правилам Play Console).
 
@@ -120,13 +120,15 @@ Xcode или через agvtool перед архивом.
 
 Материалы карточки App Store готовы в `docs/listing/`:
 `description-apple-en.txt` / `description-apple-ru.txt` (subtitle ≤ 30,
-promo ≤ 170, description, keywords ≤ 100) и шесть скриншотов 6.9"
-(`shot-*-ios.png`, 1320×2868 — требование iPhone 16 Pro Max). App Store Connect
-сейчас требует слот iPhone 6.1"/6.3" (1206×2622) — это `docs/listing/iphone-6.3/`,
-получены из 6.9" через `magick <in> -resize x2622 -gravity center -crop 1206x2622+0+0`.
-iPad 13" (2064×2752) — `docs/listing/ipad-13/`, снимаются скриптом
-`tools/ipad_shots.mjs` (Playwright по production-сборке). Support URL:
-https://jeopardizzy.github.io/Jeopardizzy-/
+promo ≤ 170, description, keywords ≤ 100) и по семь скриншотов на каждый размер:
+`iphone-6.9/` (1320×2868), `iphone-6.3/` (1206×2622, обязательный слот),
+`ipad-13/` (2064×2752). Все наборы (и `play-phone/`) снимаются одним скриптом
+`tools/store_shots.mjs` (Playwright по production-сборке; см. шапку файла).
+Support URL: https://jeopardizzy.github.io/Jeopardizzy-/support.html,
+политика: https://jeopardizzy.github.io/Jeopardizzy-/privacy.html.
+
+Название «Jeopardy» — товарный знак Sony: ни в приложении, ни в текстах сторов
+его не используем (игровой режим называется Trivia Night, ежедневный — Daily Board).
 
 ## Монетизация (варианты по возрастанию сложности)
 

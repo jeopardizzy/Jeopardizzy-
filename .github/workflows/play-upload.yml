@@ -58,7 +58,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Verify AAB signature
-        run: jarsigner -verify app/android/app/build/outputs/bundle/release/app-release.aab
+        run: jarsigner -verify android/app/build/outputs/bundle/release/app-release.aab  # steps run inside app/
 
       - name: Upload to Play Console (internal track)
         uses: r0adkll/upload-google-play@v1

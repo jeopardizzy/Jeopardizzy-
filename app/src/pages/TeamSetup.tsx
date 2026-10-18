@@ -1,8 +1,11 @@
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { TEAM_COLORS, useTeamStore } from "../store/teamStore";
 import { useMotionSafe } from "../lib/useMotionSafe";
+import { canPlayGame } from "../lib/access";
+import { useEntitlement } from "../store/entitlementStore";
+import { LIGHTNING_SECONDS } from "../lib/board";
 
 const MAX_TEAMS = 4;
 
@@ -20,8 +23,14 @@ export default function TeamSetup() {
 
   const finalEnabled = useTeamStore((s) => s.finalEnabled);
   const setFinalEnabled = useTeamStore((s) => s.setFinalEnabled);
+  const fullClub = useEntitlement((s) => s.fullClub);
+  const wrongPenalty = useTeamStore((s) => s.settings.wrongPenalty === true);
+  const setWrongPenalty = useTeamStore((s) => s.setWrongPenalty);
+  const lightning = useTeamStore((s) => s.settings.lightning === true);
+  const setLightning = useTeamStore((s) => s.setLightning);
 
-  if (!set_) {
+  // no set chosen, or a Full Club set without the unlock (deep link, refund)
+  if (!set_ || !canPlayGame(set_, fullClub)) {
     navigate("/sets", { replace: true });
     return null;
   }
@@ -90,30 +99,19 @@ export default function TeamSetup() {
           </button>
         )}
 
-        <button
-          onClick={() => setFinalEnabled(!finalEnabled)}
-          role="switch"
-          aria-checked={finalEnabled}
-          className={`mb-6 flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left shadow-card transition ${
-            finalEnabled ? "border-sage bg-sage-soft" : "border-line bg-cream"
-          }`}
-        >
-          <span>
-            <span className="block text-sm font-bold text-ink">Final wager round</span>
-            <span className="block text-xs text-mute">
-              One last clue after the final board — teams risk up to their whole score.
-              {set_.final ? " On by default in this game." : " Off by default in this game."}
-            </span>
-          </span>
-          <span
-            aria-hidden
-            className={`ml-4 flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition ${
-              finalEnabled ? "justify-end bg-sage" : "justify-start bg-line"
-            }`}
-          >
-            <span className="h-5 w-5 rounded-full bg-white shadow" />
-          </span>
-        </button>
+        <div className="mb-6 space-y-3">
+          <ModeSwitch label="Wrong answers cost points" on={wrongPenalty} onChange={setWrongPenalty}>
+            A wrong answer checked on the clue card takes the tile's points away, TV-style.
+          </ModeSwitch>
+          <ModeSwitch label="Lightning round" on={lightning} onChange={setLightning}>
+            Eight quick clues after the last board, {LIGHTNING_SECONDS} seconds each — tap the team that
+            shouts it first.
+          </ModeSwitch>
+          <ModeSwitch label="Final wager round" on={finalEnabled} onChange={setFinalEnabled}>
+            One last clue after the final board — teams risk up to their whole score.
+            {set_.final ? " On by default in this game." : " Off by default in this game."}
+          </ModeSwitch>
+        </div>
 
         <button
           onClick={() => {
@@ -126,5 +124,43 @@ export default function TeamSetup() {
         </button>
       </motion.div>
     </main>
+  );
+}
+
+/** An on/off game option on the setup card. */
+function ModeSwitch({
+  label,
+  on,
+  onChange,
+  children,
+}: {
+  label: string;
+  on: boolean;
+  onChange: (v: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      onClick={() => onChange(!on)}
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left shadow-card transition ${
+        on ? "border-sage bg-sage-soft" : "border-line bg-cream"
+      }`}
+    >
+      <span>
+        <span className="block text-sm font-bold text-ink">{label}</span>
+        <span className="block text-xs text-mute">{children}</span>
+      </span>
+      <span
+        aria-hidden
+        className={`ml-4 flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition ${
+          on ? "justify-end bg-sage" : "justify-start bg-line"
+        }`}
+      >
+        <span className="h-5 w-5 rounded-full bg-white shadow" />
+      </span>
+    </button>
   );
 }

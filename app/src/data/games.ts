@@ -1,5 +1,5 @@
 /**
- * All playable games, listed on the home of Team Jeopardy.
+ * All playable games, listed on the home of Trivia Night.
  * A game = N rounds (boards) of 5 categories × 5 clues each.
  * Round values escalate: round 1 is 100–500, round 2 200–1000, and so on.
  * Book rounds reference the curated dataset by category name;
@@ -16,7 +16,7 @@ export interface GameDef {
   /** rounds of standalone boards (UoE / classic sets), played after bookRounds */
   boardRounds: string[];
   /** grouping on the selection screen */
-  series: "Book Club" | "Idiom Arenas" | "Classic Vault";
+  series: "Book Club" | "Idiom Arenas" | "Classic Vault" | "Seasonal Specials";
   /** run the final wager round after the last board */
   final: boolean;
   /** when true, rounds are sampled from all arena boards at game start */
@@ -234,8 +234,19 @@ export const GAMES: GameDef[] = [
     series: "Idiom Arenas",
   },
   {
+    id: "winter-wordplay",
+    name: "Winter Wordplay",
+    emoji: "❄️",
+    blurb: "Snowy sayings, frosty homophones, winter rhymes and icy science.",
+    level: "Easy",
+    bookRounds: [],
+    boardRounds: ["winter-1", "winter-2"],
+    final: true,
+    series: "Seasonal Specials",
+  },
+  {
     id: "daily-jeopardy",
-    name: "Daily Jeopardy",
+    name: "Daily Board",
     emoji: "☀️",
     blurb: "One quick board of 5 random categories — the same board all day.",
     level: "Easy",

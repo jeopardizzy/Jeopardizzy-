@@ -1,9 +1,13 @@
 import { motion } from "motion/react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTeamStore } from "../store/teamStore";
 import { useWorkbookStore } from "../store/workbookStore";
 import { aggregateCategoryStats, weakestCategories } from "../lib/stats";
 import { useMotionSafe } from "../lib/useMotionSafe";
+import { canDrill } from "../lib/access";
+import { useEntitlement } from "../store/entitlementStore";
+import { askForReview, shouldAskForReview } from "../lib/reviewPrompt";
 
 /** Winner celebration with final standings. */
 export default function WinnerScreen() {
@@ -13,6 +17,16 @@ export default function WinnerScreen() {
   const set_ = useTeamStore((s) => s.set);
   const navigate = useNavigate();
   const reduce = useMotionSafe();
+  const gamesPlayed = useTeamStore((s) => s.records.gamesPlayed);
+
+  // a finished game night is the moment to ask for a store rating
+  useEffect(() => {
+    if (!shouldAskForReview(gamesPlayed)) return;
+    const t = setTimeout(askForReview, 1500);
+    return () => clearTimeout(t);
+    // once per podium: gamesPlayed is final by the time it renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const standings = [...teams].sort((a, b) => b.score - a.score);
   const top = standings[0];
@@ -107,6 +121,7 @@ function TrainingNotes() {
   if (outcomes.length === 0) return null;
 
   const practiceThese = () => {
+    if (!canDrill(useEntitlement.getState().fullClub)) return useEntitlement.getState().openSheet();
     useWorkbookStore.getState().startDrill(gameWeak.map((w) => w.name));
     navigate("/workbook");
   };

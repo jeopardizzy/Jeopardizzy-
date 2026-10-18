@@ -18,6 +18,9 @@ import {
 import { useMotionSafe } from "../lib/useMotionSafe";
 import { getVerdict } from "../lib/verdict";
 import Toggles from "../components/Toggles";
+import SpokenAnswer from "../components/SpokenAnswer";
+import { canUseLevel, FREE_WORKBOOK_LEVEL } from "../lib/access";
+import { useEntitlement } from "../store/entitlementStore";
 
 const LEVELS: { id: Level; label: string }[] = [
   { id: "all", label: "All levels" },
@@ -69,6 +72,15 @@ function Picker() {
   const startTest = useWorkbookStore((s) => s.startTest);
   const bests = useWorkbookStore((s) => s.records.workbookBests);
   const reduce = useMotionSafe();
+  const fullClub = useEntitlement((s) => s.fullClub);
+  const openSheet = useEntitlement((s) => s.openSheet);
+
+  // free tier: Easy tests only, no drills (also covers a refund mid-session)
+  useEffect(() => {
+    if (fullClub) return;
+    if (drillCategories) clearDrill();
+    if (!canUseLevel(level, false)) pick(type, FREE_WORKBOOK_LEVEL);
+  }, [fullClub, drillCategories, level, type, pick, clearDrill]);
 
   const types: (TaskType | "all")[] = [
     "all",
@@ -163,20 +175,25 @@ function Picker() {
         role="group"
         aria-label="Difficulty level"
       >
-        {LEVELS.map((l) => (
-          <button
-            key={l.id}
-            onClick={() => pick(type, l.id)}
-            aria-pressed={level === l.id}
-            className={`rounded-full px-5 py-2 text-sm font-bold shadow-card transition ${
-              level === l.id
-                ? "bg-sage text-white"
-                : "border border-line bg-surface text-mute hover:text-ink"
-            }`}
-          >
-            {l.label}
-          </button>
-        ))}
+        {LEVELS.map((l) => {
+          const locked = !canUseLevel(l.id, fullClub);
+          return (
+            <button
+              key={l.id}
+              onClick={() => (locked ? openSheet() : pick(type, l.id))}
+              aria-pressed={level === l.id}
+              aria-label={locked ? `${l.label} — Full Club` : undefined}
+              className={`rounded-full px-5 py-2 text-sm font-bold shadow-card transition ${
+                level === l.id
+                  ? "bg-sage text-white"
+                  : "border border-line bg-surface text-mute hover:text-ink"
+              }`}
+            >
+              {locked && <span aria-hidden>🔒 </span>}
+              {l.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="mb-8 flex flex-wrap items-center gap-2" role="group" aria-label="Test length">
@@ -214,12 +231,22 @@ function Picker() {
         {poolSize === 0 ? "no clues" : `${Math.min(questionCount, poolSize)} questions`})
       </button>
 
+      <FullClubCard />
       <ProgressBackup />
     </motion.div>
   );
 }
 
 /* ---------- test runner ---------- */
+
+/** Wrong answers to listen for alongside the right one: same category first. */
+function otherAnswers(questions: { categoryName: string; answer: string }[], index: number): string[] {
+  const q = questions[index];
+  const rest = questions.filter((_, i) => i !== index);
+  return [...rest.filter((o) => o.categoryName === q.categoryName), ...rest.filter((o) => o.categoryName !== q.categoryName)].map(
+    (o) => o.answer,
+  );
+}
 
 function TestRunner() {
   const questions = useWorkbookStore((s) => s.questions);
@@ -307,6 +334,15 @@ function TestRunner() {
             >
               Check
             </button>
+            <SpokenAnswer
+              answer={q.answer}
+              others={otherAnswers(questions, index)}
+              onHeard={(heard) => {
+                setText(heard);
+                answerCurrent(heard);
+              }}
+              onType={() => inputRef.current?.focus()}
+            />
           </form>
         ) : (
           <motion.div
@@ -423,6 +459,34 @@ function TestResults() {
 }
 
 /* ---------- backup / restore ---------- */
+
+/** Full Club status, with Restore always reachable (store requirement). */
+function FullClubCard() {
+  const fullClub = useEntitlement((s) => s.fullClub);
+  const platform = useEntitlement((s) => s.platform);
+  const openSheet = useEntitlement((s) => s.openSheet);
+  if (fullClub) {
+    return (
+      <p className="mt-10 rounded-2xl border border-line bg-surface px-5 py-4 text-sm font-semibold text-sage-deep shadow-card">
+        🏆 Full Club unlocked — every board and level is yours.
+      </p>
+    );
+  }
+  return (
+    <div className="mt-10 rounded-2xl border border-line bg-surface p-5 shadow-card">
+      <h2 className="font-display mb-1 text-lg text-ink">🏆 Full Club</h2>
+      <p className="mb-3 text-sm text-mute">
+        All 18 team games, every workbook level and the training-note drills. One-time purchase.
+      </p>
+      <button
+        onClick={openSheet}
+        className="rounded-xl bg-sage px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-sage-deep"
+      >
+        {platform === "native" ? "Unlock or restore" : "See Full Club"}
+      </button>
+    </div>
+  );
+}
 
 function ProgressBackup() {
   const [msg, setMsg] = useState<string | null>(null);

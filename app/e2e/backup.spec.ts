@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures";
 
 /** Finish a 5-question workbook test (all wrong on purpose — a 0/5 best is
  *  still a saved record, which is all this test needs). */

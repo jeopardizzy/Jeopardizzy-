@@ -6,6 +6,7 @@ import { isCorrect } from "../lib/answerMatch";
 import { mulberry32, randomSeed, shuffle } from "../lib/random";
 import { loadRecords, loadSettings, saveRecords, saveSettings, type Records, type Settings } from "../lib/saves";
 import { sfx } from "../audio/sound";
+import { say, stopVoice } from "../audio/voice";
 
 const initialSettings: Settings =
   typeof window === "undefined"
@@ -59,6 +60,8 @@ interface WorkbookState {
   answerCurrent: (text: string) => void;
   nextQuestion: () => void;
   quit: () => void;
+  /** remember that the player has seen the microphone explainer and turned spoken answers on */
+  enableSpokenAnswers: () => void;
 }
 
 const LEVEL_TIERS: Record<Exclude<Level, "all">, number[]> = {
@@ -145,6 +148,7 @@ export const useWorkbookStore = create<WorkbookState>((set, get) => ({
     const count = Math.min(s.questionCount, pool.length);
     const questions = shuffle([...pool], rng).slice(0, count);
     sfx.chime();
+    say({ kind: "clue", text: questions[0].clue });
     set({ phase: "test", questions, index: 0, results: [], feedback: null });
   },
 
@@ -154,6 +158,7 @@ export const useWorkbookStore = create<WorkbookState>((set, get) => ({
     const q = s.questions[s.index];
     if (!q) return;
     const correct = isCorrect(text, q.answer);
+    stopVoice();
     if (correct) sfx.ding();
     else sfx.buzz();
     set({
@@ -167,6 +172,7 @@ export const useWorkbookStore = create<WorkbookState>((set, get) => ({
     if (!s.feedback) return;
     const nextIndex = s.index + 1;
     if (nextIndex < s.questions.length) {
+      say({ kind: "clue", text: s.questions[nextIndex].clue });
       set({ index: nextIndex, feedback: null });
       return;
     }
@@ -184,5 +190,14 @@ export const useWorkbookStore = create<WorkbookState>((set, get) => ({
     set({ phase: "results", feedback: null, records });
   },
 
-  quit: () => set({ phase: "pick", questions: [], results: [], feedback: null, drillCategories: null }),
+  quit: () => {
+    stopVoice();
+    set({ phase: "pick", questions: [], results: [], feedback: null, drillCategories: null });
+  },
+
+  enableSpokenAnswers: () => {
+    const settings = { ...loadSettings(), spokenAnswers: true };
+    saveSettings(settings);
+    set({ settings });
+  },
 }));
