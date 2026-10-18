@@ -211,7 +211,11 @@ the store apps:
 - `app/relay/worker.ts`: the same core on Cloudflare Workers, one Durable
   Object for all rooms (one clock). Its own package (`app/relay`, `npm run
   dev` / `npm run deploy`); the party e2e test passes against it locally.
-  Deploying needs a Cloudflare account (free plan is enough to start).
+  Deployed (October 18, 2026) to
+  `wss://quizzical-club-party-relay.apsftllc.workers.dev/ws` on the
+  apsftllc@gmail.com Cloudflare account, observability off; the party e2e
+  test passes through it (build with `VITE_PARTY_RELAY=<that url>`). The
+  store apps don't point at it yet.
 - `app/src/party/crypto.ts`: AES-GCM room key in the join link's fragment.
 - `app/src/party/game.ts`: referee rules on the host (buzz order by relay
   time, steals through the buzz queue, no answer in the public view before
@@ -224,7 +228,7 @@ the store apps:
 
 The host's lobby shows a QR code of the join link, drawn on the device.
 
-Not yet: deploying the relay, in-app host mode inside the normal Trivia Night game,
+Not yet: a custom domain for the relay, in-app host mode inside the normal Trivia Night game,
 spoken answers on team phones (the phone doesn't know the answer, so Say it
 needs a host-side check of the recognised text), testing on real phones
 (needs the deployed relay and HTTPS, since WebCrypto requires a secure page).
