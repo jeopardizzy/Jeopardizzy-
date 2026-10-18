@@ -238,79 +238,109 @@ export async function spotSamples(targets: KeywordTarget[], samples: Float32Arra
 
 /**
  * Open the microphone and listen for the given phrases. The microphone is
- * closed when `done(labels)` returns true, after `timeoutMs`, or on stop().
+ * closed when `done(labels)` returns true, after `timeoutMs` of listening,
+ * or on stop() — whichever comes first, whatever state the audio is in.
+ *
+ * Call it straight from the tap handler: iOS only lets web audio run when
+ * it is started during a user gesture, so the AudioContext is created and
+ * resumed here, before any await.
  */
 export function listen(
   targets: KeywordTarget[],
   done: (labels: string[]) => boolean,
-  opts: { timeoutMs?: number; leniency?: number } = {},
+  opts: { timeoutMs?: number; leniency?: number; onOpen?: () => void } = {},
 ): ListenSession {
-  const { timeoutMs = 7000, leniency = 1 } = opts;
-  let stopped = false;
+  const { timeoutMs = 7000, leniency = 1, onOpen } = opts;
+
+  let ctx: AudioContext | null = null;
+  try {
+    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    ctx = new Ctx();
+    void ctx.resume();
+  } catch {
+    ctx = null;
+  }
+
+  const labels: string[] = [];
+  const captured: Float32Array[] = [];
+  let capturedLength = 0;
+  let media: MediaStream | null = null;
+  let spotter: Spotter | null = null;
+  let source: MediaStreamAudioSourceNode | null = null;
+  let proc: ScriptProcessorNode | null = null;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let finished = false;
   let finish: (h: Heard) => void = () => {};
   const result = new Promise<Heard>((resolve) => (finish = resolve));
-  const session: ListenSession = { result, stop: () => void (stopped = true) };
+
+  /** End the session now, from anywhere: idempotent, never waits on audio. */
+  const close = (complete: boolean, error?: Heard["error"]) => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(timer);
+    if (proc) proc.onaudioprocess = null;
+    proc?.disconnect();
+    source?.disconnect();
+    media?.getTracks().forEach((t) => t.stop());
+    void ctx?.close().catch(() => {});
+    spotter?.close();
+    spotter = null;
+    let audio: Float32Array | undefined;
+    if (capturedLength > 0) {
+      audio = new Float32Array(capturedLength);
+      let at = 0;
+      for (const c of captured) {
+        audio.set(c, at);
+        at += c.length;
+      }
+    }
+    captured.length = 0;
+    finish({ labels, complete, ...(error ? { error } : {}), ...(audio ? { audio } : {}) });
+  };
 
   void (async () => {
-    const labels: string[] = [];
-    const captured: Float32Array[] = [];
-    let capturedLength = 0;
-    let media: MediaStream | null = null;
-    let ctx: AudioContext | null = null;
-    let spotter: Spotter | null = null;
-    const close = (complete: boolean, error?: Heard["error"]) => {
-      media?.getTracks().forEach((t) => t.stop());
-      void ctx?.close();
-      spotter?.close();
-      let audio: Float32Array | undefined;
-      if (capturedLength > 0) {
-        audio = new Float32Array(capturedLength);
-        let at = 0;
-        for (const c of captured) {
-          audio.set(c, at);
-          at += c.length;
-        }
-      }
-      captured.length = 0;
-      finish({ labels, complete, ...(error ? { error } : {}), ...(audio ? { audio } : {}) });
-    };
+    if (!ctx) return close(false, "engine");
     try {
-      spotter = await openSpotter(targets, leniency);
+      const s = await openSpotter(targets, leniency);
+      if (finished) return s.close();
+      spotter = s;
     } catch {
       return close(false, "engine");
     }
     try {
-      media = await navigator.mediaDevices.getUserMedia({
+      const m = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
       });
+      if (finished) return m.getTracks().forEach((t) => t.stop());
+      media = m;
     } catch {
       return close(false, "mic");
     }
-    if (stopped) return close(false);
-    ctx = new AudioContext();
-    const source = ctx.createMediaStreamSource(media);
-    const proc = ctx.createScriptProcessor(4096, 1, 1);
-    const deadline = performance.now() + timeoutMs;
-    let ended = false;
-    proc.onaudioprocess = (e) => {
-      if (ended || !spotter) return;
-      const samples = downsample(e.inputBuffer.getChannelData(0), ctx!.sampleRate);
-      if (capturedLength + samples.length <= SAMPLE_RATE * MAX_AUDIO_SECONDS) {
-        captured.push(samples === e.inputBuffer.getChannelData(0) ? samples.slice() : samples);
-        capturedLength += samples.length;
-      }
-      labels.push(...spotter.feed(samples));
-      const isDone = done(labels);
-      if (isDone || stopped || performance.now() > deadline) {
-        ended = true;
-        proc.disconnect();
-        source.disconnect();
-        close(isDone);
-      }
-    };
-    source.connect(proc);
-    proc.connect(ctx.destination);
-  })();
+    try {
+      // the microphone can switch iOS's audio session; make sure the context runs
+      await ctx.resume().catch(() => {});
+      if (finished) return;
+      source = ctx.createMediaStreamSource(media);
+      proc = ctx.createScriptProcessor(4096, 1, 1);
+      proc.onaudioprocess = (e) => {
+        if (finished || !spotter) return;
+        const input = e.inputBuffer.getChannelData(0);
+        const samples = downsample(input, ctx!.sampleRate);
+        if (capturedLength + samples.length <= SAMPLE_RATE * MAX_AUDIO_SECONDS) {
+          captured.push(samples === input ? samples.slice() : samples);
+          capturedLength += samples.length;
+        }
+        labels.push(...spotter.feed(samples));
+        if (done(labels)) close(true);
+      };
+      source.connect(proc);
+      proc.connect(ctx.destination);
+    } catch {
+      return close(false, "engine");
+    }
+    timer = setTimeout(() => close(false), timeoutMs);
+    onOpen?.();
+  })().catch(() => close(false, "engine")); // whatever fails, the session always ends
 
-  return session;
+  return { result, stop: () => close(false) };
 }

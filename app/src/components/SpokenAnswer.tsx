@@ -19,7 +19,7 @@ function supported(): boolean {
   return typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia && typeof WebAssembly === "object";
 }
 
-type State = "idle" | "explain" | "listening" | "checking" | "missed" | "no-mic" | "no-engine";
+type State = "idle" | "explain" | "preparing" | "listening" | "checking" | "missed" | "no-mic" | "no-engine";
 
 /** Second and later tries listen more leniently: accents and quiet voices get through. */
 export const RETRY_LENIENCY = 0.6;
@@ -79,9 +79,15 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
     const allHeard = (labels: string[]) => groups.every((_, i) => labels.includes(`g${i}`));
     const leniency = tries.current > 0 ? RETRY_LENIENCY : 1;
     tries.current++;
-    const s = listen(targets, (labels) => allHeard(labels) || labels.some((l) => l.startsWith("x")), { leniency });
+    // called straight from the tap: iOS only starts web audio during a user gesture
+    const s = listen(targets, (labels) => allHeard(labels) || labels.some((l) => l.startsWith("x")), {
+      leniency,
+      onOpen: () => {
+        if (session.current === s) setState("listening");
+      },
+    });
     session.current = s;
-    setState("listening");
+    setState("preparing");
     setHeardText(null);
     preloadAsr(); // warm the second pass while the player speaks
     void s.result.then(async ({ labels, error, audio }) => {
@@ -160,16 +166,22 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
     <div className="flex flex-col items-center gap-1">
       <button
         type="button"
-        onClick={state === "listening" ? () => session.current?.stop() : start}
+        onClick={state === "listening" || state === "preparing" ? () => session.current?.stop() : start}
         disabled={state === "checking"}
         aria-pressed={state === "listening"}
         className={`rounded-xl border px-5 py-2.5 font-semibold transition disabled:opacity-60 ${
-          state === "listening" ? "animate-pulse border-coral bg-coral text-white" : "border-line bg-surface text-ink hover:bg-cream"
+          state === "listening"
+            ? "animate-pulse border-coral bg-coral text-white"
+            : state === "preparing"
+              ? "border-coral/40 bg-coral/10 text-ink"
+              : "border-line bg-surface text-ink hover:bg-cream"
         }`}
       >
         {state === "listening"
           ? "🎙️ Listening… (tap to stop)"
-          : state === "checking"
+          : state === "preparing"
+            ? "🎙️ Getting ready…"
+            : state === "checking"
             ? "🎙️ Checking…"
             : state === "missed"
               ? "🎙️ Say it again"
