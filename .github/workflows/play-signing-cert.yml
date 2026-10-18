@@ -6,6 +6,8 @@ name: Show Play signing certificate
 # is printed.
 
 on:
+  push:
+    paths: [.github/workflows/play-signing-cert.yml]
   workflow_dispatch:
     inputs:
       version_code:
@@ -23,7 +25,7 @@ jobs:
       - name: Look up the signing certificate
         env:
           SA_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          VERSION_CODE: ${{ inputs.version_code }}
+          VERSION_CODE: ${{ inputs.version_code || '13' }}
         run: |
           pip install --quiet google-auth requests
           python - <<'PY'
