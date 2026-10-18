@@ -9,6 +9,7 @@ import * as uoe from "../../app/src/data/uoeGames";
 import * as legacy from "../../app/src/data/legacyBoards";
 import * as arena3 from "../../app/src/data/arena3Boards";
 import * as arena4 from "../../app/src/data/arena4Boards";
+import * as seasonal from "../../app/src/data/seasonalBoards";
 import * as boardGames from "../../app/src/data/boardGames";
 import { allPhrases } from "../../app/src/lib/spokenTargets";
 
@@ -22,5 +23,5 @@ function walk(o: unknown): void {
   if (typeof r.clue === "string" && typeof r.answer === "string") answers.add(r.answer);
   Object.values(r).forEach(walk);
 }
-[quizData, games, uoe, legacy, arena3, arena4, boardGames].forEach((m) => Object.values(m).forEach(walk));
+[quizData, games, uoe, legacy, arena3, arena4, seasonal, boardGames].forEach((m) => Object.values(m).forEach(walk));
 process.stdout.write(JSON.stringify(allPhrases([...answers])));

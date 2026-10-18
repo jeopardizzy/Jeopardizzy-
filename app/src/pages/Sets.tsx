@@ -26,11 +26,12 @@ const LEVEL_STYLES: Record<string, string> = {
   Expert: "bg-skyblue/15 text-skyblue",
 };
 
-const SERIES_ORDER: GameDef["series"][] = ["Idiom Arenas", "Book Club", "Classic Vault"];
+const SERIES_ORDER: GameDef["series"][] = ["Idiom Arenas", "Book Club", "Seasonal Specials", "Classic Vault"];
 const SERIES_BLURBS: Record<GameDef["series"], string> = {
   "Idiom Arenas": "Pure idiom and saying training — the olympiad workout.",
   "Book Club": "Trivia and wordplay mixes for the whole table.",
   "Classic Vault": "The original collection, board by board.",
+  "Seasonal Specials": "Themed boards for the time of year — new ones arrive with updates.",
 };
 
 /** Trivia Night selection — the heart of the site: you choose what to play. */

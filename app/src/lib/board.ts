@@ -5,13 +5,14 @@ import { UOE_GAMES } from "../data/uoeGames";
 import { LEGACY_BOARDS } from "../data/legacyBoards";
 import { ARENA3_BOARDS } from "../data/arena3Boards";
 import { ARENA4_BOARDS } from "../data/arena4Boards";
+import { SEASONAL_BOARDS } from "../data/seasonalBoards";
 import type { BoardGame } from "../data/boardGames";
 import { GAMES, type GameDef } from "../data/games";
 
 const BASE_VALUES = [100, 200, 300, 400, 500];
 
 const ALL_BOARDS = new Map<string, BoardGame>(
-  [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS].map((g) => [g.id, g]),
+  [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS, ...SEASONAL_BOARDS].map((g) => [g.id, g]),
 );
 
 /** Boards that Arena Mix can draw from: all four idiom arenas (21 boards). */

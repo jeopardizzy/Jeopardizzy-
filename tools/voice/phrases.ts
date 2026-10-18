@@ -10,6 +10,7 @@ import * as uoe from "../../app/src/data/uoeGames";
 import * as legacy from "../../app/src/data/legacyBoards";
 import * as arena3 from "../../app/src/data/arena3Boards";
 import * as arena4 from "../../app/src/data/arena4Boards";
+import * as seasonal from "../../app/src/data/seasonalBoards";
 import * as boardGames from "../../app/src/data/boardGames";
 import { HOST_LINES, spokenAnswer, spokenClue, voiceId, type VoiceKind } from "../../app/src/lib/speech";
 
@@ -49,7 +50,7 @@ function walk(o: unknown): void {
   Object.values(r).forEach(walk);
 }
 
-[quizData, games, uoe, legacy, arena3, arena4, boardGames].forEach((m) => Object.values(m).forEach(walk));
+[quizData, games, uoe, legacy, arena3, arena4, seasonal, boardGames].forEach((m) => Object.values(m).forEach(walk));
 for (const [key, line] of Object.entries(HOST_LINES)) out.set(`h-${key}`, { id: `h-${key}`, kind: "line", text: line, say: line });
 
 process.stdout.write(JSON.stringify([...out.values()], null, 0));

@@ -5,6 +5,7 @@ import { UOE_GAMES } from "../../src/data/uoeGames";
 import { LEGACY_BOARDS } from "../../src/data/legacyBoards";
 import { ARENA3_BOARDS } from "../../src/data/arena3Boards";
 import { ARENA4_BOARDS } from "../../src/data/arena4Boards";
+import { SEASONAL_BOARDS } from "../../src/data/seasonalBoards";
 import {
   boardForRound,
   gameRoundCount,
@@ -60,7 +61,7 @@ describe("UoE idiom games", () => {
 
 describe("legacy and arena boards", () => {
   it("every board has 4-5 categories with 4-5 usable clues each", () => {
-    for (const g of [...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS]) {
+    for (const g of [...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS, ...SEASONAL_BOARDS]) {
       expect(g.categories.length, g.id).toBeGreaterThanOrEqual(4);
       expect(g.categories.length, g.id).toBeLessThanOrEqual(5);
       for (const c of g.categories) {
@@ -117,7 +118,7 @@ describe("legacy and arena boards", () => {
 describe("games", () => {
   const bookNames = new Set(quizData.categories.map((c) => c.name));
   const boardIds = new Set(
-    [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS].map((g) => g.id),
+    [...UOE_GAMES, ...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS, ...SEASONAL_BOARDS].map((g) => g.id),
   );
 
   it("every book round references existing categories with 5+ clues", () => {

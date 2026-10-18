@@ -3,6 +3,7 @@ import { quizData } from "../../src/data/quizData";
 import { LEGACY_BOARDS } from "../../src/data/legacyBoards";
 import { ARENA3_BOARDS } from "../../src/data/arena3Boards";
 import { ARENA4_BOARDS } from "../../src/data/arena4Boards";
+import { SEASONAL_BOARDS } from "../../src/data/seasonalBoards";
 import { UOE_GAMES } from "../../src/data/uoeGames";
 
 /**
@@ -20,7 +21,7 @@ function allTexts(): string[] {
     out.push(c.name);
     for (const cl of c.clues) out.push(cl.clue, cl.answer);
   }
-  for (const g of [...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS, ...UOE_GAMES]) {
+  for (const g of [...LEGACY_BOARDS, ...ARENA3_BOARDS, ...ARENA4_BOARDS, ...SEASONAL_BOARDS, ...UOE_GAMES]) {
     for (const cat of g.categories) {
       out.push(cat.name);
       for (const cl of cat.clues) out.push(cl.clue, cl.answer, cl.note ?? "");

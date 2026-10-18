@@ -16,7 +16,7 @@ export interface GameDef {
   /** rounds of standalone boards (UoE / classic sets), played after bookRounds */
   boardRounds: string[];
   /** grouping on the selection screen */
-  series: "Book Club" | "Idiom Arenas" | "Classic Vault";
+  series: "Book Club" | "Idiom Arenas" | "Classic Vault" | "Seasonal Specials";
   /** run the final wager round after the last board */
   final: boolean;
   /** when true, rounds are sampled from all arena boards at game start */
@@ -232,6 +232,17 @@ export const GAMES: GameDef[] = [
     mix: true,
     final: false,
     series: "Idiom Arenas",
+  },
+  {
+    id: "winter-wordplay",
+    name: "Winter Wordplay",
+    emoji: "❄️",
+    blurb: "Snowy sayings, frosty homophones, winter rhymes and icy science.",
+    level: "Easy",
+    bookRounds: [],
+    boardRounds: ["winter-1", "winter-2"],
+    final: true,
+    series: "Seasonal Specials",
   },
   {
     id: "daily-jeopardy",
