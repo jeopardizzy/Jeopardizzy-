@@ -11,6 +11,11 @@ if (typeof window !== "undefined" && ["localhost", "127.0.0.1"].includes(locatio
   (window as unknown as { __teamStore: typeof useTeamStore }).__teamStore = useTeamStore;
 }
 
+// Diagnostic builds only (VITE_VOICE_SELFTEST=1): check the voice engines on a device at launch.
+if (import.meta.env.VITE_VOICE_SELFTEST === "1") {
+  setTimeout(() => void import("./voice/selftest").then((m) => m.runVoiceSelftest()), 2000);
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />
