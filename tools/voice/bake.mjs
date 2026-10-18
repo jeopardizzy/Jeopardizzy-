@@ -9,8 +9,9 @@
 //
 // environment (never pass secrets on the command line):
 //   DASHSCOPE_API_KEY        Model Studio API key (Singapore region)
-//   DASHSCOPE_WORKSPACE_ID   workspace id; the endpoint becomes
+//   DASHSCOPE_WORKSPACE_ID   optional workspace id; the endpoint becomes
 //                            https://<id>.ap-southeast-1.maas.aliyuncs.com/...
+//                            (default: https://dashscope-intl.aliyuncs.com/...)
 //   DASHSCOPE_TTS_URL        optional full endpoint override
 //
 // A clip is rebaked only when its bake key (model, voice, prompt, spoken text,
@@ -34,8 +35,9 @@ const opt = (f) => (args.includes(f) ? args[args.indexOf(f) + 1] : undefined);
 function endpoint() {
   if (process.env.DASHSCOPE_TTS_URL) return process.env.DASHSCOPE_TTS_URL;
   const ws = process.env.DASHSCOPE_WORKSPACE_ID;
-  if (!ws) throw new Error("set DASHSCOPE_WORKSPACE_ID (or DASHSCOPE_TTS_URL)");
-  return `https://${ws}.ap-southeast-1.maas.aliyuncs.com/api/v1/services/audio/tts/SpeechSynthesizer`;
+  // without a workspace id, the older shared international host still serves the same API
+  const host = ws ? `${ws}.ap-southeast-1.maas.aliyuncs.com` : "dashscope-intl.aliyuncs.com";
+  return `https://${host}/api/v1/services/audio/tts/SpeechSynthesizer`;
 }
 
 function apiKey() {
@@ -137,9 +139,16 @@ async function audition() {
   fs.mkdirSync(dir, { recursive: true });
   const jobs = a.candidates.flatMap((v) => a.lines.map((line, i) => ({ id: `${v.label}-${i + 1}`, v, line })));
   const failed = await pool(jobs, async ({ id, v, line }) => encode(await synthesize(v, line), path.join(dir, `${id}.mp3`)));
-  const rows = a.candidates.map((v) =>
-    `<h2>${v.label}</h2><p><code>${v.model}</code> ${v.voice ?? ""} ${v.prompt ? `<br><i>${v.prompt}</i>` : ""}</p>` +
-    a.lines.map((l, i) => `<p>${l}<br><audio controls preload="none" src="${v.label}-${i + 1}.mp3"></audio></p>`).join(""));
+  const rows = a.candidates.map((v) => {
+    const head = `<h2>${v.label}</h2><p><code>${v.model}</code> ${v.voice ?? ""} ${v.instruction || v.prompt ? `<br><i>${v.instruction ?? v.prompt}</i>` : ""}</p>`;
+    const clips = a.lines.map((l, i) => {
+      const file = `${v.label}-${i + 1}.mp3`;
+      return fs.existsSync(path.join(dir, file))
+        ? `<p>${l}<br><audio controls preload="none" src="${file}"></audio></p>`
+        : `<p>${l}<br><i>(not available for this voice)</i></p>`;
+    });
+    return head + clips.join("");
+  });
   fs.writeFileSync(path.join(dir, "index.html"), `<!doctype html><meta charset=utf-8><title>Quizmaster audition</title><body style="font:16px system-ui;max-width:720px;margin:2em auto">${rows.join("<hr>")}`);
   console.log(`audition → ${dir}${failed ? ` (${failed} failed)` : ""}`);
 }
@@ -173,5 +182,14 @@ async function bake() {
   if (failed) process.exitCode = 1;
 }
 
+if (!flag("--dry-run")) {
+  try {
+    endpoint();
+    apiKey();
+  } catch (e) {
+    console.error(e.message);
+    process.exit(2);
+  }
+}
 if (flag("--audition")) await audition();
 else await bake();
