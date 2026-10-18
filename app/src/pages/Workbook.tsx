@@ -341,6 +341,7 @@ function TestRunner() {
                 setText(heard);
                 answerCurrent(heard);
               }}
+              onType={() => inputRef.current?.focus()}
             />
           </form>
         ) : (

@@ -7,12 +7,7 @@
 //   node tools/voice/bake.mjs --dry-run         list what would be (re)baked and the character count
 //   node tools/voice/bake.mjs [--limit N]       bake into app/public/voice/ (incremental)
 //
-// environment (never pass secrets on the command line):
-//   DASHSCOPE_API_KEY        Model Studio API key (Singapore region)
-//   DASHSCOPE_WORKSPACE_ID   optional workspace id; the endpoint becomes
-//                            https://<id>.ap-southeast-1.maas.aliyuncs.com/...
-//                            (default: https://dashscope-intl.aliyuncs.com/...)
-//   DASHSCOPE_TTS_URL        optional full endpoint override
+// credentials come from the environment; see tools/voice/tts.mjs
 //
 // A clip is rebaked only when its bake key (model, voice, prompt, spoken text,
 // encoding) changes, so editing one clue costs one request.
@@ -20,6 +15,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { checkCredentials, pool as runPool, synthesize as synthesizeAt } from "./tts.mjs";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1")), "../..");
 const OUT_DIR = path.join(ROOT, "app/public/voice");
@@ -32,70 +28,7 @@ const args = process.argv.slice(2);
 const flag = (f) => args.includes(f);
 const opt = (f) => (args.includes(f) ? args[args.indexOf(f) + 1] : undefined);
 
-function endpoint() {
-  if (process.env.DASHSCOPE_TTS_URL) return process.env.DASHSCOPE_TTS_URL;
-  const ws = process.env.DASHSCOPE_WORKSPACE_ID;
-  // without a workspace id, the older shared international host still serves the same API
-  const host = ws ? `${ws}.ap-southeast-1.maas.aliyuncs.com` : "dashscope-intl.aliyuncs.com";
-  return `https://${host}/api/v1/services/audio/tts/SpeechSynthesizer`;
-}
-
-function apiKey() {
-  const k = process.env.DASHSCOPE_API_KEY;
-  if (!k) throw new Error("set DASHSCOPE_API_KEY in the environment (not on the command line)");
-  return k;
-}
-
-/** Request body for one line. "next" models take a described voice; the others a named voice. */
-export function requestBody(voice, say) {
-  if (voice.model.includes("tts-next")) {
-    return {
-      model: voice.model,
-      input: {
-        text_prompt: `${voice.prompt}: ${say}`,
-        ...(voice.references ? { references: voice.references } : {}),
-        format: "wav",
-        sample_rate: ENCODE.sampleRate,
-        channels: 1,
-        rate: voice.rate ?? 1.0,
-        seed: voice.seed ?? 42,
-      },
-    };
-  }
-  return {
-    model: voice.model,
-    input: {
-      text: say,
-      voice: voice.voice,
-      ...(voice.instruction ? { instruction: voice.instruction } : {}),
-      format: "wav",
-      sample_rate: ENCODE.sampleRate,
-      rate: voice.rate ?? 1.0,
-      language_hints: ["en"],
-      ...(voice.seed !== undefined ? { seed: voice.seed } : {}),
-    },
-  };
-}
-
-async function synthesize(voice, say, attempt = 1) {
-  const res = await fetch(endpoint(), {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey()}`, "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody(voice, say)),
-  });
-  const body = await res.json().catch(() => ({}));
-  const url = body?.output?.audio?.url;
-  if (!res.ok || !url) {
-    if (attempt < 3 && (res.status === 429 || res.status >= 500)) {
-      await new Promise((r) => setTimeout(r, 1500 * attempt));
-      return synthesize(voice, say, attempt + 1);
-    }
-    throw new Error(`TTS ${res.status} ${body?.code ?? ""} ${body?.message ?? ""}`.trim());
-  }
-  const audio = await fetch(url);
-  if (!audio.ok) throw new Error(`audio download ${audio.status}`);
-  return Buffer.from(await audio.arrayBuffer());
-}
+const synthesize = (voice, say) => synthesizeAt(voice, say, ENCODE.sampleRate);
 
 /** WAV → loudness-normalised mono MP3; returns duration in seconds. */
 function encode(wav, outFile) {
@@ -120,18 +53,7 @@ function phrases() {
   return JSON.parse(r.stdout);
 }
 
-async function pool(items, fn) {
-  let next = 0, done = 0, failed = 0;
-  const worker = async () => {
-    while (next < items.length) {
-      const item = items[next++];
-      try { await fn(item); } catch (e) { failed++; console.error(`✗ ${item.id}: ${e.message}`); }
-      if (++done % 25 === 0 || done === items.length) console.log(`${done}/${items.length}${failed ? ` (${failed} failed)` : ""}`);
-    }
-  };
-  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-  return failed;
-}
+const pool = (items, fn) => runPool(items, fn, CONCURRENCY);
 
 async function audition() {
   const a = JSON.parse(fs.readFileSync(path.join(ROOT, "tools/voice/audition.json"), "utf8"));
@@ -184,8 +106,7 @@ async function bake() {
 
 if (!flag("--dry-run")) {
   try {
-    endpoint();
-    apiKey();
+    checkCredentials();
   } catch (e) {
     console.error(e.message);
     process.exit(2);

@@ -31,8 +31,20 @@ export function numberWords(n: number): string {
   return String(n);
 }
 
+/** Abbreviations as people say them ("Mt. Everest" → "MOUNT EVEREST"). */
+const SPOKEN_ABBREVIATIONS: [RegExp, string][] = [
+  [/\bMt\.?(?=\s)/gi, "Mount"],
+  [/\bSt\.(?=\s)/gi, "Saint"],
+  [/\bDr\.(?=\s)/gi, "Doctor"],
+  [/\bMr\.(?=\s)/gi, "Mister"],
+  [/\bMrs\.(?=\s)/gi, "Missus"],
+  [/\bJr\.?(?=\s|$)/gi, "Junior"],
+  [/\bvs\.?(?=\s)/gi, "versus"],
+];
+
 /** Upper-case words only: digits spelled, "&" as AND, punctuation dropped. */
 export function phrase(s: string): string {
+  for (const [re, word] of SPOKEN_ABBREVIATIONS) s = s.replace(re, word);
   return s
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")

@@ -34,6 +34,13 @@ describe("spokenTargets", () => {
     expect(phrase("7 Up & more")).toBe("SEVEN UP AND MORE");
   });
 
+  it("says abbreviations in full", () => {
+    expect(phrase("Mt. Everest")).toBe("MOUNT EVEREST");
+    expect(phrase("St. Louis")).toBe("SAINT LOUIS");
+    expect(phrase("Martin Luther King Jr.")).toBe("MARTIN LUTHER KING JUNIOR");
+    expect(phrase("Mount Everest")).toBe("MOUNT EVEREST");
+  });
+
   it("gives every Workbook answer at least one non-empty phrase", () => {
     for (const c of quizData.categories) {
       for (const q of c.clues) {

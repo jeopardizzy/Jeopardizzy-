@@ -105,6 +105,8 @@ export interface Heard {
   labels: string[];
   /** listening ended because the caller's `done` said so (not by timeout or stop) */
   complete: boolean;
+  /** why nothing could be heard: no microphone access, or the engine didn't load */
+  error?: "mic" | "engine";
 }
 
 export interface ListenSession {
@@ -130,23 +132,93 @@ function downsample(input: Float32Array, from: number): Float32Array {
 /**
  * Trigger threshold by length: short words need a confident match (they are
  * easy to hit by accident), long ones a gentler one (each extra piece makes a
- * full match harder, and an accidental one rarer).
+ * full match harder, and an accidental one rarer). `leniency` below 1 lowers
+ * every bar, for accented speech and second tries.
  */
-export function thresholdFor(tokens: string): number {
+export function thresholdFor(tokens: string, leniency = 1): number {
   const pieces = tokens.trim().split(/\s+/).length;
-  return Math.round(Math.max(0.08, Math.min(0.3, 0.36 - 0.04 * pieces)) * 100) / 100;
+  const base = Math.max(0.08, Math.min(0.3, 0.36 - 0.04 * pieces));
+  return Math.round(Math.max(0.05, base * leniency) * 100) / 100;
 }
 
 /** The keywords string the spotter takes: one "<tokens> :boost #threshold @label" per line. */
-export function keywordsSpec(targets: KeywordTarget[]): string {
-  return targets.map((t) => `${t.tokens} :2.0 #${thresholdFor(t.tokens)} @${t.label}`).join("\n");
+export function keywordsSpec(targets: KeywordTarget[], leniency = 1): string {
+  const boost = leniency < 1 ? 2.5 : 2.0;
+  return targets.map((t) => `${t.tokens} :${boost} #${thresholdFor(t.tokens, leniency)} @${t.label}`).join("\n");
+}
+
+/** One keyword stream: feed 16 kHz audio, collect the labels it spots. */
+interface Spotter {
+  feed(samples: Float32Array): string[];
+  close(): void;
+}
+
+async function openSpotter(targets: KeywordTarget[], leniency: number): Promise<Spotter> {
+  const { mod: m, kws } = await loadKws();
+  const spec = keywordsSpec(targets, leniency);
+  const n = m.lengthBytesUTF8(spec) + 1;
+  const p = m._malloc(n);
+  m.stringToUTF8(spec, p, n);
+  const handle = m._SherpaOnnxCreateKeywordStreamWithKeywords(kws.handle, p);
+  m._free(p);
+  if (!handle) throw new Error("keywords rejected");
+  const stream = { handle };
+  let buf = 0, bufLen = 0;
+  return {
+    feed(samples) {
+      if (samples.length > bufLen) {
+        if (buf) m._free(buf);
+        buf = m._malloc(samples.length * 4);
+        bufLen = samples.length;
+      }
+      m.HEAPF32.set(samples, buf / 4);
+      m._SherpaOnnxOnlineStreamAcceptWaveform(handle, SAMPLE_RATE, buf, samples.length);
+      const heard: string[] = [];
+      while (kws.isReady(stream)) {
+        kws.decode(stream);
+        const r = kws.getResult(stream);
+        if (r.keyword) {
+          heard.push(r.keyword);
+          kws.reset(stream);
+        }
+      }
+      return heard;
+    },
+    close() {
+      m._SherpaOnnxDestroyOnlineStream(handle);
+      if (buf) m._free(buf);
+    },
+  };
+}
+
+/**
+ * Spot phrases in recorded 16 kHz audio, exactly as listen() would hear it
+ * from the microphone. Used by the accuracy tests (tools/kws/accent-eval.mjs).
+ */
+export async function spotSamples(targets: KeywordTarget[], samples: Float32Array, leniency = 1): Promise<string[]> {
+  const s = await openSpotter(targets, leniency);
+  try {
+    const labels: string[] = [];
+    const chunk = 4096;
+    const padded = new Float32Array(samples.length + SAMPLE_RATE); // a second of silence lets the last word finish
+    padded.set(samples);
+    for (let i = 0; i < padded.length; i += chunk) labels.push(...s.feed(padded.subarray(i, i + chunk)));
+    return labels;
+  } finally {
+    s.close();
+  }
 }
 
 /**
  * Open the microphone and listen for the given phrases. The microphone is
  * closed when `done(labels)` returns true, after `timeoutMs`, or on stop().
  */
-export function listen(targets: KeywordTarget[], done: (labels: string[]) => boolean, timeoutMs = 7000): ListenSession {
+export function listen(
+  targets: KeywordTarget[],
+  done: (labels: string[]) => boolean,
+  opts: { timeoutMs?: number; leniency?: number } = {},
+): ListenSession {
+  const { timeoutMs = 7000, leniency = 1 } = opts;
   let stopped = false;
   let finish: (h: Heard) => void = () => {};
   const result = new Promise<Heard>((resolve) => (finish = resolve));
@@ -156,70 +228,44 @@ export function listen(targets: KeywordTarget[], done: (labels: string[]) => boo
     const labels: string[] = [];
     let media: MediaStream | null = null;
     let ctx: AudioContext | null = null;
-    let streamHandle = 0;
-    let buf = 0, bufLen = 0;
-    let mod: SherpaModule | null = null;
-    const close = (complete: boolean) => {
+    let spotter: Spotter | null = null;
+    const close = (complete: boolean, error?: Heard["error"]) => {
       media?.getTracks().forEach((t) => t.stop());
       void ctx?.close();
-      if (mod) {
-        if (streamHandle) mod._SherpaOnnxDestroyOnlineStream(streamHandle);
-        if (buf) mod._free(buf);
-      }
-      finish({ labels, complete });
+      spotter?.close();
+      finish({ labels, complete, ...(error ? { error } : {}) });
     };
     try {
-      const { mod: m, kws } = await loadKws();
-      mod = m;
-      const spec = keywordsSpec(targets);
-      const n = m.lengthBytesUTF8(spec) + 1;
-      const p = m._malloc(n);
-      m.stringToUTF8(spec, p, n);
-      streamHandle = m._SherpaOnnxCreateKeywordStreamWithKeywords(kws.handle, p);
-      m._free(p);
-      if (!streamHandle) throw new Error("keywords rejected");
-      const stream = { handle: streamHandle };
-
+      spotter = await openSpotter(targets, leniency);
+    } catch {
+      return close(false, "engine");
+    }
+    try {
       media = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 },
       });
-      if (stopped) return close(false);
-      ctx = new AudioContext();
-      const source = ctx.createMediaStreamSource(media);
-      const proc = ctx.createScriptProcessor(4096, 1, 1);
-      const deadline = performance.now() + timeoutMs;
-      let ended = false;
-      proc.onaudioprocess = (e) => {
-        if (ended) return;
-        const samples = downsample(e.inputBuffer.getChannelData(0), ctx!.sampleRate);
-        if (samples.length > bufLen) {
-          if (buf) m._free(buf);
-          buf = m._malloc(samples.length * 4);
-          bufLen = samples.length;
-        }
-        m.HEAPF32.set(samples, buf / 4);
-        m._SherpaOnnxOnlineStreamAcceptWaveform(streamHandle, SAMPLE_RATE, buf, samples.length);
-        while (kws.isReady(stream)) {
-          kws.decode(stream);
-          const r = kws.getResult(stream);
-          if (r.keyword) {
-            labels.push(r.keyword);
-            kws.reset(stream);
-          }
-        }
-        const isDone = done(labels);
-        if (isDone || stopped || performance.now() > deadline) {
-          ended = true;
-          proc.disconnect();
-          source.disconnect();
-          close(isDone);
-        }
-      };
-      source.connect(proc);
-      proc.connect(ctx.destination);
     } catch {
-      close(false);
+      return close(false, "mic");
     }
+    if (stopped) return close(false);
+    ctx = new AudioContext();
+    const source = ctx.createMediaStreamSource(media);
+    const proc = ctx.createScriptProcessor(4096, 1, 1);
+    const deadline = performance.now() + timeoutMs;
+    let ended = false;
+    proc.onaudioprocess = (e) => {
+      if (ended || !spotter) return;
+      labels.push(...spotter.feed(downsample(e.inputBuffer.getChannelData(0), ctx!.sampleRate)));
+      const isDone = done(labels);
+      if (isDone || stopped || performance.now() > deadline) {
+        ended = true;
+        proc.disconnect();
+        source.disconnect();
+        close(isDone);
+      }
+    };
+    source.connect(proc);
+    proc.connect(ctx.destination);
   })();
 
   return session;
