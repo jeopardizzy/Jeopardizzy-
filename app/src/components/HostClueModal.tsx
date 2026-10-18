@@ -6,27 +6,43 @@ import { isVoiceAvailable } from "../audio/voice";
 import { sfx } from "../audio/sound";
 import { isCorrect } from "../lib/answerMatch";
 import SpokenAnswer from "./SpokenAnswer";
+import { nextAnswering } from "../lib/turns";
 
-type Verdict = "correct" | "wrong" | null;
+interface ClueAnswerProps {
+  answer: string;
+  others: string[];
+  /** status line under the box ("Not quite, Team Butter. Team Sage, your turn.") */
+  message: string | null;
+  /** every team has missed: no more answering, only reveal */
+  closed: boolean;
+  onGuess: (correct: boolean) => void;
+}
 
 /**
- * The picking team can answer on the card itself, typed or out loud; the
- * app checks it like a Workbook answer. Right: the answer is revealed with
- * their team highlighted. Wrong: nothing is revealed, so they (or another
- * team) can try again. The host's buttons still decide the points.
+ * Answering on the card itself, typed or out loud, checked like a Workbook
+ * answer. Whose turn it is lives in HostClueModal (steals pass the turn).
  */
-function ClueAnswer({ answer, others, onVerdict }: { answer: string; others: string[]; onVerdict: (v: Verdict) => void }) {
+function ClueAnswer({ answer, others, message, closed, onGuess }: ClueAnswerProps) {
   const [text, setText] = useState("");
-  const [wrong, setWrong] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const check = (guess: string) => {
-    if (!guess.trim()) return;
-    if (isCorrect(guess, answer)) return onVerdict("correct");
-    sfx.buzz();
-    setWrong(true);
-    onVerdict("wrong");
+    if (!guess.trim() || closed) return;
+    const correct = isCorrect(guess, answer);
+    if (!correct) {
+      sfx.buzz();
+      setText("");
+    }
+    onGuess(correct);
   };
+
+  if (closed) {
+    return message ? (
+      <p role="status" className="mx-auto mb-5 max-w-md text-center text-sm font-semibold text-coral">
+        {message}
+      </p>
+    ) : null;
+  }
 
   return (
     <div className="mx-auto mb-5 flex max-w-md flex-col gap-2">
@@ -44,10 +60,7 @@ function ClueAnswer({ answer, others, onVerdict }: { answer: string; others: str
           id="clue-answer"
           ref={inputRef}
           value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            setWrong(false);
-          }}
+          onChange={(e) => setText(e.target.value)}
           placeholder="Type the answer…"
           autoComplete="off"
           className="min-w-0 flex-1 rounded-xl border border-line bg-cream px-4 py-2.5 text-base text-ink placeholder:text-mute/60"
@@ -60,9 +73,9 @@ function ClueAnswer({ answer, others, onVerdict }: { answer: string; others: str
           Check
         </button>
       </form>
-      {wrong && (
+      {message && (
         <p role="status" className="text-center text-sm font-semibold text-coral">
-          Not quite. Try again, let another team answer, or reveal it.
+          {message}
         </p>
       )}
       <SpokenAnswer
@@ -99,10 +112,42 @@ export default function HostClueModal() {
 
   const tile = board?.tiles.find((t) => t.id === currentTileId) ?? null;
   const open = phase === "clue" && tile !== null;
-  const [verdict, setVerdict] = useState<Verdict>(null);
-  useEffect(() => setVerdict(null), [currentTileId]);
   const others = board?.tiles.filter((t) => t.id !== currentTileId).map((t) => t.answer) ?? [];
   const picker = teams[activeTeam];
+  const teamIds = teams.map((t) => t.id);
+
+  // steals: who is answering now, who already missed, who got it right
+  const [answeringId, setAnsweringId] = useState<number | null>(picker?.id ?? null);
+  const [tried, setTried] = useState<number[]>([]);
+  const [winnerId, setWinnerId] = useState<number | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  useEffect(() => {
+    setAnsweringId(picker?.id ?? null);
+    setTried([]);
+    setWinnerId(null);
+    setMessage(null);
+  }, [currentTileId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const nameOf = (id: number | null) => teams.find((t) => t.id === id)?.name ?? "";
+  const onGuess = (correct: boolean) => {
+    if (answeringId === null) return;
+    if (correct) {
+      setWinnerId(answeringId);
+      setMessage(null);
+      revealClue();
+      return;
+    }
+    const nowTried = [...tried, answeringId];
+    const next = picker ? nextAnswering(teamIds, picker.id, nowTried) : null;
+    setTried(nowTried);
+    setAnsweringId(next);
+    setMessage(
+      next === null
+        ? `Not quite, ${nameOf(answeringId)}. Every team has had a go — reveal the answer.`
+        : `Not quite, ${nameOf(answeringId)}. ${nameOf(next)}, your turn — or reveal it.`,
+    );
+  };
+  const winner = teams.find((t) => t.id === winnerId) ?? null;
 
   return (
     <AnimatePresence>
@@ -149,14 +194,37 @@ export default function HostClueModal() {
                     </button>
                   )}
                 </p>
+                {teams.length > 1 && answeringId !== null && (
+                  <div className="mb-3 flex flex-wrap items-center justify-center gap-1.5" role="group" aria-label="Who is answering">
+                    <span className="text-xs font-bold uppercase tracking-[0.15em] text-mute">Answering:</span>
+                    {teams.map((t) => {
+                      const out = tried.includes(t.id);
+                      const on = t.id === answeringId;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          disabled={out}
+                          aria-pressed={on}
+                          onClick={() => setAnsweringId(t.id)}
+                          className={`rounded-full border px-3 py-1 text-xs font-bold transition disabled:line-through disabled:opacity-40 ${
+                            on ? "text-white" : "bg-surface text-ink hover:bg-cream"
+                          }`}
+                          style={on ? { background: t.color, borderColor: t.color } : { borderColor: t.color }}
+                        >
+                          {t.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 <ClueAnswer
                   key={tile.id}
                   answer={tile.answer}
                   others={others}
-                  onVerdict={(v) => {
-                    setVerdict(v);
-                    if (v === "correct") revealClue();
-                  }}
+                  message={message}
+                  closed={answeringId === null}
+                  onGuess={onGuess}
                 />
                 <button
                   onClick={revealClue}
@@ -172,9 +240,9 @@ export default function HostClueModal() {
                 animate={{ opacity: 1, y: 0 }}
                 role="status"
               >
-                {verdict === "correct" && picker && (
+                {winner && (
                   <p className="font-display mb-2 text-center text-2xl text-sage">
-                    Correct, {picker.name}!
+                    Correct, {winner.name}!
                   </p>
                 )}
                 <p className="mb-2 rounded-2xl bg-butter-soft px-4 py-3 text-center text-lg text-ink">
@@ -193,9 +261,9 @@ export default function HostClueModal() {
                     <button
                       key={t.id}
                       onClick={() => awardTo(t.id)}
-                      autoFocus={verdict === "correct" && t.id === picker?.id}
+                      autoFocus={t.id === winner?.id}
                       className={`flex items-center gap-2 rounded-full px-5 py-2.5 font-bold text-white shadow-card transition hover:brightness-105 active:scale-[0.97] ${
-                        verdict === "correct" && t.id === picker?.id ? "ring-4 ring-sage/40 ring-offset-2" : ""
+                        t.id === winner?.id ? "ring-4 ring-sage/40 ring-offset-2" : ""
                       }`}
                       style={{ background: t.color }}
                     >
