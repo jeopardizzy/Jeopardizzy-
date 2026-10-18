@@ -85,13 +85,16 @@ export default function SpokenAnswer({ answer, others, onHeard, onType }: Props)
     const s = listen(targets, (labels) => allHeard(labels) || labels.some((l) => l.startsWith("x")), {
       leniency,
       onOpen: () => {
-        if (session.current === s) setState("listening");
+        if (session.current !== s) return;
+        setState("listening");
+        // warm the second pass while the player speaks — only now, so the two
+        // engines never load at the same moment (phones have little memory to spare)
+        preloadAsr();
       },
     });
     session.current = s;
     setState("preparing");
     setHeardText(null);
-    preloadAsr(); // warm the second pass while the player speaks
     void s.result.then(async ({ labels, error, detail, audio }) => {
       if (session.current !== s) return;
       setProblem(detail ?? null);

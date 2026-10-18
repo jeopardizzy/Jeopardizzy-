@@ -87,21 +87,71 @@ function spotterConfig() {
   };
 }
 
-/** Load the WebAssembly spotter once. Rejects if the device can't run it. */
-export function loadKws(): Promise<{ mod: SherpaModule; kws: UpstreamKws }> {
-  if (!engine) {
-    engine = (async () => {
+/** The engine's own last messages (sherpa-onnx reports errors on stderr), for failure notes. */
+const engineLog: string[] = [];
+const remember = (t: string) => {
+  engineLog.push(String(t).slice(0, 160));
+  if (engineLog.length > 4) engineLog.shift();
+};
+
+/** What went wrong, compactly: the error, how much memory the engine held, its last message. */
+export function describeFailure(stage: string, e: unknown, mod?: SherpaModule | null): string {
+  const what = typeof e === "number" ? `C++ exception ${e}` : String((e as { message?: string })?.message ?? e);
+  const heap = mod?.HEAPF32 ? ` · heap ${Math.round(mod.HEAPF32.buffer.byteLength / 1048576)} MB` : "";
+  const last = engineLog.length ? ` · ${engineLog[engineLog.length - 1]}` : "";
+  return `${stage}: ${what}${heap}${last}`.slice(0, 240);
+}
+
+let runtime: Promise<SherpaModule> | null = null;
+
+/** Load the Emscripten runtime and model files once; they stay loaded. */
+function loadRuntime(): Promise<SherpaModule> {
+  if (!runtime) {
+    runtime = (async () => {
       await loadScript(`${BASE}sherpa-onnx-kws.js`);
       const ready = new Promise<SherpaModule>((resolve) => {
         window.Module = {
           locateFile: (path: string) => `${BASE}${path}`,
+          print: remember,
+          printErr: remember,
           onRuntimeInitialized: () => resolve(window.Module as unknown as SherpaModule),
         };
       });
       await loadScript(`${BASE}sherpa-onnx-wasm-kws-main.js`);
-      const mod = await ready;
-      if (!window.createKws) throw new Error("keyword spotter wrapper missing");
-      return { mod, kws: window.createKws(mod, spotterConfig()) };
+      return ready;
+    })();
+    runtime.catch(() => {
+      runtime = null;
+    });
+  }
+  return runtime;
+}
+
+/**
+ * Load the WebAssembly spotter once. Rejects (with a describeFailure note)
+ * if the device can't run it; creating the spotter is retried once, since
+ * a phone short on memory right then may manage a moment later.
+ */
+export function loadKws(): Promise<{ mod: SherpaModule; kws: UpstreamKws }> {
+  if (!engine) {
+    engine = (async () => {
+      let mod: SherpaModule | null = null;
+      try {
+        mod = await loadRuntime();
+      } catch (e) {
+        throw new Error(describeFailure("loading", e));
+      }
+      if (!window.createKws) throw new Error("loading: keyword spotter wrapper missing");
+      try {
+        return { mod, kws: window.createKws(mod, spotterConfig()) };
+      } catch {
+        await new Promise((r) => setTimeout(r, 400));
+        try {
+          return { mod, kws: window.createKws(mod, spotterConfig()) };
+        } catch (e) {
+          throw new Error(describeFailure("creating spotter", e, mod));
+        }
+      }
     })();
     engine.catch(() => {
       engine = null; // allow a later retry
@@ -193,9 +243,15 @@ async function openSpotter(targets: KeywordTarget[], leniency: number): Promise<
   const n = m.lengthBytesUTF8(spec) + 1;
   const p = m._malloc(n);
   m.stringToUTF8(spec, p, n);
-  const handle = m._SherpaOnnxCreateKeywordStreamWithKeywords(kws.handle, p);
-  m._free(p);
-  if (!handle) throw new Error("keywords rejected");
+  let handle = 0;
+  try {
+    handle = m._SherpaOnnxCreateKeywordStreamWithKeywords(kws.handle, p);
+  } catch (e) {
+    throw new Error(describeFailure("opening stream", e, m));
+  } finally {
+    m._free(p);
+  }
+  if (!handle) throw new Error(describeFailure("opening stream", "keywords rejected", m));
   const stream = { handle };
   let buf = 0, bufLen = 0;
   return {
@@ -317,7 +373,7 @@ export function listen(
         (e) => (clearTimeout(t), reject(e)),
       );
     });
-  const why = (e: unknown) => String((e as { message?: string })?.message ?? e).slice(0, 120);
+  const why = (e: unknown) => String((e as { message?: string })?.message ?? e).slice(0, 240);
   let watchdog: ReturnType<typeof setTimeout> | undefined;
 
   void (async () => {
