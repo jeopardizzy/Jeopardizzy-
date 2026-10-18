@@ -204,3 +204,18 @@ describe("party game rules", () => {
     expect(partyView(g).clue).toBeNull();
   });
 });
+
+describe("join links", async () => {
+  const { DEPLOYED_RELAY, joinLink, joinRouteFor } = await import("../../src/party/connection");
+
+  it("with the deployed relay, the QR code points at the relay's /join page (opens the app if installed)", () => {
+    const link = joinLink(DEPLOYED_RELAY, "ABCD", "Cg74X3C6c9L7T_E9iFlFVg");
+    expect(link).toBe("https://quizzical-club-party-relay.apsftllc.workers.dev/join#ABCD/Cg74X3C6c9L7T_E9iFlFVg");
+    expect(joinRouteFor(link)).toBe("/join/ABCD/Cg74X3C6c9L7T_E9iFlFVg");
+  });
+
+  it("ignores links that aren't join links", () => {
+    expect(joinRouteFor("https://quizzical-club-party-relay.apsftllc.workers.dev/")).toBeNull();
+    expect(joinRouteFor("https://example.com/join#AB/short")).toBeNull();
+  });
+});

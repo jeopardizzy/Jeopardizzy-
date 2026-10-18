@@ -44,10 +44,6 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          # website only: "Play on several phones (preview)" through the party
-          # relay on Cloudflare (app/relay). Store builds don't set this.
-          VITE_PARTY_RELAY: wss://quizzical-club-party-relay.apsftllc.workers.dev/ws
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
