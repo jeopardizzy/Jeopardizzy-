@@ -13,6 +13,8 @@ import { unlockAudio } from "./audio/sound";
 import { loadVoice, unlockVoice } from "./audio/voice";
 import { platformAdapter } from "./lib/purchases";
 import { useEntitlement } from "./store/entitlementStore";
+import PartyHost from "./pages/PartyHost";
+import PartyJoin from "./pages/PartyJoin";
 
 /** Shell with the permanent sidebar — hidden during an active team game. */
 function AppShell({ children }: { children: ReactNode }) {
@@ -60,6 +62,8 @@ export default function App() {
           <Route path="/game" element={<TeamGame />} />
           <Route path="/workbook" element={<Workbook />} />
           <Route path="/guides" element={<Guides />} />
+          <Route path="/party" element={<PartyHost />} />
+          <Route path="/join/:code/:key" element={<PartyJoin />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppShell>

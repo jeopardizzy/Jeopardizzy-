@@ -1,6 +1,6 @@
 # Trivia Night on several phones — design
 
-Status: proposal, October 2026. Nothing here is built yet.
+Status: phase 0 prototype built (October 2026); see "Prototype" below.
 
 ## Goal
 
@@ -147,9 +147,9 @@ names of people, no device identifiers, nothing stored.
   encryption on, the public section can stay "no data collected"; the form
   answers need care and must match the design exactly.
 - **Families policy / COPPA (Play targets 9+)**: no personal information,
-  no accounts, no chat, no third-party SDKs, no ads. Free-text team names
-  never leave the host phone (team phones choose from the host's list), so
-  nothing typed by a child is sent anywhere.
+  no accounts, no chat, no third-party SDKs, no ads. Team names and typed
+  answers do travel to the other phones in the room, but only end-to-end
+  encrypted: the relay (and we) can't read them, and nothing is stored.
 - **No chat between teams**, deliberately. Chat is user-generated content,
   which brings moderation, reporting and blocking requirements in both
   stores.
@@ -196,6 +196,33 @@ phones unchanged.
 Testing: Playwright already drives the app; several browser contexts in
 one test can play host and teams against a local relay, so the full flow
 gets end-to-end tests like the one-phone game.
+
+## Prototype (phase 0)
+
+Built and tested; reachable only from a local dev or preview server, never in
+the store apps:
+
+- `app/src/party/relayCore.ts`: rooms, 4-letter codes, host reconnect with a
+  token, phones reconnect with their own id, 16 phones per room, 8 KB
+  messages, rooms close 2 minutes after the host leaves or after 2 idle hours.
+  Forwards only; every message is stamped with the relay clock.
+- `app/relay/server.ts`: the same core behind a local WebSocket server
+  (`npm run relay`, port 8787). A Cloudflare Worker / Durable Object adapter
+  is the next step before any phone outside the dev machine can join.
+- `app/src/party/crypto.ts`: AES-GCM room key in the join link's fragment.
+- `app/src/party/game.ts`: referee rules on the host (buzz order by relay
+  time, steals through the buzz queue, no answer in the public view before
+  the reveal).
+- Screens: `#/party` (host: teams, code and link, clue, buzz order) and
+  `#/join/CODE/KEY` (team phone: pick a team, BUZZ, type the answer).
+  Plays ten clues from today's Daily Board.
+- Tests: `tests/unit/party.test.ts` (relay, encryption, rules) and
+  `e2e/party.spec.ts` (host and two team phones in separate browsers).
+
+Not yet: QR code, in-app host mode inside the normal Trivia Night game,
+spoken answers on team phones (the phone doesn't know the answer, so Say it
+needs a host-side check of the recognised text), testing on real phones
+(needs the deployed relay and HTTPS, since WebCrypto requires a secure page).
 
 ## Open questions for later
 
