@@ -5,6 +5,7 @@ import { buildDailyBoard } from "../lib/board";
 import { dailySeed } from "../lib/random";
 import { say, stopVoice } from "../audio/voice";
 import { sfx } from "../audio/sound";
+import QrCode from "../components/QrCode";
 import { hostRoom, RELAY_URL, type HostRoom, type PlayerMsg, type RoomStatus } from "../party/connection";
 import {
   answer,
@@ -198,6 +199,11 @@ export default function PartyHost() {
               <p className="font-display text-4xl tracking-[0.3em] text-ink" aria-label="Join code">
                 {code ?? "…"}
               </p>
+              {link && view.phase === "lobby" && (
+                <div className="mt-3 flex justify-center">
+                  <QrCode text={link} label="QR code to join this room" />
+                </div>
+              )}
               {link && (
                 <p className="mt-2 break-all text-xs text-mute">
                   <a href={link} target="_blank" rel="noreferrer" className="text-sage-deep underline" data-testid="join-link">

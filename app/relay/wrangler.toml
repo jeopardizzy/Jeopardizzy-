@@ -1,0 +1,16 @@
+# Party relay (prototype). See worker.ts.
+name = "quizzical-club-party-relay"
+main = "worker.ts"
+compatibility_date = "2026-10-01"
+
+[[durable_objects.bindings]]
+name = "RELAY"
+class_name = "PartyRelay"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PartyRelay"]
+
+# no logs of message contents; only Cloudflare's default request metrics
+[observability]
+enabled = false

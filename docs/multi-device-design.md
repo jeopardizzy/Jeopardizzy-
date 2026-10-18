@@ -207,8 +207,11 @@ the store apps:
   messages, rooms close 2 minutes after the host leaves or after 2 idle hours.
   Forwards only; every message is stamped with the relay clock.
 - `app/relay/server.ts`: the same core behind a local WebSocket server
-  (`npm run relay`, port 8787). A Cloudflare Worker / Durable Object adapter
-  is the next step before any phone outside the dev machine can join.
+  (`npm run relay`, port 8787).
+- `app/relay/worker.ts`: the same core on Cloudflare Workers, one Durable
+  Object for all rooms (one clock). Its own package (`app/relay`, `npm run
+  dev` / `npm run deploy`); the party e2e test passes against it locally.
+  Deploying needs a Cloudflare account (free plan is enough to start).
 - `app/src/party/crypto.ts`: AES-GCM room key in the join link's fragment.
 - `app/src/party/game.ts`: referee rules on the host (buzz order by relay
   time, steals through the buzz queue, no answer in the public view before
@@ -219,7 +222,9 @@ the store apps:
 - Tests: `tests/unit/party.test.ts` (relay, encryption, rules) and
   `e2e/party.spec.ts` (host and two team phones in separate browsers).
 
-Not yet: QR code, in-app host mode inside the normal Trivia Night game,
+The host's lobby shows a QR code of the join link, drawn on the device.
+
+Not yet: deploying the relay, in-app host mode inside the normal Trivia Night game,
 spoken answers on team phones (the phone doesn't know the answer, so Say it
 needs a host-side check of the recognised text), testing on real phones
 (needs the deployed relay and HTTPS, since WebCrypto requires a secure page).

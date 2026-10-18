@@ -27,7 +27,8 @@ export default defineConfig({
       // party relay for e2e/party.spec.ts
       command: "npm run relay",
       port: 8787,
-      reuseExistingServer: false,
+      // reuse lets the same test run against the Cloudflare relay (cd relay && npm run dev)
+      reuseExistingServer: true,
       timeout: 60_000,
     },
   ],
