@@ -193,7 +193,7 @@ export class RelayHub {
 
 /** Secure random bytes (Web Crypto: browsers, Node 20+, serverless runtimes). */
 function randomBytes(n: number): Uint8Array {
-  return globalThis.crypto.getRandomValues(new Uint8Array(n));
+  return crypto.getRandomValues(new Uint8Array(n));
 }
 
 /** Compare tokens without leaking how much of a guess was right through timing. */

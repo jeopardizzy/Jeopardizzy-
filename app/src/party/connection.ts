@@ -19,7 +19,7 @@ export type RoomStatus = "connecting" | "open" | "offline" | "no-room" | "closed
 export const RELAY_URL: string | null =
   (import.meta.env.VITE_PARTY_RELAY as string | undefined) ??
   (typeof location !== "undefined" && location.hostname === "localhost" && location.port
-    ? "ws://localhost:8787"
+    ? "ws://localhost:8787/ws"
     : null);
 
 /** One WebSocket to the relay that reconnects on its own, calling `hello` after every (re)connect. */

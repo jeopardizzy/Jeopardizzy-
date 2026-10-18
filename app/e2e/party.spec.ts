@@ -27,6 +27,8 @@ test.describe("playing on several phones (prototype)", () => {
     const link = (await page.getByTestId("join-link").getAttribute("href"))!;
     expect(link).toMatch(/#\/join\/[A-Z]{4}\/[\w-]{22}$/);
 
+    await expect(page.getByRole("img", { name: "QR code to join this room" })).toBeVisible();
+
     const sageCtx = await browser.newContext();
     const butterCtx = await browser.newContext();
     const sage = await sageCtx.newPage();
@@ -36,6 +38,7 @@ test.describe("playing on several phones (prototype)", () => {
     await expect(page.getByRole("listitem").filter({ hasText: "Team Sage" })).toContainText("📱1");
 
     await page.getByRole("button", { name: "Start" }).click();
+    await expect(page.getByRole("img", { name: "QR code to join this room" })).toHaveCount(0);
     await expect(sage.getByText(firstClue.clue)).toBeVisible();
     await expect(sage.getByRole("button", { name: "BUZZ" })).toHaveCount(0); // still reading
 
