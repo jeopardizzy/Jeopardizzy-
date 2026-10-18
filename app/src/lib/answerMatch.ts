@@ -44,21 +44,28 @@ export function levenshtein(a: string, b: string, cap = 3): number {
  */
 export function alternates(answer: string): string[] {
   const out = new Set<string>();
-  const whole = normalize(answer);
-  if (whole) out.add(whole); // typing the entire answer always counts
-  const chunks = answer.split("/").map((s) => s.trim());
-  for (const chunk of chunks) {
-    const noParen = chunk
-      .replace(/\([^)]*\)/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-    const parens = [...chunk.matchAll(/\(([^)]*)\)/g)].map((m) => m[1]).join(" ");
-    for (const v of [chunk, noParen, parens]) {
-      const n = normalize(v);
-      if (n) out.add(n);
-    }
+  for (const v of chunks(answer)) {
+    const n = normalize(v);
+    if (n) out.add(n);
   }
   return [...out];
+}
+
+/**
+ * The raw pieces an answer may be given as. Parenthetical notes are set aside
+ * before splitting on "/", so a note's own slash ("Dove (DOHV/DUHV)") never
+ * cuts the answer in half.
+ */
+function chunks(answer: string): string[] {
+  const outside = answer.replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+  const notes = [...answer.matchAll(/\(([^)]*)\)/g)].map((m) => m[1].trim());
+  return [
+    answer, // typing the entire answer always counts
+    outside,
+    ...outside.split("/").map((s) => s.trim()),
+    ...notes,
+    ...notes.flatMap((n) => n.split("/").map((s) => s.trim())),
+  ];
 }
 
 function toleranceFor(len: number): number {
@@ -79,13 +86,9 @@ export function isCorrect(guess: string, answer: string): boolean {
   // generous containment — but only against short, chunk-derived alternates
   // (e.g. "eider" inside "Duck (Eider)"), never against long full answers
   if (g.length >= 5) {
-    for (const chunk of answer.split("/")) {
-      const noParen = chunk.replace(/\([^)]*\)/g, " ");
-      const parens = [...chunk.matchAll(/\(([^)]*)\)/g)].map((m) => m[1]).join(" ");
-      for (const v of [chunk, noParen, parens]) {
-        const n = normalize(v);
-        if (n && n.split(" ").length <= 3 && n.split(" ").includes(g)) return true;
-      }
+    for (const v of chunks(answer)) {
+      const n = normalize(v);
+      if (n && n.split(" ").length <= 3 && n.split(" ").includes(g)) return true;
     }
   }
   return false;
