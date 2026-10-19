@@ -155,4 +155,270 @@ export const SEASONAL_BOARDS: BoardGame[] = [
       },
     ],
   },
+  {
+      id: "autumn-1",
+      title: "Autumn Wordplay I",
+      categories: [
+        {
+          name: "Autumn Sayings",
+          clues: [
+            {
+              clue: "To turn over a new ____: to make a fresh start.",
+              answer: "Leaf"
+            },
+            {
+              clue: "The apple doesn't fall far from the ____: children are often a lot like their parents.",
+              answer: "Tree"
+            },
+            {
+              clue: "To be the apple of someone's ____: to be their favorite.",
+              answer: "Eye"
+            },
+            {
+              clue: "To compare apples and ____: to compare two very different things.",
+              answer: "Oranges"
+            },
+            {
+              clue: "You reap what you ____: your actions decide what happens to you later.",
+              answer: "Sow",
+              note: "To sow is to plant seeds; to reap is to gather the crop."
+            }
+          ]
+        },
+        {
+          name: "Autumn Rhymes",
+          clues: [
+            {
+              clue: "Rhyming pair: a dance party held in autumn.",
+              answer: "Fall Ball"
+            },
+            {
+              clue: "Rhyming pair: a juicy fruit picked for a big furry animal.",
+              answer: "Bear Pear"
+            },
+            {
+              clue: "Rhyming pair: someone who sneaks off with fallen leaves.",
+              answer: "Leaf Thief"
+            },
+            {
+              clue: "Rhyming pair: a midday meal of crispy apples.",
+              answer: "Crunch Lunch"
+            },
+            {
+              clue: "Rhyming pair: a bath towel for a bird that hoots at night.",
+              answer: "Owl Towel"
+            }
+          ]
+        },
+        {
+          name: "Harvest Homophones",
+          clues: [
+            {
+              clue: "Sounds the same: a fruit picked in autumn, and a word for two of something.",
+              answer: "Pear / Pair"
+            },
+            {
+              clue: "Sounds the same: a small juicy fruit, and what a squirrel does with its nuts.",
+              answer: "Berry / Bury"
+            },
+            {
+              clue: "Sounds the same: a cooking herb, and what a clock measures.",
+              answer: "Thyme / Time"
+            },
+            {
+              clue: "Sounds the same: a long vegetable related to the onion, and water dripping through a hole.",
+              answer: "Leek / Leak"
+            },
+            {
+              clue: "Sounds the same: another word for corn, and a puzzle of winding paths.",
+              answer: "Maize / Maze",
+              note: "Some farms cut a giant maze into a field of maize every autumn."
+            }
+          ]
+        },
+        {
+          name: "Farmyard Compounds",
+          clues: [
+            {
+              clue: "Add a word to SCARE: a straw figure that keeps birds away from a field.",
+              answer: "Scarecrow"
+            },
+            {
+              clue: "Add a word in front of CORN: a snack that pops in a hot pan.",
+              answer: "Popcorn"
+            },
+            {
+              clue: "Add a word to HAY: a tall pile of dried grass in a field.",
+              answer: "Haystack"
+            },
+            {
+              clue: "Add a word to SUN: a tall yellow flower with seeds that birds love.",
+              answer: "Sunflower"
+            },
+            {
+              clue: "Add a word to WHEEL: a one-wheeled cart a gardener pushes.",
+              answer: "Wheelbarrow"
+            }
+          ]
+        },
+        {
+          name: "Autumn Nature",
+          clues: [
+            {
+              clue: "This big orange squash is carved into lanterns in October.",
+              answer: "Pumpkin"
+            },
+            {
+              clue: "Squirrels bury these little nuts from oak trees.",
+              answer: "Acorn"
+            },
+            {
+              clue: "Many birds fly south for the winter; this long seasonal journey is called ____.",
+              answer: "Migration"
+            },
+            {
+              clue: "Trees that lose all their leaves every autumn are called this.",
+              answer: "Deciduous"
+            },
+            {
+              clue: "This green substance in leaves fades in autumn, letting the reds and yellows show.",
+              answer: "Chlorophyll"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: "autumn-2",
+      title: "Autumn Wordplay II",
+      categories: [
+        {
+          name: "Autumn Sayings II",
+          clues: [
+            {
+              clue: "Easy as ____: very simple (and a tasty autumn dessert).",
+              answer: "Pie"
+            },
+            {
+              clue: "One bad ____ spoils the bunch: one troublemaker can affect a whole group.",
+              answer: "Apple"
+            },
+            {
+              clue: "In a ____: summed up in just a few words.",
+              answer: "Nutshell"
+            },
+            {
+              clue: "Full of ____: bursting with energy.",
+              answer: "Beans"
+            },
+            {
+              clue: "To go against the ____: to do the opposite of what most people do.",
+              answer: "Grain"
+            }
+          ]
+        },
+        {
+          name: "Autumn Rhymes II",
+          clues: [
+            {
+              clue: "Rhyming pair: a tiny house where a squirrel stores its acorns.",
+              answer: "Nut Hut"
+            },
+            {
+              clue: "Rhyming pair: a performance put on by big black birds.",
+              answer: "Crow Show"
+            },
+            {
+              clue: "Rhyming pair: a trumpet made from an ear of maize.",
+              answer: "Corn Horn"
+            },
+            {
+              clue: "Rhyming pair: a friend who loves jumping in puddles.",
+              answer: "Muddy Buddy"
+            },
+            {
+              clue: "Rhyming pair: a hang-glider flown by an eight-legged web-spinner.",
+              answer: "Spider Glider"
+            }
+          ]
+        },
+        {
+          name: "Harvest Homophones II",
+          clues: [
+            {
+              clue: "Sounds the same: the powder you bake pumpkin bread with, and a blossom.",
+              answer: "Flour / Flower"
+            },
+            {
+              clue: "Sounds the same: to press and fold bread dough, and a word meaning “to require”.",
+              answer: "Knead / Need"
+            },
+            {
+              clue: "Sounds the same: the part of a plant under the ground, and the way you travel somewhere.",
+              answer: "Root / Route",
+              note: "In some places “route” rhymes with “out”; in others it sounds just like “root”."
+            },
+            {
+              clue: "Sounds the same: the word in “the pumpkins have ___ so big”, and a sound of complaint.",
+              answer: "Grown / Groan"
+            },
+            {
+              clue: "Sounds the same: a single grain of corn, and an army officer.",
+              answer: "Kernel / Colonel"
+            }
+          ]
+        },
+        {
+          name: "Harvest Compounds",
+          clues: [
+            {
+              clue: "Add a word to RAIN: a waterproof jacket.",
+              answer: "Raincoat"
+            },
+            {
+              clue: "Add a word to PINE: the woody seed holder that falls from a pine tree.",
+              answer: "Pinecone"
+            },
+            {
+              clue: "Add a word to CORN: a golden bread made from maize.",
+              answer: "Cornbread"
+            },
+            {
+              clue: "Add a word to BARN: the open area around farm buildings where animals roam.",
+              answer: "Barnyard"
+            },
+            {
+              clue: "Add a word to WIND: a building whose sails turn to grind grain.",
+              answer: "Windmill"
+            }
+          ]
+        },
+        {
+          name: "Harvest Science",
+          clues: [
+            {
+              clue: "Gathering ripe crops from the fields is called this.",
+              answer: "Harvest"
+            },
+            {
+              clue: "Tiny drops of water that cover the grass on cool autumn mornings.",
+              answer: "Dew"
+            },
+            {
+              clue: "Bears eat lots in autumn to build up this, which keeps them going through winter.",
+              answer: "Fat"
+            },
+            {
+              clue: "The autumn day when daytime and nighttime are about the same length is the autumn ____.",
+              answer: "Equinox"
+            },
+            {
+              clue: "The process plants use to make food from sunlight.",
+              answer: "Photosynthesis"
+            }
+          ]
+        }
+      ]
+    }
+  
 ];
