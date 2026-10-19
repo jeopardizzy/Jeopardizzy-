@@ -1,18 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { HOST_GRACE_MS, IDLE_MS, MAX_PEERS, RelayHub, type Conn } from "../../src/party/relayCore";
 import { importRoomKey, newRoomKey, open, seal } from "../../src/party/crypto";
-import {
-  answer,
-  buzz,
-  buzzOrderText,
-  newPartyGame,
-  nextClue,
-  openBuzzers,
-  partyView,
-  revealClue,
-  startParty,
-  type PartyGame,
-} from "../../src/party/game";
+import { answer, buzz, buzzOrderText, everyoneMissed, judge, newRound, openBuzzers, withGaps } from "../../src/party/round";
 
 class FakeConn implements Conn {
   got: Record<string, unknown>[] = [];
@@ -135,73 +124,55 @@ describe("party encryption", () => {
   });
 });
 
-describe("party game rules", () => {
-  const teams = [0, 1, 2].map((id) => ({ id, name: ["Sage", "Butter", "Coral"][id], color: "#000", score: 0 }));
-  const clues = [
-    { categoryName: "C", clue: "Frozen water", answer: "Ice", value: 100 },
-    { categoryName: "C", clue: "Six-sided flake", answer: "Snowflake", value: 200 },
-  ];
-  const ready = (): PartyGame => openBuzzers(startParty(newPartyGame(teams, clues)), 1000);
+describe("party round rules", () => {
+  const teams = [0, 1, 2];
+  const ready = () => openBuzzers(newRound("tile-1"));
 
-  it("the earliest buzz by relay time answers, whatever order the messages were handled in", () => {
-    let g = ready();
-    g = buzz(g, 1, 1500);
-    g = buzz(g, 2, 1300); // arrived at the relay first, handled second
-    expect(g.answering).toBe(1); // the turn was already given…
-    expect(g.buzzes.map((b) => b.team)).toEqual([2, 1]); // …but the order shown is fair
-    expect(buzzOrderText(partyView(g))).toBe("Coral first · Butter +0.20 s");
+  it("buzzers are closed until the host opens them", () => {
+    const r = newRound("tile-1");
+    expect(buzz(r, 0, 5)).toBe(r);
   });
 
-  it("ignores buzzes before the buzzers open, repeats and teams that already missed", () => {
-    let g = startParty(newPartyGame(teams, clues));
-    expect(buzz(g, 0, 5)).toBe(g); // still reading
-    g = openBuzzers(g, 1000);
-    expect(buzz(g, 0, 999)).toBe(g); // early
-    g = buzz(g, 0, 1001);
-    expect(buzz(g, 0, 1002)).toBe(g);
-    g = answer(g, 0, "nope");
-    expect(buzz(g, 0, 1003)).toBe(g);
+  it("the first buzz answers; the order shown is by relay time", () => {
+    let r = ready();
+    r = buzz(r, 1, 1500);
+    r = buzz(r, 2, 1300); // reached the relay first, handled second
+    expect(r.answering).toBe(1); // the turn was already given…
+    expect(r.buzzes.map((b) => b.team)).toEqual([2, 1]); // …but the order shown is fair
+    expect(buzzOrderText(withGaps(r.buzzes), (id) => ["Sage", "Butter", "Coral"][id])).toBe("Coral first · Butter +0.20 s");
   });
 
-  it("a miss passes to the next buzzer; a correct answer scores and reveals", () => {
-    let g = ready();
-    g = buzz(buzz(g, 0, 1100), 1, 1200);
-    g = answer(g, 1, "Ice"); // not their turn
-    expect(g.lastAnswer).toBeNull();
-    g = answer(g, 0, "Water");
-    expect(g.answering).toBe(1);
-    expect(g.lastAnswer).toMatchObject({ team: 0, correct: false });
-    g = answer(g, 1, "ice");
-    expect(g.phase).toBe("revealed");
-    expect(g.winner).toBe(1);
-    expect(g.teams[1].score).toBe(100);
+  it("ignores repeat buzzes, answers out of turn, and teams that already missed", () => {
+    let r = buzz(ready(), 0, 1000);
+    expect(buzz(r, 0, 1001)).toBe(r);
+    expect(answer(r, 1, "Ice", false, "Ice")).toBe(r);
+    r = answer(r, 0, "Water", false, "Ice");
+    expect(r.tried).toEqual([0]);
+    expect(buzz(r, 0, 1002)).toBe(r);
   });
 
-  it("with no buzzer left, buzzing reopens for the teams that haven't tried; all missing reveals", () => {
-    let g = buzz(ready(), 0, 1100);
-    g = answer(g, 0, "no");
-    expect(g.phase).toBe("buzzing");
-    g = answer(buzz(g, 1, 1200), 1, "no");
-    g = answer(buzz(g, 2, 1300), 2, "no");
-    expect(g.phase).toBe("revealed");
-    expect(g.winner).toBeNull();
+  it("a miss passes to the next buzzer; a correct answer wins and closes the buzzers", () => {
+    let r = buzz(buzz(ready(), 0, 1100), 1, 1200);
+    r = answer(r, 0, "Water", false, "Ice");
+    expect(r.answering).toBe(1);
+    expect(r.lastAnswer).toMatchObject({ team: 0, correct: false });
+    r = answer(r, 1, "ice", false, "Ice");
+    expect(r).toMatchObject({ winner: 1, answering: null, open: false });
   });
 
-  it("phones never see the answer before the reveal", () => {
-    let g = buzz(ready(), 0, 1100);
-    expect(JSON.stringify(partyView(g))).not.toContain('"Ice"');
-    g = revealClue(g);
-    expect(partyView(g).answer).toBe("Ice");
+  it("with no buzzer left, teams that haven't tried can still buzz in", () => {
+    let r = answer(buzz(ready(), 0, 1100), 0, "no", false, "Ice");
+    expect(r.answering).toBeNull();
+    r = buzz(r, 2, 1300);
+    expect(r.answering).toBe(2);
+    r = answer(buzz(answer(r, 2, "no", false, "Ice"), 1, 1400), 1, "no", false, "Ice");
+    expect(everyoneMissed(r, teams)).toBe(true);
   });
 
-  it("moves through the clues to the end", () => {
-    let g = revealClue(ready());
-    g = nextClue(g);
-    expect(g.phase).toBe("reading");
-    expect(partyView(g).clue?.clue).toBe("Six-sided flake");
-    g = nextClue(revealClue(g));
-    expect(g.phase).toBe("done");
-    expect(partyView(g).clue).toBeNull();
+  it("spoken answers (text from the phone's speech-to-text) are matched leniently", () => {
+    expect(judge("I think it's mount everest", true, "Mount Everest")).toBe(true);
+    expect(judge("I think it's mount everest", false, "Mount Everest")).toBe(false);
+    expect(judge("polar bear", true, "Penguin")).toBe(false);
   });
 });
 

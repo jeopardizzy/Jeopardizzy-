@@ -6,6 +6,8 @@ import { useMotionSafe } from "../lib/useMotionSafe";
 import { canPlayGame } from "../lib/access";
 import { useEntitlement } from "../store/entitlementStore";
 import { LIGHTNING_SECONDS } from "../lib/board";
+import { RELAY_URL } from "../party/connection";
+import { usePartyHost } from "../party/hostSession";
 
 const MAX_TEAMS = 4;
 
@@ -28,6 +30,8 @@ export default function TeamSetup() {
   const setWrongPenalty = useTeamStore((s) => s.setWrongPenalty);
   const lightning = useTeamStore((s) => s.settings.lightning === true);
   const setLightning = useTeamStore((s) => s.setLightning);
+  const phones = useTeamStore((s) => s.settings.phones === true) && RELAY_URL !== null;
+  const setPhones = useTeamStore((s) => s.setPhones);
 
   // no set chosen, or a Full Club set without the unlock (deep link, refund)
   if (!set_ || !canPlayGame(set_, fullClub)) {
@@ -100,6 +104,12 @@ export default function TeamSetup() {
         )}
 
         <div className="mb-6 space-y-3">
+          {RELAY_URL && (
+            <ModeSwitch label="Teams answer on their own phones" on={phones} onChange={setPhones}>
+              Preview. Each team scans a QR code to buzz in and answer on its own phone; this phone shows the
+              board and keeps score. Needs an internet connection.
+            </ModeSwitch>
+          )}
           <ModeSwitch label="Wrong answers cost points" on={wrongPenalty} onChange={setWrongPenalty}>
             A wrong answer checked on the clue card takes the tile's points away, TV-style.
           </ModeSwitch>
@@ -116,6 +126,7 @@ export default function TeamSetup() {
         <button
           onClick={() => {
             startGame(names);
+            if (phones) usePartyHost.getState().open();
             navigate("/game");
           }}
           className="font-display w-full rounded-2xl bg-sage px-6 py-4 text-xl text-white transition hover:bg-sage-deep active:scale-[0.98]"

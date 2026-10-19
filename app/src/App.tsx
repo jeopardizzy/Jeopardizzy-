@@ -13,7 +13,6 @@ import { unlockAudio } from "./audio/sound";
 import { loadVoice, unlockVoice } from "./audio/voice";
 import { platformAdapter } from "./lib/purchases";
 import { useEntitlement } from "./store/entitlementStore";
-import PartyHost from "./pages/PartyHost";
 import PartyJoin from "./pages/PartyJoin";
 import AppLinks from "./party/AppLinks";
 
@@ -64,7 +63,6 @@ export default function App() {
           <Route path="/game" element={<TeamGame />} />
           <Route path="/workbook" element={<Workbook />} />
           <Route path="/guides" element={<Guides />} />
-          <Route path="/party" element={<PartyHost />} />
           <Route path="/join/:code/:key" element={<PartyJoin />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

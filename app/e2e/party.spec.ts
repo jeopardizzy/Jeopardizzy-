@@ -1,33 +1,41 @@
 import { expect, test } from "./fixtures";
-import { buildDailyBoard } from "../src/lib/board";
-import { dailySeed } from "../src/lib/random";
 
 type Page = import("@playwright/test").Page;
 
-/** The prototype plays today's Daily Board, cheapest first. */
-const firstClue = buildDailyBoard(dailySeed())
-  .tiles.slice()
-  .sort((a, b) => a.value - b.value)[0];
+/** Read the host's game through the localhost-only store hook. */
+const hostGame = (page: Page) =>
+  page.evaluate(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const s = (window as unknown as { __teamStore: any }).__teamStore.getState();
+    const tile = s.board?.tiles.find((t: { id: string }) => t.id === s.currentTileId);
+    return { answer: tile?.answer as string, value: tile?.value as number, final: s.finalClue?.answer as string };
+  });
+
+const plain = (answer: string) => answer.replace(/\(.*$/, "").split("/")[0].trim();
 
 async function phone(page: Page, link: string, team: string) {
   await page.goto(link);
   await page.getByRole("button", { name: team }).click();
-  await expect(page.getByText("You're in!")).toBeVisible();
+  await expect(page.getByText(/is picking a tile|picks the next tile/)).toBeVisible();
 }
 
-test.describe("playing on several phones (prototype)", () => {
-  test.skip(({ isMobile }) => isMobile, "multi-context flow runs once, on desktop");
+test.describe("Trivia Night on several phones", () => {
+  test.skip(({ isMobile }) => isMobile, "multi-browser flow runs once, on desktop");
 
-  test("teams join by link, buzz in order, steal after a miss, and score", async ({ page, browser }) => {
-    test.setTimeout(60_000);
-    await page.goto("/#/sets");
-    await page.getByRole("link", { name: /Play on several phones/ }).click();
-    await page.getByRole("button", { name: "Open a room" }).click();
-    await expect(page.getByLabel("Join code")).toHaveText(/^[A-Z]{4}$/);
+  test("teams buzz and answer on their phones, steal, wager secretly and finish", async ({ page, browser }) => {
+    test.setTimeout(90_000);
+    // host: today's board with phones and the final round on
+    await page.goto("/#/");
+    await page.getByRole("button", { name: /Play today/ }).click();
+    await page.getByRole("switch", { name: "Teams answer on their own phones" }).click();
+    const finalSwitch = page.getByRole("switch", { name: "Final wager round" });
+    if ((await finalSwitch.getAttribute("aria-checked")) !== "true") await finalSwitch.click();
+    await page.getByRole("button", { name: "Start the game" }).click();
+
+    const bar = page.getByRole("region", { name: "Phones" });
+    await expect(bar.getByLabel("Join code")).toHaveText(/^[A-Z]{4}$/);
+    await expect(page.getByRole("img", { name: "QR code to join this game" })).toBeVisible();
     const link = (await page.getByTestId("join-link").getAttribute("href"))!;
-    expect(link).toMatch(/#\/join\/[A-Z]{4}\/[\w-]{22}$/);
-
-    await expect(page.getByRole("img", { name: "QR code to join this room" })).toBeVisible();
 
     const sageCtx = await browser.newContext();
     const butterCtx = await browser.newContext();
@@ -35,44 +43,70 @@ test.describe("playing on several phones (prototype)", () => {
     const butter = await butterCtx.newPage();
     await phone(sage, link, "Team Sage");
     await phone(butter, link, "Team Butter");
-    await expect(page.getByRole("listitem").filter({ hasText: "Team Sage" })).toContainText("📱1");
+    await expect(bar.getByRole("list", { name: "Phones per team" })).toContainText("Team Butter 📱1");
 
-    await page.getByRole("button", { name: "Start" }).click();
-    await expect(page.getByRole("img", { name: "QR code to join this room" })).toHaveCount(0);
-    await expect(sage.getByText(firstClue.clue)).toBeVisible();
-    await expect(sage.getByRole("button", { name: "BUZZ" })).toHaveCount(0); // still reading
-
+    // a clue: phones see it, buzzers open only when the host says so
+    await page.locator("[role='gridcell']:not([disabled])").first().click();
+    const { answer, value } = await hostGame(page);
+    await expect(sage.getByText("Listen… buzzers open soon.")).toBeVisible();
+    await expect(sage.getByRole("button", { name: "BUZZ" })).toHaveCount(0);
     await page.getByRole("button", { name: "Open buzzers" }).click();
     await sage.getByRole("button", { name: "BUZZ" }).click();
     await expect(page.getByLabel("Buzz order")).toHaveText("Team Sage first");
     await butter.getByRole("button", { name: "BUZZ" }).click();
     await expect(page.getByLabel("Buzz order")).toHaveText(/^Team Sage first · Team Butter \+\d\.\d\d s$/);
 
-    // Sage misses; the turn passes to Butter, who steals it
+    // Sage misses, Butter steals
     await expect(butter.getByText("Team Sage is answering…")).toBeVisible();
     await sage.getByLabel("Your answer").fill("definitely not it zzz");
     await sage.getByRole("button", { name: "Send" }).click();
-    await expect(sage.getByText("Not quite — wait for the next clue.")).toBeVisible();
-    const plain = firstClue.answer.replace(/\(.*$/, "").split("/")[0].trim();
-    await butter.getByLabel("Your answer").fill(plain);
+    await expect(page.getByText(/Team Sage: “definitely not it zzz” — not quite/)).toBeVisible();
+    await expect(sage.getByText(/not quite\. Wait for the next clue/)).toBeVisible();
+    await butter.getByLabel("Your answer").fill(plain(answer));
     await butter.getByRole("button", { name: "Send" }).click();
 
-    await expect(page.getByText(/^The answer is/)).toBeVisible();
-    await expect(page.getByRole("listitem").filter({ hasText: "Team Butter" })).toContainText(String(firstClue.value));
-    await expect(butter.getByText(/You got it!/)).toBeVisible();
+    // the host sees the steal and awards it
+    await expect(page.getByText("Correct, Team Butter!")).toBeVisible();
+    await expect(butter.getByText(/You got it! The answer is/)).toBeVisible();
     await expect(sage.getByText(/The answer is/)).toBeVisible();
+    await page.getByRole("dialog").getByRole("button", { name: "Team Butter", exact: true }).click();
+    await expect(sage.getByRole("list", { name: "Scores" })).toContainText(`Team Butter ${value}`);
 
-    // the next clue clears the round on every phone
-    await page.getByRole("button", { name: "Next clue" }).click();
-    await expect(sage.getByText("Listen… buzzers open soon.")).toBeVisible();
-    await expect(butter.getByText(/The answer is/)).toHaveCount(0);
+    // final round: wagers are secret on the phones
+    await page.getByRole("button", { name: "Finish game" }).click();
+    await page.getByRole("button", { name: "To the final" }).click();
+    await expect(butter.getByLabel("Your wager")).toBeVisible();
+    const wager = value - 30; // not a number shown anywhere else on the host screen
+    await butter.getByLabel("Your wager").fill(String(wager));
+    await butter.getByRole("button", { name: "Wager" }).click();
+    await expect(butter.getByText("✓ Wager sent")).toBeVisible();
+    await expect(page.getByText("✓ Wagered")).toHaveCount(1);
+    await expect(page.getByText(String(wager))).toHaveCount(0); // the amount stays hidden
+    await page.getByRole("button", { name: "Lock wagers, show the clue" }).click();
+
+    const { final } = await hostGame(page);
+    await butter.getByLabel("Your answer").fill(plain(final));
+    await butter.getByRole("button", { name: "Send" }).click();
+    await expect(butter.getByText("✓ Answer sent")).toBeVisible();
+    await expect(page.getByText("Answers in: 1 of 2")).toBeVisible();
+    await page.getByRole("button", { name: "Reveal answer" }).click();
+    await expect(page.getByText(/answered “.+” — looks right/)).toBeVisible();
+    await expect(page.getByText("no answer sent")).toBeVisible();
+
+    const rows = page.locator("div.rounded-xl", { has: page.getByRole("button", { name: "✓ Right" }) });
+    await rows.filter({ hasText: "Team Butter" }).getByRole("button", { name: "✓ Right" }).click();
+    await rows.filter({ hasText: "Team Sage" }).getByRole("button", { name: "✗ Wrong" }).click();
+    await expect(page.getByText(`(wagered ${wager})`)).toBeVisible(); // shown at the reveal
+    await page.getByRole("button", { name: "Crown the winners" }).click();
+    await expect(butter.getByText("You win! 🏆")).toBeVisible();
+    await expect(sage.getByText("Team Butter wins!")).toBeVisible();
 
     await sageCtx.close();
     await butterCtx.close();
   });
 
-  test("a wrong room code says so", async ({ page }) => {
+  test("a wrong game code says so", async ({ page }) => {
     await page.goto("/#/join/ZZZZ/AAAAAAAAAAAAAAAAAAAAAA");
-    await expect(page.getByText("That room doesn't exist.", { exact: false })).toBeVisible();
+    await expect(page.getByText("That game doesn't exist any more.", { exact: false })).toBeVisible();
   });
 });

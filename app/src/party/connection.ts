@@ -1,13 +1,43 @@
 import { importRoomKey, newRoomKey, open, seal } from "./crypto";
-import type { PartyView } from "./game";
+import type { AnswerResult } from "./round";
 
-/** Team phone → host. */
+/** Team phone → host. `key` names the clue, so a late message for an old clue is ignored. */
 export type PlayerMsg =
   | { t: "team"; team: number }
-  | { t: "buzz"; clue: number }
-  | { t: "answer"; clue: number; text: string };
+  | { t: "buzz"; key: string }
+  | { t: "answer"; key: string; text: string; spoken: boolean }
+  | { t: "wager"; amount: number }
+  | { t: "final"; text: string; spoken: boolean };
+
 /** Host → phones. */
-export type HostMsg = { t: "view"; view: PartyView } | { t: "you"; team: number | null };
+export type HostMsg = { t: "view"; view: PhoneView } | { t: "you"; team: number | null };
+
+/**
+ * What every phone may see. Never contains an answer before it is revealed,
+ * nor another team's final wager or final answer.
+ */
+export interface PhoneView {
+  stage: "board" | "clue" | "lightning" | "final-wager" | "final-clue" | "winner";
+  game: string;
+  roundLabel: string;
+  teams: { id: number; name: string; color: string; score: number }[];
+  /** whose turn it is to pick a tile */
+  picker: number | null;
+  clue: { key: string; category: string; text: string; value: number } | null;
+  revealed: boolean;
+  answer: string | null;
+  buzz: {
+    open: boolean;
+    order: { team: number; gapMs: number }[];
+    answering: number | null;
+    tried: number[];
+    lastAnswer: AnswerResult | null;
+  } | null;
+  winner: number | null;
+  /** final round: which teams have sent a wager / an answer (not what they sent) */
+  wagered: number[];
+  finalAnswered: number[];
+}
 
 export type RoomStatus = "connecting" | "open" | "offline" | "no-room" | "room-full" | "closed";
 

@@ -7,6 +7,8 @@ import { sfx } from "../audio/sound";
 import { isCorrect } from "../lib/answerMatch";
 import SpokenAnswer from "./SpokenAnswer";
 import { nextAnswering } from "../lib/turns";
+import { usePartyHost } from "../party/hostSession";
+import PhoneAnswers from "./PhoneAnswers";
 
 interface ClueAnswerProps {
   answer: string;
@@ -111,6 +113,9 @@ export default function HostClueModal() {
   const penaltyOn = useTeamStore((s) => s.settings.wrongPenalty === true);
   const voiceOn = useTeamStore((s) => s.settings.voice !== false) && isVoiceAvailable();
   const reduce = useMotionSafe();
+  // teams answering on their own phones (several-phones play)
+  const partyOn = usePartyHost((s) => s.room !== null);
+  const partyWinnerId = usePartyHost((s) => (s.round && s.round.key === currentTileId ? s.round.winner : null));
 
   const tile = board?.tiles.find((t) => t.id === currentTileId) ?? null;
   const open = phase === "clue" && tile !== null;
@@ -151,7 +156,7 @@ export default function HostClueModal() {
         : `Not quite, ${who}. ${nameOf(next)}, your turn — or reveal it.`,
     );
   };
-  const winner = teams.find((t) => t.id === winnerId) ?? null;
+  const winner = teams.find((t) => t.id === (partyOn ? partyWinnerId : winnerId)) ?? null;
 
   return (
     <AnimatePresence>
@@ -199,7 +204,8 @@ export default function HostClueModal() {
                     </button>
                   )}
                 </p>
-                {teams.length > 1 && answeringId !== null && (
+                {partyOn && <PhoneAnswers />}
+                {!partyOn && teams.length > 1 && answeringId !== null && (
                   <div className="mb-3 flex flex-wrap items-center justify-center gap-1.5" role="group" aria-label="Who is answering">
                     <span className="text-xs font-bold uppercase tracking-[0.15em] text-mute">Answering:</span>
                     {teams.map((t) => {
@@ -223,6 +229,7 @@ export default function HostClueModal() {
                     })}
                   </div>
                 )}
+                {!partyOn && (
                 <ClueAnswer
                   key={tile.id}
                   answer={tile.answer}
@@ -231,6 +238,7 @@ export default function HostClueModal() {
                   closed={answeringId === null}
                   onGuess={onGuess}
                 />
+                )}
                 <button
                   onClick={revealClue}
                   autoFocus

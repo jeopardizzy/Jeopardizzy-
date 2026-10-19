@@ -35,6 +35,8 @@ export const SettingsSchema = z.object({
   wrongPenalty: z.boolean().optional(),
   /** Trivia Night: a timed lightning round after the last board; undefined = off */
   lightning: z.boolean().optional(),
+  /** Trivia Night: teams buzz and answer on their own phones (preview); undefined = off */
+  phones: z.boolean().optional(),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 

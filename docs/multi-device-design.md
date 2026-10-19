@@ -1,6 +1,7 @@
 # Trivia Night on several phones — design
 
-Status: phase 0 prototype built (October 2026); see "Prototype" below.
+Status: phase 1 built (October 2026), shipping in 1.0.1 as a preview; see
+"Phase 1" below.
 
 ## Goal
 
@@ -232,6 +233,37 @@ Not yet: a custom domain for the relay, in-app host mode inside the normal Trivi
 spoken answers on team phones (the phone doesn't know the answer, so Say it
 needs a host-side check of the recognised text), testing on real phones
 (needs the deployed relay and HTTPS, since WebCrypto requires a secure page).
+
+## Phase 1 (built)
+
+Decided and built on October 18–19, 2026:
+
+- **Inside the normal Trivia Night.** Team Setup has a "Teams answer on their
+  own phones" switch (preview). Any game works, with its boards, values,
+  wrong-answer penalty, lightning round and final round; Full Club is checked
+  on the host phone only, team phones and website guests join free.
+- **First to buzz answers.** The tile picker only chooses the category; when
+  the host taps **Open buzzers** (after the clue is read), the fastest team
+  answers, a miss passes to the next buzzer, and teams that haven't tried can
+  still buzz. This replaces the one-phone "picker answers first" rule only
+  when phones are on. Buzz order is by relay time and shown with the gap.
+- **Answers:** typed, or **Say it** on the team's phone: speech is turned into
+  text on that phone (Moonshine tiny, on-device) and only the text is sent;
+  the host checks it with the same accent-tolerant matching as the Workbook.
+  A wrong answer costs points when that mode is on. The host still awards.
+- **Final round:** each team wagers secretly on its phone (the host screen
+  shows only "✓ Wagered"), then sends its final answer; the host sees the
+  answers at the reveal, with a "looks right" hint, and marks them.
+- **Lightning round:** phones show the clue; teams shout, the host taps.
+- Code: `app/src/party/round.ts` (rules), `hostSession.ts` (room + game
+  bridge), `components/PartyBar.tsx`, `PhoneAnswers.tsx`,
+  `PhoneSpeak.tsx`, `pages/PartyJoin.tsx`. The phase 0 host screen is gone.
+- Tests: `tests/unit/party.test.ts`, `e2e/party.spec.ts` (host + two team
+  phones: buzz order, miss and steal, award, secret wagers, final answers,
+  winner on every phone).
+
+Not covered by automated tests: Say it on a team phone (needs a real
+microphone; check on devices).
 
 ## Open questions for later
 

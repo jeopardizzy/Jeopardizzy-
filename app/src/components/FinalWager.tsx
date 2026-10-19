@@ -2,6 +2,8 @@ import { motion } from "motion/react";
 import { useTeamStore } from "../store/teamStore";
 import { useMotionSafe } from "../lib/useMotionSafe";
 import { say } from "../audio/voice";
+import { usePartyHost } from "../party/hostSession";
+import { judge } from "../party/round";
 
 /** Final Quizzical for teams: per-team wagers, reveal, per-team grading. */
 export default function FinalWager() {
@@ -15,6 +17,10 @@ export default function FinalWager() {
   const markFinal = useTeamStore((s) => s.markFinal);
   const finishGame = useTeamStore((s) => s.finishGame);
   const reduce = useMotionSafe();
+  // several-phones play: wagers and final answers come from each team's phone
+  const partyOn = usePartyHost((s) => s.room !== null);
+  const wagered = usePartyHost((s) => s.wagered);
+  const finalAnswers = usePartyHost((s) => s.finalAnswers);
 
   if (!finalClue) return null;
 
@@ -32,7 +38,9 @@ export default function FinalWager() {
           Category: <span className="text-sage-deep">{finalClue.categoryName}</span>
         </h2>
         <p className="mb-6 text-center text-sm text-mute">
-          Each team wagers up to its score. Write the wagers down, then lock in.
+          {partyOn
+            ? "Each team wagers up to its score on its own phone — secretly. Lock in when every team has wagered."
+            : "Each team wagers up to its score. Write the wagers down, then lock in."}
         </p>
 
         <div className="mb-6 space-y-3">
@@ -45,6 +53,11 @@ export default function FinalWager() {
               />
               <span className="w-32 truncate text-sm font-semibold text-ink">{t.name}</span>
               <span className="text-xs text-mute">({t.score} pts)</span>
+              {partyOn ? (
+                <span className={`ml-auto text-sm font-semibold ${wagered.includes(t.id) ? "text-sage-deep" : "text-mute"}`}>
+                  {wagered.includes(t.id) ? "✓ Wagered" : "Waiting…"}
+                </span>
+              ) : (
               <input
                 type="number"
                 min={0}
@@ -54,6 +67,7 @@ export default function FinalWager() {
                 aria-label={`Wager for ${t.name}`}
                 className="ml-auto w-28 rounded-xl border border-line bg-cream px-3 py-2 text-center font-display text-lg text-sage-deep"
               />
+              )}
             </div>
           ))}
         </div>
@@ -81,6 +95,11 @@ export default function FinalWager() {
 
       {!revealed ? (
         <div className="text-center">
+          {partyOn && (
+            <p className="mb-4 text-sm text-mute" role="status">
+              Answers in: {Object.keys(finalAnswers).length} of {teams.length}
+            </p>
+          )}
           <button
             onClick={() => useTeamStore.getState().revealFinal()}
             autoFocus
@@ -110,6 +129,13 @@ export default function FinalWager() {
                 />
                 <span className="flex-1 text-sm font-semibold text-ink">
                   {t.name} <span className="font-normal text-mute">(wagered {wagers[t.id]})</span>
+                  {partyOn && (
+                    <span className="block text-xs font-normal text-mute">
+                      {finalAnswers[t.id]
+                        ? `answered “${finalAnswers[t.id].text}”${judge(finalAnswers[t.id].text, finalAnswers[t.id].spoken, finalClue.answer) ? " — looks right" : ""}`
+                        : "no answer sent"}
+                    </span>
+                  )}
                 </span>
                 {finalMarks[t.id] === null ? (
                   <div className="flex gap-2">
