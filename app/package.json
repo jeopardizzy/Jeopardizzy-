@@ -6,7 +6,7 @@
   "description": "Quizzical Club — team trivia boards, practice workbook and puzzle guides. Static, GitHub Pages ready.",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/check-assets.mjs && tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",
@@ -14,7 +14,8 @@
     "e2e": "playwright test",
     "sync": "npm run build && cap sync",
     "apk": "npm run sync && cd android && gradlew assembleDebug",
-    "relay": "tsx relay/server.ts"
+    "relay": "tsx relay/server.ts",
+    "check-assets": "node scripts/check-assets.mjs"
   },
   "dependencies": {
     "@capacitor-community/in-app-review": "8.0.0",

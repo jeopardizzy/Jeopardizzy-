@@ -219,3 +219,39 @@ describe("join links", async () => {
     expect(joinRouteFor("https://example.com/join#AB/short")).toBeNull();
   });
 });
+
+describe("party relay hardening (review findings)", () => {
+  it("ignores valid-JSON non-objects instead of throwing", () => {
+    const { hub } = hubWithRoom();
+    const c = new FakeConn();
+    for (const text of ["null", "42", "[]", '"x"', "true"]) {
+      expect(() => hub.handle(c, text)).not.toThrow();
+      expect(c.last()).toEqual({ op: "error", code: "bad-json" });
+    }
+  });
+
+  it("one connection can't occupy a room under many ids", () => {
+    const { hub, room } = hubWithRoom();
+    const c = new FakeConn();
+    hub.handle(c, JSON.stringify({ op: "join", room, peer: "p0" }));
+    for (let i = 1; i < MAX_PEERS; i++) hub.handle(c, JSON.stringify({ op: "join", room, peer: `p${i}` }));
+    expect(c.last()).toEqual({ op: "error", code: "already-in-room" });
+    hub.drop(c);
+    // every real phone still fits
+    for (let i = 0; i < MAX_PEERS; i++) {
+      const phone = new FakeConn();
+      hub.handle(phone, JSON.stringify({ op: "join", room, peer: `real${i}` }));
+      expect(phone.last()).toEqual({ op: "joined", room });
+    }
+  });
+
+  it("a host connection can't also join as a phone, and a phone can't take over as host", () => {
+    const { hub, host, room, token } = hubWithRoom();
+    hub.handle(host, JSON.stringify({ op: "join", room, peer: "x" }));
+    expect(host.last()).toEqual({ op: "error", code: "already-in-room" });
+    const phone = new FakeConn();
+    hub.handle(phone, JSON.stringify({ op: "join", room, peer: "p" }));
+    hub.handle(phone, JSON.stringify({ op: "rehost", room, token }));
+    expect(phone.last()).toEqual({ op: "error", code: "already-in-room" });
+  });
+});

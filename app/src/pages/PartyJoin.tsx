@@ -8,6 +8,7 @@ const STATUS_TEXT: Record<RoomStatus, string> = {
   open: "",
   offline: "Connection lost — reconnecting…",
   "no-room": "That room doesn't exist. Check the code with the host.",
+  "room-full": "This room is full (16 phones). Ask a teammate to share their phone.",
   closed: "The host closed the room.",
 };
 
@@ -36,6 +37,12 @@ export default function PartyJoin() {
   // a new clue clears the answer box
   const index = view?.index;
   useEffect(() => setText(""), [index]);
+  // …and so does the host receiving this team's answer (until then, keep the draft)
+  const lastAnswer = view?.lastAnswer;
+  useEffect(() => {
+    if (lastAnswer && lastAnswer.team === team) setText("");
+  }, [lastAnswer, team]);
+  const online = status === "open";
 
   if (!RELAY_URL) {
     return (
@@ -45,11 +52,12 @@ export default function PartyJoin() {
     );
   }
 
-  const send = roomRef.current?.send ?? (() => {});
+  const send = roomRef.current?.send ?? (() => false);
   const mine = view?.teams.find((t) => t.id === team) ?? null;
   const buzzed = view?.buzzes.some((b) => b.team === team) ?? false;
   const out = team !== null && (view?.tried.includes(team) ?? false);
-  const canBuzz = view && team !== null && (view.phase === "buzzing" || view.phase === "answering") && !buzzed && !out;
+  const canBuzz =
+    online && view && team !== null && (view.phase === "buzzing" || view.phase === "answering") && !buzzed && !out;
   const myTurn = view?.phase === "answering" && view.answering === team && team !== null;
 
   return (
@@ -115,9 +123,8 @@ export default function PartyJoin() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if (!text.trim()) return;
+                  if (!text.trim() || !online) return;
                   send({ t: "answer", clue: view.index, text });
-                  setText("");
                 }}
                 className="mb-4 flex gap-2"
               >
@@ -129,7 +136,7 @@ export default function PartyJoin() {
                   placeholder="Your turn — type the answer"
                   className="min-w-0 flex-1 rounded-xl border border-line bg-cream px-4 py-3 text-base text-ink"
                 />
-                <button type="submit" className="rounded-xl bg-sage px-4 py-3 font-semibold text-white">
+                <button type="submit" disabled={!online} className="rounded-xl bg-sage px-4 py-3 font-semibold text-white disabled:opacity-40">
                   Send
                 </button>
               </form>

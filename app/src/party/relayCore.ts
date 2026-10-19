@@ -53,12 +53,17 @@ export class RelayHub {
   }
 
   handle(conn: Conn, text: string): void {
-    let m: Record<string, unknown>;
+    let parsed: unknown;
     try {
-      m = JSON.parse(text);
+      parsed = JSON.parse(text);
     } catch {
       return reply(conn, { op: "error", code: "bad-json" });
     }
+    // valid JSON can still be null, a number or an array: only objects are messages
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return reply(conn, { op: "error", code: "bad-json" });
+    }
+    const m = parsed as Record<string, unknown>;
     const role = this.roles.get(conn);
     switch (m.op) {
       case "create": {
@@ -76,6 +81,7 @@ export class RelayHub {
         return reply(conn, { op: "created", room: room.code, token: room.token });
       }
       case "rehost": {
+        if (role) return reply(conn, { op: "error", code: "already-in-room" });
         const room = this.rooms.get(String(m.room ?? "").toUpperCase());
         if (!room || typeof m.token !== "string" || !sameToken(m.token, room.token)) {
           return reply(conn, { op: "error", code: "no-room" });
@@ -94,6 +100,11 @@ export class RelayHub {
         const peer = typeof m.peer === "string" ? m.peer.slice(0, 40) : "";
         if (!room) return reply(conn, { op: "error", code: "no-room" });
         if (!peer) return reply(conn, { op: "error", code: "bad-peer" });
+        // one membership per connection: a host can't also join, and a phone
+        // can't fill the room by joining under many ids
+        if (role && (role.kind === "host" || role.room !== room || role.peer !== peer)) {
+          return reply(conn, { op: "error", code: "already-in-room" });
+        }
         const old = room.peers.get(peer);
         if (!old && room.peers.size >= MAX_PEERS) return reply(conn, { op: "error", code: "room-full" });
         if (old && old !== conn) {

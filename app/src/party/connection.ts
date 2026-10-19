@@ -9,7 +9,7 @@ export type PlayerMsg =
 /** Host → phones. */
 export type HostMsg = { t: "view"; view: PartyView } | { t: "you"; team: number | null };
 
-export type RoomStatus = "connecting" | "open" | "offline" | "no-room" | "closed";
+export type RoomStatus = "connecting" | "open" | "offline" | "no-room" | "room-full" | "closed";
 
 /** The party relay on Cloudflare Workers (app/relay). */
 export const DEPLOYED_RELAY = "wss://quizzical-club-party-relay.apsftllc.workers.dev/ws";
@@ -57,8 +57,12 @@ class RelaySocket {
     this.connect();
   }
 
+  get isOpen(): boolean {
+    return this.ws?.readyState === WebSocket.OPEN;
+  }
+
   send(m: object): void {
-    if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(m));
+    if (this.isOpen) this.ws!.send(JSON.stringify(m));
   }
 
   stop(): void {
@@ -156,7 +160,8 @@ export function hostRoom(
 }
 
 export interface PlayerRoom {
-  send(msg: PlayerMsg): void;
+  /** false (and nothing sent) while the phone is offline */
+  send(msg: PlayerMsg): boolean;
   close(): void;
 }
 
@@ -196,11 +201,16 @@ export function joinRoom(
         });
       } else if (m.op === "closed") on.status("closed");
       else if (m.op === "error" && m.code === "no-room") on.status("no-room");
+      else if (m.op === "error" && m.code === "room-full") on.status("room-full");
     },
     on.status,
   );
   return {
-    send: (msg) => out(async () => sock.send({ op: "send", to: "host", data: await seal(await keyP, msg) })),
+    send: (msg) => {
+      if (!sock.isOpen) return false;
+      out(async () => sock.send({ op: "send", to: "host", data: await seal(await keyP, msg) }));
+      return true;
+    },
     close: () => sock.stop(),
   };
 }

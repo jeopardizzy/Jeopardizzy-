@@ -4,14 +4,12 @@ import { CATEGORY_TYPES, type TaskType } from "../data/categoryTypes";
 import { boardCluesForCategory } from "../lib/board";
 import { isCorrect } from "../lib/answerMatch";
 import { mulberry32, randomSeed, shuffle } from "../lib/random";
-import { loadRecords, loadSettings, saveRecords, saveSettings, type Records, type Settings } from "../lib/saves";
+import type { Records, Settings } from "../lib/saves";
+import { useSaves } from "./savesStore";
 import { sfx } from "../audio/sound";
 import { say, stopVoice } from "../audio/voice";
 
-const initialSettings: Settings =
-  typeof window === "undefined"
-    ? { version: 1, sound: true, reduceMotion: false, teamNames: [] }
-    : loadSettings();
+const initialSettings: Settings = useSaves.getState().settings;
 
 export type Level = "all" | "easy" | "medium" | "hard";
 export type WorkbookPhase = "pick" | "test" | "results";
@@ -118,18 +116,15 @@ export const useWorkbookStore = create<WorkbookState>((set, get) => ({
   index: 0,
   results: [],
   feedback: null,
-  records: typeof window === "undefined"
-    ? { version: 1, gamesPlayed: 0, workbookBests: {} }
-    : loadRecords(),
+  records: useSaves.getState().records,
   settings: initialSettings,
 
   pick: (type, level) => set({ type, level }),
 
   setQuestionCount: (n) => {
     if (!TEST_LENGTHS.includes(n as (typeof TEST_LENGTHS)[number])) return;
-    const settings = { ...get().settings, workbookCount: n };
-    saveSettings(settings);
-    set({ questionCount: n, settings });
+    useSaves.getState().patchSettings({ workbookCount: n });
+    set({ questionCount: n });
   },
 
   startDrill: (categoryNames) => {
@@ -180,14 +175,14 @@ export const useWorkbookStore = create<WorkbookState>((set, get) => ({
     // drill tests don't record bests (their pools vary)
     const correctCount = s.results.filter((r) => r.correct).length;
     const key = bestKey(s.type, s.level, s.questions.length);
-    let records = s.records;
     if (!s.drillCategories) {
-      const best = Math.max(s.records.workbookBests[key] ?? 0, correctCount);
-      records = { ...s.records, workbookBests: { ...s.records.workbookBests, [key]: best } };
-      saveRecords(records);
+      useSaves.getState().updateRecords((r) => ({
+        ...r,
+        workbookBests: { ...r.workbookBests, [key]: Math.max(r.workbookBests[key] ?? 0, correctCount) },
+      }));
     }
     sfx.fanfare();
-    set({ phase: "results", feedback: null, records });
+    set({ phase: "results", feedback: null });
   },
 
   quit: () => {
@@ -196,8 +191,9 @@ export const useWorkbookStore = create<WorkbookState>((set, get) => ({
   },
 
   enableSpokenAnswers: () => {
-    const settings = { ...loadSettings(), spokenAnswers: true };
-    saveSettings(settings);
-    set({ settings });
+    useSaves.getState().patchSettings({ spokenAnswers: true });
   },
 }));
+
+// mirror the shared saves (see savesStore.ts)
+useSaves.subscribe(({ settings, records }) => useWorkbookStore.setState({ settings, records }));

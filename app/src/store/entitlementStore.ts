@@ -67,14 +67,22 @@ export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 let adapter: PurchasesAdapter | null = null;
 
 export const useEntitlement = create<EntitlementState>((set, get) => {
+  // Every ownership check and purchase grant gets a number; a check's answer
+  // only applies if nothing newer happened while the store was thinking, so a
+  // slow "not owned" from before a purchase can't lock a paying player out.
+  let latest = 0;
+
   const grant = () => {
+    latest++;
     saveCached(true);
     set({ fullClub: true, sheetOpen: false, busy: "idle" });
   };
 
   const check = async (a: PurchasesAdapter) => {
+    const mine = ++latest;
     try {
       const owned = await withTimeout(a.owned(), STORE_TIMEOUT_MS);
+      if (mine !== latest) return; // superseded by a purchase or a newer check
       if (owned && !get().fullClub) return grant();
       saveCached(owned);
       set({ fullClub: owned });

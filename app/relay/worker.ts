@@ -63,7 +63,12 @@ export class PartyRelay {
     };
     server.addEventListener("message", (e) => {
       // envelope JSON around at most MAX_DATA of ciphertext
-      if (typeof e.data === "string" && e.data.length <= MAX_DATA + 512) this.hub.handle(conn, e.data);
+      if (typeof e.data !== "string" || e.data.length > MAX_DATA + 512) return;
+      try {
+        this.hub.handle(conn, e.data);
+      } catch {
+        conn.close();
+      }
     });
     server.addEventListener("close", () => this.hub.drop(conn));
     server.addEventListener("error", () => this.hub.drop(conn));

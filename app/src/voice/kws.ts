@@ -364,22 +364,39 @@ export function listen(
     finish({ labels, complete, ...(error ? { error, detail } : {}), ...(audio ? { audio } : {}) });
   };
 
-  /** Each start-up step gets a deadline, so "getting ready" can never hang. */
-  const step = <T,>(p: Promise<T>, ms: number, what: string): Promise<T> =>
+  /**
+   * Each start-up step gets a deadline, so "getting ready" can never hang.
+   * A result that arrives after its deadline (say, microphone permission
+   * granted after the session already gave up) is handed to `dispose`, so
+   * nothing it opened stays on.
+   */
+  const step = <T,>(p: Promise<T>, ms: number, what: string, dispose: (late: T) => void): Promise<T> =>
     new Promise<T>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(`${what} timed out`)), ms);
+      let late = false;
+      const t = setTimeout(() => {
+        late = true;
+        reject(new Error(`${what} timed out`));
+      }, ms);
       p.then(
-        (v) => (clearTimeout(t), resolve(v)),
-        (e) => (clearTimeout(t), reject(e)),
+        (v) => {
+          if (late) return dispose(v);
+          clearTimeout(t);
+          resolve(v);
+        },
+        (e) => {
+          clearTimeout(t);
+          reject(e);
+        },
       );
     });
+  const stopTracks = (m: MediaStream) => m.getTracks().forEach((t) => t.stop());
   const why = (e: unknown) => String((e as { message?: string })?.message ?? e).slice(0, 240);
   let watchdog: ReturnType<typeof setTimeout> | undefined;
 
   void (async () => {
     if (!ctx) return close(false, "engine", "no web audio");
     try {
-      const s = await step(openSpotter(targets, leniency), ENGINE_TIMEOUT_MS, "loading");
+      const s = await step(openSpotter(targets, leniency), ENGINE_TIMEOUT_MS, "loading", (late) => late.close());
       if (finished) return s.close();
       spotter = s;
     } catch (e) {
@@ -390,8 +407,9 @@ export function listen(
         navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } }),
         MIC_TIMEOUT_MS,
         "microphone",
+        stopTracks,
       );
-      if (finished) return m.getTracks().forEach((t) => t.stop());
+      if (finished) return stopTracks(m);
       media = m;
     } catch (e) {
       return close(false, "mic", why(e));
