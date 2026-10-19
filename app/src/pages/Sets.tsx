@@ -1,11 +1,10 @@
 import { motion } from "motion/react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTeamStore } from "../store/teamStore";
 import type { GameDef } from "../data/games";
 import { gameRoundCount, getRoundCategories, listPlayableGames } from "../lib/board";
 import { useMotionSafe } from "../lib/useMotionSafe";
 import { canPlayGame } from "../lib/access";
-import { RELAY_URL } from "../party/connection";
 import { useEntitlement } from "../store/entitlementStore";
 
 /** Exact clue count across all rounds (handles 4-wide boards and mixes). */
@@ -52,14 +51,6 @@ export default function Sets() {
           Every game is a list of boards — five categories, five clues each, values climbing with
           every round. Pick the flavor that fits the table.
         </p>
-        {RELAY_URL && (
-          <Link
-            to="/party"
-            className="mb-8 block rounded-2xl border border-dashed border-sage px-4 py-3 text-sm font-semibold text-sage-deep"
-          >
-            📱 Play on several phones (preview)
-          </Link>
-        )}
 
         {SERIES_ORDER.map((series) => {
           const games = listPlayableGames().filter((g) => g.series === series && !g.daily);

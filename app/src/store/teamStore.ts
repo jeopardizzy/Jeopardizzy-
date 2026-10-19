@@ -87,6 +87,7 @@ interface TeamGameState {
   setFinalEnabled: (v: boolean) => void;
   setWrongPenalty: (v: boolean) => void;
   setLightning: (v: boolean) => void;
+  setPhones: (v: boolean) => void;
   startGame: (names: string[]) => void;
   openTile: (tileId: string) => void;
   revealClue: () => void;
@@ -161,6 +162,10 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
 
   setLightning: (v) => {
     useSaves.getState().patchSettings({ lightning: v });
+  },
+
+  setPhones: (v) => {
+    useSaves.getState().patchSettings({ phones: v });
   },
 
   startGame: (names) => {

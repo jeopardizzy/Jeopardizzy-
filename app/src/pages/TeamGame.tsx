@@ -7,6 +7,7 @@ import HostClueModal from "../components/HostClueModal";
 import FinalWager from "../components/FinalWager";
 import WinnerScreen from "../components/WinnerScreen";
 import LightningRound from "../components/LightningRound";
+import PartyBar from "../components/PartyBar";
 import Scoreboard from "../components/Scoreboard";
 import Toggles from "../components/Toggles";
 import { useMotionSafe } from "../lib/useMotionSafe";
@@ -55,6 +56,7 @@ export default function TeamGame() {
           <Toggles />
         </div>
 
+        <PartyBar />
         <Scoreboard />
 
         <AnimatePresence mode="wait">
