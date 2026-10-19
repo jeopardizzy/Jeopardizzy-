@@ -16,7 +16,15 @@ wss.on("connection", (ws) => {
     send: (text) => ws.readyState === ws.OPEN && ws.send(text),
     close: () => ws.close(),
   };
-  ws.on("message", (data) => hub.handle(conn, data.toString()));
+  ws.on("message", (data) => {
+    try {
+      hub.handle(conn, data.toString());
+    } catch (e) {
+      // never let one bad message take down every game on this relay
+      console.error("relay: message handling failed:", e instanceof Error ? e.message : e);
+      ws.close(1011);
+    }
+  });
   ws.on("close", () => hub.drop(conn));
   ws.on("error", () => hub.drop(conn));
 });

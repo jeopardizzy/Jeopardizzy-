@@ -14,14 +14,8 @@ import {
 import { awardPoints, missPenalty } from "../lib/scoring";
 import { randomSeed, dailySeed } from "../lib/random";
 import type { GameDef } from "../data/games";
-import {
-  loadRecords,
-  loadSettings,
-  saveRecords,
-  saveSettings,
-  type Records,
-  type Settings,
-} from "../lib/saves";
+import type { Records, Settings } from "../lib/saves";
+import { useSaves } from "./savesStore";
 import { setSoundMuted, sfx } from "../audio/sound";
 import { say, setVoiceEnabled, stopVoice } from "../audio/voice";
 import {
@@ -119,10 +113,7 @@ interface TeamGameState {
   repeatClue: () => void;
 }
 
-const initialSettings: Settings =
-  typeof window === "undefined"
-    ? { version: 1, sound: true, reduceMotion: false, teamNames: ["Team Sage", "Team Butter"] }
-    : loadSettings();
+const initialSettings: Settings = useSaves.getState().settings;
 setSoundMuted(!initialSettings.sound);
 setVoiceEnabled(initialSettings.voice !== false);
 
@@ -146,9 +137,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
   earlyFinished: false,
   outcomes: [],
   settings: initialSettings,
-  records: typeof window === "undefined"
-    ? { version: 1, gamesPlayed: 0, workbookBests: {} }
-    : loadRecords(),
+  records: useSaves.getState().records,
 
   selectSet: (setId) => {
     const found = listPlayableGames().find((s) => s.id === setId);
@@ -162,22 +151,16 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
   backToSets: () => set({ phase: "sets", set: null, board: null, teams: [] }),
 
   setFinalEnabled: (v) => {
-    const s = get();
-    const settings: Settings = { ...s.settings, finalWager: v };
-    saveSettings(settings);
-    set({ finalEnabled: v, settings });
+    useSaves.getState().patchSettings({ finalWager: v });
+    set({ finalEnabled: v });
   },
 
   setWrongPenalty: (v) => {
-    const settings: Settings = { ...get().settings, wrongPenalty: v };
-    saveSettings(settings);
-    set({ settings });
+    useSaves.getState().patchSettings({ wrongPenalty: v });
   },
 
   setLightning: (v) => {
-    const settings: Settings = { ...get().settings, lightning: v };
-    saveSettings(settings);
-    set({ settings });
+    useSaves.getState().patchSettings({ lightning: v });
   },
 
   startGame: (names) => {
@@ -193,7 +176,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     const seed = randomSeed();
     const game = materializeGame(s.set, seed);
     const board = game.daily ? buildDailyBoard(dailySeed()) : boardForRound(game, 0, seed);
-    saveSettings({ ...s.settings, teamNames: teams.map((t) => t.name) });
+    useSaves.getState().patchSettings({ teamNames: teams.map((t) => t.name) });
     sfx.chime();
     say({ line: game.daily ? "dailyBoard" : "newGame" });
     set({
@@ -359,9 +342,7 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
   finishGame: () => {
     const s = get();
     if (s.phase === "final-clue" && s.finalMarks.some((m) => m === null)) return;
-    const records = finalizeRecords(s);
-    saveRecords(records);
-    set({ records });
+    recordGame(s.outcomes);
     sfx.fanfare();
     say({ line: winnerLine(s.teams) });
     set({ phase: "winner" });
@@ -385,11 +366,10 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
       });
       return;
     }
-    const records = finalizeRecords(s);
-    saveRecords(records);
+    recordGame(s.outcomes);
     sfx.fanfare();
     say({ line: winnerLine(s.teams) });
-    set({ phase: "winner", earlyFinished: true, currentTileId: null, records });
+    set({ phase: "winner", earlyFinished: true, currentTileId: null });
   },
 
   playAgain: () => {
@@ -397,27 +377,24 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
   },
 
   toggleSound: () => {
-    const next: Settings = { ...get().settings, sound: !get().settings.sound };
+    const next = useSaves.getState().patchSettings({ sound: !useSaves.getState().settings.sound });
     setSoundMuted(!next.sound);
-    saveSettings(next);
-    set({ settings: next });
     if (next.sound) sfx.tick();
   },
 
   toggleMotion: () => {
-    const next: Settings = { ...get().settings, reduceMotion: !get().settings.reduceMotion };
-    saveSettings(next);
-    set({ settings: next });
+    useSaves.getState().patchSettings({ reduceMotion: !useSaves.getState().settings.reduceMotion });
   },
 
   toggleVoice: () => {
-    const on = get().settings.voice === false;
-    const next: Settings = { ...get().settings, voice: on };
+    const on = useSaves.getState().settings.voice === false;
+    useSaves.getState().patchSettings({ voice: on });
     setVoiceEnabled(on);
-    saveSettings(next);
-    set({ settings: next });
   },
 }));
+
+// mirror the shared saves, so screens can keep reading s.settings / s.records here
+useSaves.subscribe(({ settings, records }) => useTeamStore.setState({ settings, records }));
 
 /** "And we have a winner!" unless the top score is shared. */
 function winnerLine(teams: Team[]): "winner" | "tie" {
@@ -428,14 +405,14 @@ function winnerLine(teams: Team[]): "winner" | "tie" {
 type Set = (partial: Partial<TeamGameState>) => void;
 type Get = () => TeamGameState;
 
-/** Fold the finished game's per-category stats into the all-time record. */
-function finalizeRecords(s: TeamGameState): Records {
-  const gameStats = aggregateCategoryStats(s.outcomes);
-  return {
-    ...s.records,
-    gamesPlayed: s.records.gamesPlayed + 1,
-    categoryStats: mergeCategoryStats(s.records.categoryStats ?? {}, gameStats),
-  };
+/** Fold the finished game's per-category stats into the all-time record (the current saved one). */
+function recordGame(outcomes: TileOutcome[]): Records {
+  const gameStats = aggregateCategoryStats(outcomes);
+  return useSaves.getState().updateRecords((r) => ({
+    ...r,
+    gamesPlayed: r.gamesPlayed + 1,
+    categoryStats: mergeCategoryStats(r.categoryStats ?? {}, gameStats),
+  }));
 }
 
 /** Mark the tile played and either return to the board or advance the game. */
@@ -500,10 +477,9 @@ function afterBoards(
     });
   } else {
     // no final round in this game — straight to the podium
-    const records = finalizeRecords(s);
-    saveRecords(records);
+    recordGame(s.outcomes);
     sfx.fanfare();
     say({ line: winnerLine(teams) });
-    set({ teams, activeTeam, playedTileIds, records, lightning: null, phase: "winner", currentTileId: null });
+    set({ teams, activeTeam, playedTileIds, lightning: null, phase: "winner", currentTileId: null });
   }
 }

@@ -49,6 +49,18 @@ describe("Full Club entitlement", () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  it("a slow 'not owned' answer from before a purchase doesn't lock the buyer out", async () => {
+    let answerOld: (v: boolean) => void = () => {};
+    const a = fake({ owned: () => new Promise<boolean>((r) => (answerOld = r)) });
+    const launch = useEntitlement.getState().init(a);
+    a.fire(); // the purchase lands while the launch check is still waiting
+    expect(useEntitlement.getState().fullClub).toBe(true);
+    answerOld(false);
+    await launch;
+    expect(useEntitlement.getState().fullClub).toBe(true);
+    expect(cached()).toBe(true);
+  });
+
   it("launch: store says owned → unlocked, cached, price loaded", async () => {
     await useEntitlement.getState().init(fake({ owned: async () => true }));
     expect(useEntitlement.getState().fullClub).toBe(true);
