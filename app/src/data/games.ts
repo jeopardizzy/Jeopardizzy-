@@ -234,6 +234,17 @@ export const GAMES: GameDef[] = [
     series: "Idiom Arenas",
   },
   {
+    id: "autumn-wordplay",
+    name: "Autumn Wordplay",
+    emoji: "🍂",
+    blurb: "Harvest homophones, autumn rhymes, farmyard compounds and leafy science.",
+    level: "Easy",
+    bookRounds: [],
+    boardRounds: ["autumn-1", "autumn-2"],
+    final: true,
+    series: "Seasonal Specials",
+  },
+  {
     id: "winter-wordplay",
     name: "Winter Wordplay",
     emoji: "❄️",
