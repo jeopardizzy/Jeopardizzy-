@@ -7,7 +7,7 @@ import { ARENA3_BOARDS } from "../data/arena3Boards";
 import { ARENA4_BOARDS } from "../data/arena4Boards";
 import { SEASONAL_BOARDS } from "../data/seasonalBoards";
 import type { BoardGame } from "../data/boardGames";
-import { GAMES, type GameDef } from "../data/games";
+import { GAMES, type CustomPick, type GameDef } from "../data/games";
 
 const BASE_VALUES = [100, 200, 300, 400, 500];
 
@@ -85,7 +85,7 @@ export interface RoundCategory {
 
 /** Total number of boards in a game (mix games always play 3, daily plays 1). */
 export function gameRoundCount(game: GameDef): number {
-  if (game.daily) return 1;
+  if (game.daily || game.custom) return 1;
   return game.mix ? game.boardRounds.length || MIX_ROUNDS : game.bookRounds.length + game.boardRounds.length;
 }
 
@@ -137,6 +137,14 @@ export function buildDailyBoard(seed: number): Board {
 
 /** Resolve a round's categories (book dataset or a standalone board). */
 export function getRoundCategories(game: GameDef, roundIndex: number): RoundCategory[] {
+  if (game.custom) {
+    return game.custom.map((pick, i) => {
+      const cat = builderCategories().find((c) => c.name === pick.name);
+      if (!cat) throw new Error(`Custom board references unknown category: ${pick.name}`);
+      const clues = pick.clues?.length === 5 ? pick.clues.map((n) => cat.clues[n]).filter(Boolean) : cat.clues;
+      return { id: `custom-${i}`, name: cat.name, clues };
+    });
+  }
   if (roundIndex < game.bookRounds.length) {
     return game.bookRounds[roundIndex].map((name) => {
       const cat = quizData.categories.find((c) => c.name === name);
@@ -250,4 +258,44 @@ export function pickLightningClues(game: GameDef, seed: number, count = LIGHTNIN
 /** Each lightning clue is worth the cheapest tile of the last board. */
 export function lightningValue(game: GameDef): number {
   return BASE_VALUES[0] * gameRoundCount(game);
+}
+
+let builderCache: RoundCategory[] | null = null;
+
+/**
+ * Every category a host can put on a custom board: the book dataset and all
+ * standalone boards, merged by name (clues de-duplicated, easy → hard order
+ * kept), with at least five clues. Alphabetical.
+ */
+export function builderCategories(): RoundCategory[] {
+  if (builderCache) return builderCache;
+  const byName = new Map<string, RoundCategory>();
+  const add = (name: string, clues: { clue: string; answer: string; note?: string }[]) => {
+    const cat = byName.get(name) ?? { id: `b-${byName.size}`, name, clues: [] };
+    for (const c of clues) if (!cat.clues.some((x) => x.clue === c.clue)) cat.clues.push(c);
+    byName.set(name, cat);
+  };
+  for (const c of quizData.categories) add(c.name, c.clues);
+  for (const g of ALL_BOARDS.values()) for (const c of g.categories) add(c.name, c.clues);
+  builderCache = [...byName.values()].filter((c) => c.clues.length >= 5).sort((a, b) => a.name.localeCompare(b.name));
+  return builderCache;
+}
+
+/**
+ * A playable game for a custom board. Categories without five chosen clues
+ * get random ones when the board is built (seeded per game, easy → hard).
+ */
+export function customGame(picks: CustomPick[]): GameDef {
+  return {
+    id: "custom",
+    name: "Your board",
+    emoji: "🛠️",
+    blurb: picks.map((p) => p.name).join(" · "),
+    level: "Medium",
+    bookRounds: [],
+    boardRounds: [],
+    final: false,
+    series: "Book Club",
+    custom: picks,
+  };
 }

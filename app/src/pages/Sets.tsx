@@ -52,6 +52,22 @@ export default function Sets() {
           every round. Pick the flavor that fits the table.
         </p>
 
+        <button
+          onClick={() => navigate("/build")}
+          className="mb-8 flex w-full items-center gap-4 rounded-3xl border-2 border-dashed border-sage bg-surface p-5 text-left shadow-card transition hover:-translate-y-0.5 hover:shadow-pop"
+        >
+          <span className="text-3xl" aria-hidden>
+            🛠️
+          </span>
+          <span className="flex-1">
+            <span className="font-display block text-xl text-ink">Build your own board</span>
+            <span className="block text-sm text-mute">
+              Choose the categories and even the exact questions — or roll them at random.
+            </span>
+          </span>
+          {!fullClub && <span className="rounded-full bg-ink/5 px-3 py-1 text-xs font-bold text-mute">🔒 Full Club</span>}
+        </button>
+
         {SERIES_ORDER.map((series) => {
           const games = listPlayableGames().filter((g) => g.series === series && !g.daily);
           if (games.length === 0) return null;

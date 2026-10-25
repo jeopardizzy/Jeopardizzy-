@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useTeamStore } from "../store/teamStore";
 import { useMotionSafe } from "../lib/useMotionSafe";
 import { LIGHTNING_SECONDS } from "../lib/board";
+import { displayClue } from "../lib/displayClue";
 
 /**
  * Lightning round: quick clues against the clock. Teams shout the answer;
@@ -42,7 +43,7 @@ function LightningClueCard() {
     <motion.div
       initial={reduce ? false : { opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mx-auto max-w-xl rounded-3xl border border-line bg-surface p-8 shadow-pop lg:mx-0 lg:ml-10 lg:max-w-[46vw]"
+      className="mx-auto max-w-xl rounded-3xl border border-line bg-surface p-8 shadow-pop lg:max-w-[46vw]"
     >
       <div className="mb-4 flex items-center justify-between text-xs font-bold uppercase tracking-[0.25em]">
         <span className="text-coral">
@@ -50,8 +51,8 @@ function LightningClueCard() {
         </span>
         <span className="text-butter-deep">{value} pts</span>
       </div>
-      <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-sage">{clue.categoryName}</p>
-      <p className="mb-6 text-xl font-semibold leading-relaxed text-ink sm:text-2xl">{clue.clue}</p>
+      <p className="mb-1 text-center text-xs font-bold uppercase tracking-[0.2em] text-sage">{clue.categoryName}</p>
+      <p className="mb-6 text-center text-xl font-semibold leading-relaxed text-ink sm:text-2xl">{displayClue(clue.clue)}</p>
 
       {!revealed ? (
         <>
@@ -82,7 +83,7 @@ function LightningClueCard() {
               onClick={() => reveal()}
               className="rounded-full border border-line px-5 py-2.5 font-semibold text-mute transition hover:bg-cream hover:text-ink"
             >
-              Nobody — show it
+              Reveal answer
             </button>
           </div>
         </>

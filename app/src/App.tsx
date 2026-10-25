@@ -14,6 +14,7 @@ import { loadVoice, unlockVoice } from "./audio/voice";
 import { platformAdapter } from "./lib/purchases";
 import { useEntitlement } from "./store/entitlementStore";
 import PartyJoin from "./pages/PartyJoin";
+import BoardBuilder from "./pages/BoardBuilder";
 import AppLinks from "./party/AppLinks";
 
 /** Shell with the permanent sidebar — hidden during an active team game. */
@@ -64,6 +65,7 @@ export default function App() {
           <Route path="/workbook" element={<Workbook />} />
           <Route path="/guides" element={<Guides />} />
           <Route path="/join/:code/:key" element={<PartyJoin />} />
+          <Route path="/build" element={<BoardBuilder />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppShell>

@@ -7,6 +7,7 @@ import { sfx } from "../audio/sound";
 import { isCorrect } from "../lib/answerMatch";
 import SpokenAnswer from "./SpokenAnswer";
 import { nextAnswering } from "../lib/turns";
+import { displayClue } from "../lib/displayClue";
 import { usePartyHost } from "../party/hostSession";
 import PhoneAnswers from "./PhoneAnswers";
 
@@ -167,7 +168,7 @@ export default function HostClueModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: reduce ? 0 : 0.18 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm lg:justify-start lg:pl-10"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label={`${tile.categoryName} for ${tile.value} points`}
@@ -184,8 +185,8 @@ export default function HostClueModal() {
               <span className="text-butter-deep">{tile.value} pts</span>
             </div>
 
-            <p className="mb-8 text-xl font-semibold leading-relaxed text-ink sm:text-2xl">
-              {tile.clue}
+            <p className="mb-8 text-center text-xl font-semibold leading-relaxed text-ink sm:text-2xl">
+              {displayClue(tile.clue)}
             </p>
 
             {!revealed ? (

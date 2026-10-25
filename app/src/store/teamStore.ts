@@ -83,6 +83,8 @@ interface TeamGameState {
   records: Records;
 
   selectSet: (setId: string) => void;
+  /** a board built on the "Build your own board" screen */
+  selectCustom: (game: GameDef) => void;
   backToSets: () => void;
   setFinalEnabled: (v: boolean) => void;
   setWrongPenalty: (v: boolean) => void;
@@ -147,6 +149,11 @@ export const useTeamStore = create<TeamGameState>((set, get) => ({
     // toggle starts at the game's own default, unless the player overrode it before
     const override = get().settings.finalWager;
     set({ set: found, phase: "setup", finalEnabled: override ?? found.final });
+  },
+
+  selectCustom: (game) => {
+    sfx.tick();
+    set({ set: game, phase: "setup", finalEnabled: get().settings.finalWager ?? false });
   },
 
   backToSets: () => set({ phase: "sets", set: null, board: null, teams: [] }),

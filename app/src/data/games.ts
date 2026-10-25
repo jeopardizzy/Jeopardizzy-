@@ -5,6 +5,12 @@
  * Book rounds reference the curated dataset by category name;
  * UoE rounds embed the idiom boards from the Use of English series.
  */
+/** One column of a custom board: a category, and (optionally) its five clues by index. */
+export interface CustomPick {
+  name: string;
+  clues?: number[];
+}
+
 export interface GameDef {
   id: string;
   name: string;
@@ -23,6 +29,8 @@ export interface GameDef {
   mix?: boolean;
   /** daily game: one board sampled across all pools, seeded by the UTC date */
   daily?: boolean;
+  /** a board the host built: its categories, each with exactly five chosen clues or random ones */
+  custom?: CustomPick[];
   /** set on auto-generated parts: parent game id, 0-based part index, total parts */
   partOf?: string;
   partIndex?: number;

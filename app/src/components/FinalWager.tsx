@@ -4,6 +4,7 @@ import { useMotionSafe } from "../lib/useMotionSafe";
 import { say } from "../audio/voice";
 import { usePartyHost } from "../party/hostSession";
 import { judge } from "../party/round";
+import { displayClue } from "../lib/displayClue";
 
 /** Final Quizzical for teams: per-team wagers, reveal, per-team grading. */
 export default function FinalWager() {
@@ -29,7 +30,7 @@ export default function FinalWager() {
       <motion.div
         initial={reduce ? false : { opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto max-w-xl rounded-3xl border border-line bg-surface p-8 shadow-pop lg:mx-0 lg:ml-10 lg:max-w-[46vw]"
+        className="mx-auto max-w-xl rounded-3xl border border-line bg-surface p-8 shadow-pop lg:max-w-[46vw]"
       >
         <p className="mb-1 text-center text-xs font-bold uppercase tracking-[0.3em] text-coral">
           Final Quizzical
@@ -83,14 +84,14 @@ export default function FinalWager() {
     <motion.div
       initial={reduce ? false : { opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="mx-auto max-w-2xl rounded-3xl border border-line bg-surface p-8 shadow-pop sm:p-10 lg:mx-0 lg:ml-10 lg:max-w-[46vw]"
+      className="mx-auto max-w-2xl rounded-3xl border border-line bg-surface p-8 shadow-pop sm:p-10 lg:max-w-[46vw]"
     >
       <div className="mb-4 flex items-center justify-between text-xs font-bold uppercase tracking-[0.25em]">
         <span className="text-sage">{finalClue.categoryName}</span>
         <span className="text-coral">final</span>
       </div>
-      <p className="mb-8 text-xl font-semibold leading-relaxed text-ink sm:text-2xl">
-        {finalClue.clue}
+      <p className="mb-8 text-center text-xl font-semibold leading-relaxed text-ink sm:text-2xl">
+        {displayClue(finalClue.clue)}
       </p>
 
       {!revealed ? (

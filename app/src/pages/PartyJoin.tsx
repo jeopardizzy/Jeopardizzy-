@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { joinRoom, RELAY_URL, type PhoneView, type PlayerMsg, type PlayerRoom, type RoomStatus } from "../party/connection";
 import { buzzOrderText } from "../party/round";
 import PhoneSpeak from "../components/PhoneSpeak";
+import { displayClue } from "../lib/displayClue";
 
 const STATUS_TEXT: Record<RoomStatus, string> = {
   connecting: "Connecting…",
@@ -148,7 +149,7 @@ function Stage({ view, team, online, send, name }: StageProps) {
         {clue.category}
         {clue.value ? ` · ${clue.value} pts` : ""}
       </p>
-      <p className="mb-5 text-lg font-semibold leading-relaxed text-ink">{clue.text}</p>
+      <p className="mb-5 text-lg font-semibold leading-relaxed text-ink">{displayClue(clue.text)}</p>
     </>
   );
 

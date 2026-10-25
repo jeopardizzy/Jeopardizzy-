@@ -57,12 +57,12 @@ export const SEASONAL_BOARDS: BoardGame[] = [
       {
         name: "Snowy Compounds",
         clues: [
-          { clue: "Add a word to SNOW: a white winter figure with a carrot nose.", answer: "Snowman" },
-          { clue: "Add a word to SNOW: a frozen sphere you throw at your friends.", answer: "Snowball" },
-          { clue: "Add a word to FIRE: the cozy spot in a room where logs crackle.", answer: "Fireplace" },
-          { clue: "Add a word to SNOW: a winter sport where you ride down a hill on one wide board.", answer: "Snowboard" },
+          { clue: "A white winter figure with a carrot nose.", answer: "Snowman" },
+          { clue: "A frozen sphere you throw at your friends.", answer: "Snowball" },
+          { clue: "The cozy spot in a room where logs crackle.", answer: "Fireplace" },
+          { clue: "A winter sport where you ride down a hill on one wide board.", answer: "Snowboard" },
           {
-            clue: "Add a word to FROST: the harm cold can do to fingers and toes.",
+            clue: "The harm cold can do to fingers and toes.",
             answer: "Frostbite",
             note: "Keep mittens and thick socks on when it's very cold!",
           },
@@ -132,11 +132,11 @@ export const SEASONAL_BOARDS: BoardGame[] = [
       {
         name: "Icy Compounds",
         clues: [
-          { clue: "Add a word to ICE: a huge chunk of ice floating in the sea.", answer: "Iceberg" },
-          { clue: "Add a word to EAR: fluffy warmers that cover your ears.", answer: "Earmuffs" },
-          { clue: "Add a word to SNOW: a deep heap of snow piled up by the wind.", answer: "Snowdrift" },
-          { clue: "Add a word to HAIL: a single icy pellet that falls in a storm.", answer: "Hailstone" },
-          { clue: "Add a word to WIND: how much colder the wind makes the air feel.", answer: "Windchill" },
+          { clue: "A huge chunk of ice floating in the sea.", answer: "Iceberg" },
+          { clue: "Fluffy warmers that cover your ears.", answer: "Earmuffs" },
+          { clue: "A deep heap of snow piled up by the wind.", answer: "Snowdrift" },
+          { clue: "A single icy pellet that falls in a storm.", answer: "Hailstone" },
+          { clue: "How much colder the wind makes the air feel.", answer: "Windchill" },
         ],
       },
       {
@@ -240,23 +240,23 @@ export const SEASONAL_BOARDS: BoardGame[] = [
           name: "Farmyard Compounds",
           clues: [
             {
-              clue: "Add a word to SCARE: a straw figure that keeps birds away from a field.",
+              clue: "A straw figure that keeps birds away from a field.",
               answer: "Scarecrow"
             },
             {
-              clue: "Add a word in front of CORN: a snack that pops in a hot pan.",
+              clue: "A snack that pops in a hot pan.",
               answer: "Popcorn"
             },
             {
-              clue: "Add a word to HAY: a tall pile of dried grass in a field.",
+              clue: "A tall pile of dried grass in a field.",
               answer: "Haystack"
             },
             {
-              clue: "Add a word to SUN: a tall yellow flower with seeds that birds love.",
+              clue: "A tall yellow flower with seeds that birds love.",
               answer: "Sunflower"
             },
             {
-              clue: "Add a word to WHEEL: a one-wheeled cart a gardener pushes.",
+              clue: "A one-wheeled cart a gardener pushes.",
               answer: "Wheelbarrow"
             }
           ]
@@ -372,23 +372,23 @@ export const SEASONAL_BOARDS: BoardGame[] = [
           name: "Harvest Compounds",
           clues: [
             {
-              clue: "Add a word to RAIN: a waterproof jacket.",
+              clue: "A waterproof jacket.",
               answer: "Raincoat"
             },
             {
-              clue: "Add a word to PINE: the woody seed holder that falls from a pine tree.",
+              clue: "The woody seed holder that falls from a pine tree.",
               answer: "Pinecone"
             },
             {
-              clue: "Add a word to CORN: a golden bread made from maize.",
+              clue: "A golden bread made from maize.",
               answer: "Cornbread"
             },
             {
-              clue: "Add a word to BARN: the open area around farm buildings where animals roam.",
+              clue: "The open area around farm buildings where animals roam.",
               answer: "Barnyard"
             },
             {
-              clue: "Add a word to WIND: a building whose sails turn to grind grain.",
+              clue: "A building whose sails turn to grind grain.",
               answer: "Windmill"
             }
           ]

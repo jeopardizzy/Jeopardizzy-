@@ -83,7 +83,7 @@ test.describe("Trivia Night game modes", () => {
 
     // nobody knows: just the answer
     await expect(page.getByText(/Lightning · 2 of 8/)).toBeVisible();
-    await page.getByRole("button", { name: "Nobody — show it" }).click();
+    await page.getByRole("button", { name: "Reveal answer" }).click();
     await expect(page.getByText(/The answer is/)).toBeVisible();
     await expect(page.getByText(/^\+300/)).toHaveCount(0);
     await page.getByRole("button", { name: "Next clue" }).click();
