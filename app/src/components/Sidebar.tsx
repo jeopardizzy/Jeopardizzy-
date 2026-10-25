@@ -2,11 +2,13 @@ import { NavLink, useNavigate } from "react-router-dom";
 
 /**
  * Permanent app navigation (per the home-screen redesign):
- * logo on top, then Guides / Workbook / Trivia Night. One nav element:
+ * logo on top, then Today / Guides / Workbook / Trivia Night. One nav element:
  * bottom bar on mobile, left sidebar on desktop. Hidden during an active
  * team game (the shell drops it).
  */
 const ITEMS = [
+  // the Daily Board (home): on phones the logo is hidden, so this is the way back
+  { to: "/", emoji: "☀️", label: "Today", end: true },
   { to: "/guides", emoji: "📖", label: "Guides" },
   { to: "/workbook", emoji: "✏️", label: "Workbook" },
   { to: "/sets", emoji: "🎯", label: "Trivia Night" },
@@ -42,7 +44,7 @@ export default function Sidebar() {
 
       <div className="contents lg:flex lg:flex-col lg:gap-1">
         {ITEMS.map((item) => (
-          <NavLink key={item.to} to={item.to} className={({ isActive }) => linkCls(isActive)}>
+          <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => linkCls(isActive)}>
             <span aria-hidden className="text-xl lg:text-base">
               {item.emoji}
             </span>

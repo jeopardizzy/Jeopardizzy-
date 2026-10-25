@@ -60,9 +60,19 @@ function pauseAtGaps(s: string): string {
  */
 export function spokenClue(text: string): string {
   if (/_/.test(text) && /·/.test(text)) return "Fill in the missing letters.";
-  const m = LETTER_PATTERN.exec(text);
-  if (m && /[A-Za-z]_|_[A-Za-z]|^[A-Za-z]{1,3}\s+_/.test(m[0])) text = text.slice(m[0].length);
+  const lp = letterPattern(text);
+  if (lp) text = lp.definition;
   return pauseAtGaps(speakCaps(text));
+}
+
+/**
+ * A letter puzzle split into its pattern and definition
+ * ("___ ___ ___ ___ny Thin." → "___ ___ ___ ___ny" + "Thin."), or null.
+ */
+export function letterPattern(text: string): { pattern: string; definition: string } | null {
+  const m = LETTER_PATTERN.exec(text);
+  if (!m || !/[A-Za-z]_|_[A-Za-z]|^[A-Za-z]{1,3}\s+_/.test(m[0])) return null;
+  return { pattern: m[0].trim(), definition: text.slice(m[0].length) };
 }
 
 /** What the quizmaster says for an answer: "POLE / POLL" → "pole, or poll". */

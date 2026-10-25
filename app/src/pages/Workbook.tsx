@@ -20,6 +20,7 @@ import { getVerdict } from "../lib/verdict";
 import Toggles from "../components/Toggles";
 import SpokenAnswer from "../components/SpokenAnswer";
 import { canUseLevel, FREE_WORKBOOK_LEVEL } from "../lib/access";
+import { displayClue } from "../lib/displayClue";
 import { useEntitlement } from "../store/entitlementStore";
 
 const LEVELS: { id: Level; label: string }[] = [
@@ -305,7 +306,7 @@ function TestRunner() {
         <p className="mb-4 text-xs font-bold uppercase tracking-[0.25em] text-sage">
           {q.categoryName}
         </p>
-        <p className="mb-8 text-xl font-semibold leading-relaxed text-ink sm:text-2xl">{q.clue}</p>
+        <p className="mb-8 text-xl font-semibold leading-relaxed text-ink sm:text-2xl">{displayClue(q.clue)}</p>
 
         {!feedback ? (
           <form
@@ -446,7 +447,7 @@ function TestResults() {
               r.correct ? "border-sage/30 bg-sage-soft" : "border-coral/30 bg-surface"
             }`}
           >
-            <p className="text-ink">{r.question.clue}</p>
+            <p className="text-ink">{displayClue(r.question.clue)}</p>
             <p className="mt-1 text-mute">
               {r.correct ? "✓" : `✗ you said “${r.given}” ·`} answer:{" "}
               <strong className="text-butter-deep">{r.question.answer}</strong>
