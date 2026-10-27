@@ -8,6 +8,7 @@ import type { CustomPick } from "../data/games";
 
 const MAX = 5;
 const MIN = 3;
+const LEVELS = ["100 · easiest", "200", "300", "400", "500 · hardest"];
 
 /**
  * Build your own board: pick the categories (or roll them at random), and for
@@ -39,13 +40,19 @@ export default function BoardBuilder() {
 
   const start = () => {
     if (!fullClub) return openSheet();
-    // fill partly chosen categories up to five clues at random, keep easy → hard order
+    // fill partly chosen categories up to five clues at random: missing difficulty levels first, easy → hard order
     const ready = picks.map((p) => {
       if (!p.clues || p.clues.length === 0 || p.clues.length === 5) return p;
       const cat = all.find((c) => c.name === p.name)!;
-      const rest = cat.clues.map((_, i) => i).filter((i) => !p.clues!.includes(i));
       const chosen = [...p.clues];
-      while (chosen.length < 5 && rest.length) chosen.push(rest.splice(Math.floor(Math.random() * rest.length), 1)[0]);
+      const take = (ok: (i: number) => boolean) => {
+        const free = cat.clues.map((_, i) => i).filter((i) => !chosen.includes(i) && ok(i));
+        if (free.length) chosen.push(free[Math.floor(Math.random() * free.length)]);
+      };
+      for (let lv = 0; lv < 5 && chosen.length < 5; lv++) {
+        if (!chosen.some((i) => cat.clues[i].level === lv)) take((i) => cat.clues[i].level === lv);
+      }
+      while (chosen.length < 5) take(() => true);
       return { name: p.name, clues: chosen.sort((a, b) => a - b) };
     });
     selectCustom(customGame(ready));
@@ -63,8 +70,8 @@ export default function BoardBuilder() {
         </button>
         <h1 className="font-display mb-1 text-3xl text-ink">Build your own board</h1>
         <p className="mb-6 text-mute">
-          Pick {MIN}–{MAX} categories, or roll them at random. Each category gets five clues, cheapest first: random ones,
-          or the exact questions you choose.
+          Pick {MIN}–{MAX} categories, or roll them at random. Each category gets five clues, from easiest (100) to
+          hardest (500): random ones, or the exact questions you choose.
           {!fullClub && " Part of Full Club."}
         </p>
 
@@ -114,8 +121,12 @@ export default function BoardBuilder() {
                       {cat.clues.map((c, n) => {
                         const on = p.clues?.includes(n) ?? false;
                         const full = (p.clues?.length ?? 0) >= 5;
+                        const level = c.level ?? 0;
                         return (
                           <li key={n}>
+                            {(n === 0 || cat.clues[n - 1].level !== c.level) && (
+                              <p className="mt-2 px-2 text-xs font-bold uppercase tracking-[0.15em] text-mute">{LEVELS[level]}</p>
+                            )}
                             <label className={`flex gap-2 rounded-lg px-2 py-1.5 text-sm ${on ? "bg-sage-soft" : ""}`}>
                               <input
                                 type="checkbox"

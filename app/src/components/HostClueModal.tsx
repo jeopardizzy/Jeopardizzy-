@@ -7,6 +7,7 @@ import { sfx } from "../audio/sound";
 import { isCorrect } from "../lib/answerMatch";
 import SpokenAnswer from "./SpokenAnswer";
 import { nextAnswering } from "../lib/turns";
+import HowToPlay from "./HowToPlay";
 import { displayClue } from "../lib/displayClue";
 import { usePartyHost } from "../party/hostSession";
 import PhoneAnswers from "./PhoneAnswers";
@@ -185,9 +186,10 @@ export default function HostClueModal() {
               <span className="text-butter-deep">{tile.value} pts</span>
             </div>
 
-            <p className="mb-8 text-center text-xl font-semibold leading-relaxed text-ink sm:text-2xl">
+            <p className="mb-4 text-center text-xl font-semibold leading-relaxed text-ink sm:text-2xl">
               {displayClue(tile.clue)}
             </p>
+            <HowToPlay key={tile.id} category={tile.categoryName} clue={tile.clue} />
 
             {!revealed ? (
               <div className="text-center">

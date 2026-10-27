@@ -8,6 +8,7 @@ import { ARENA4_BOARDS } from "../data/arena4Boards";
 import { SEASONAL_BOARDS } from "../data/seasonalBoards";
 import type { BoardGame } from "../data/boardGames";
 import { GAMES, type CustomPick, type GameDef } from "../data/games";
+import { taskName } from "../data/taskGuides";
 
 const BASE_VALUES = [100, 200, 300, 400, 500];
 
@@ -80,7 +81,8 @@ export function listPlayableGames(): GameDef[] {
 export interface RoundCategory {
   id: string;
   name: string;
-  clues: { clue: string; answer: string; note?: string }[];
+  /** level: 0 (easiest) … 4 (hardest), set on builder tasks that merge several sets */
+  clues: { clue: string; answer: string; note?: string; level?: number }[];
 }
 
 /** Total number of boards in a game (mix games always play 3, daily plays 1). */
@@ -139,9 +141,11 @@ export function buildDailyBoard(seed: number): Board {
 export function getRoundCategories(game: GameDef, roundIndex: number): RoundCategory[] {
   if (game.custom) {
     return game.custom.map((pick, i) => {
-      const cat = builderCategories().find((c) => c.name === pick.name);
+      // boards saved before tasks were merged name a set ("Bonus Mix 3"); its clue numbers no longer apply
+      const exact = builderCategories().find((c) => c.name === pick.name);
+      const cat = exact ?? builderCategories().find((c) => c.name === taskName(pick.name));
       if (!cat) throw new Error(`Custom board references unknown category: ${pick.name}`);
-      const clues = pick.clues?.length === 5 ? pick.clues.map((n) => cat.clues[n]).filter(Boolean) : cat.clues;
+      const clues = exact && pick.clues?.length === 5 ? pick.clues.map((n) => cat.clues[n]).filter(Boolean) : cat.clues;
       return { id: `custom-${i}`, name: cat.name, clues };
     });
   }
@@ -164,10 +168,17 @@ export function getRoundCategories(game: GameDef, roundIndex: number): RoundCate
 
 /**
  * Pick 5 clues from a category, preserving the source order (curated
- * easy → hard). Stride-samples when a category has extras.
+ * easy → hard). Stride-samples when a category has extras; a merged task
+ * gets one random clue from each difficulty level.
  */
-function pickClues<T>(clues: T[], rng: () => number): T[] {
+function pickClues<T extends { level?: number }>(clues: T[], rng: () => number): T[] {
   if (clues.length <= 5) return [...clues];
+  if (clues[0].level !== undefined) {
+    return [0, 1, 2, 3, 4].map((lv) => {
+      const at = clues.filter((c) => c.level === lv);
+      return at[Math.floor(rng() * at.length)];
+    });
+  }
   const span = clues.length - 5 + 1;
   const start = Math.floor(rng() * span);
   const step = (clues.length - start) / 5;
@@ -262,22 +273,41 @@ export function lightningValue(game: GameDef): number {
 
 let builderCache: RoundCategory[] | null = null;
 
+/** The same clue in two sets, written slightly differently ("[give both words]", "_ _ _" vs "___"). */
+const clueKey = (clue: string) =>
+  clue
+    .replace(/\s*\[[^\]]*\]\s*$/, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
 /**
- * Every category a host can put on a custom board: the book dataset and all
- * standalone boards, merged by name (clues de-duplicated, easy → hard order
- * kept), with at least five clues. Alphabetical.
+ * Every task a host can put on a custom board: the book dataset and all
+ * standalone boards, with numbered sets of the same task merged into one
+ * ("Bonus Mix 1" … "Bonus Mix 14" → "Bonus Mix"). Clues are de-duplicated and
+ * ordered easiest first: each clue keeps its difficulty level (0–4) from its
+ * own set, so a random board still runs easy → hard. At least five clues.
+ * Alphabetical.
  */
 export function builderCategories(): RoundCategory[] {
   if (builderCache) return builderCache;
-  const byName = new Map<string, RoundCategory>();
-  const add = (name: string, clues: { clue: string; answer: string; note?: string }[]) => {
-    const cat = byName.get(name) ?? { id: `b-${byName.size}`, name, clues: [] };
-    for (const c of clues) if (!cat.clues.some((x) => x.clue === c.clue)) cat.clues.push(c);
+  const byName = new Map<string, RoundCategory & { keys: Set<string> }>();
+  const add = (setName: string, clues: { clue: string; answer: string; note?: string }[]) => {
+    const name = taskName(setName);
+    const cat = byName.get(name) ?? { id: `b-${byName.size}`, name, clues: [], keys: new Set<string>() };
+    clues.forEach((c, i) => {
+      const key = clueKey(c.clue);
+      if (cat.keys.has(key)) return;
+      cat.keys.add(key);
+      cat.clues.push({ ...c, level: Math.min(4, Math.floor((i * 5) / clues.length)) });
+    });
     byName.set(name, cat);
   };
   for (const c of quizData.categories) add(c.name, c.clues);
   for (const g of ALL_BOARDS.values()) for (const c of g.categories) add(c.name, c.clues);
-  builderCache = [...byName.values()].filter((c) => c.clues.length >= 5).sort((a, b) => a.name.localeCompare(b.name));
+  builderCache = [...byName.values()]
+    .map(({ id, name, clues }) => ({ id, name, clues: [...clues].sort((a, b) => a.level! - b.level!) }))
+    .filter((c) => c.clues.length >= 5 && [0, 1, 2, 3, 4].every((lv) => c.clues.some((x) => x.level === lv)))
+    .sort((a, b) => a.name.localeCompare(b.name));
   return builderCache;
 }
 

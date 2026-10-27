@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useTeamStore } from "../store/teamStore";
 import { useMotionSafe } from "../lib/useMotionSafe";
 import { LIGHTNING_SECONDS } from "../lib/board";
+import HowToPlay from "./HowToPlay";
 import { displayClue } from "../lib/displayClue";
 
 /**
@@ -52,7 +53,8 @@ function LightningClueCard() {
         <span className="text-butter-deep">{value} pts</span>
       </div>
       <p className="mb-1 text-center text-xs font-bold uppercase tracking-[0.2em] text-sage">{clue.categoryName}</p>
-      <p className="mb-6 text-center text-xl font-semibold leading-relaxed text-ink sm:text-2xl">{displayClue(clue.clue)}</p>
+      <p className="mb-4 text-center text-xl font-semibold leading-relaxed text-ink sm:text-2xl">{displayClue(clue.clue)}</p>
+      <HowToPlay category={clue.categoryName} clue={clue.clue} />
 
       {!revealed ? (
         <>

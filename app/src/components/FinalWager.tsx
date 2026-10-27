@@ -4,6 +4,7 @@ import { useMotionSafe } from "../lib/useMotionSafe";
 import { say } from "../audio/voice";
 import { usePartyHost } from "../party/hostSession";
 import { judge } from "../party/round";
+import HowToPlay from "./HowToPlay";
 import { displayClue } from "../lib/displayClue";
 
 /** Final Quizzical for teams: per-team wagers, reveal, per-team grading. */
@@ -90,9 +91,10 @@ export default function FinalWager() {
         <span className="text-sage">{finalClue.categoryName}</span>
         <span className="text-coral">final</span>
       </div>
-      <p className="mb-8 text-center text-xl font-semibold leading-relaxed text-ink sm:text-2xl">
+      <p className="mb-4 text-center text-xl font-semibold leading-relaxed text-ink sm:text-2xl">
         {displayClue(finalClue.clue)}
       </p>
+      <HowToPlay category={finalClue.categoryName} clue={finalClue.clue} />
 
       {!revealed ? (
         <div className="text-center">
