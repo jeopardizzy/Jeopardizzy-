@@ -35,6 +35,26 @@ test.describe("build your own board", () => {
     // the 100-point tile of the first column is the first chosen question
     await page.locator("[role='gridcell']:not([disabled])").first().click();
     await expect(page.getByRole("dialog")).toContainText(chosen[0].slice(0, 20));
+
+    // every clue card explains its task
+    await page.getByRole("dialog").getByRole("button", { name: /How to play/ }).click();
+    await expect(page.getByRole("region", { name: /^How to play / })).toBeVisible();
+  });
+
+  test("numbered sets are one task", async ({ page }) => {
+    await page.goto("/#/build");
+    const categories = page.getByRole("list", { name: "Categories" });
+    await page.getByLabel("Search categories").fill("Bonus Mix");
+    await expect(categories.getByRole("button")).toHaveCount(1);
+    await expect(categories).toContainText("Bonus Mix");
+  });
+
+  test("guides: every task has one, found by name", async ({ page }) => {
+    await page.goto("/#/guides");
+    await page.getByLabel("Find a task").fill("Sheesh");
+    await expect(page.getByRole("list", { name: "Tasks for Theme Words" })).toContainText("Sheesh");
+    await page.getByLabel("Find a task").fill("Bonus Mix");
+    await expect(page.getByText(/Each clue starts with its type in brackets/)).toBeVisible();
   });
 
   test("random categories fill the board", async ({ page }) => {

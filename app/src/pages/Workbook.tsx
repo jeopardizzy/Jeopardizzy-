@@ -20,6 +20,7 @@ import { getVerdict } from "../lib/verdict";
 import Toggles from "../components/Toggles";
 import SpokenAnswer from "../components/SpokenAnswer";
 import { canUseLevel, FREE_WORKBOOK_LEVEL } from "../lib/access";
+import HowToPlay from "../components/HowToPlay";
 import { displayClue } from "../lib/displayClue";
 import { useEntitlement } from "../store/entitlementStore";
 
@@ -306,7 +307,8 @@ function TestRunner() {
         <p className="mb-4 text-xs font-bold uppercase tracking-[0.25em] text-sage">
           {q.categoryName}
         </p>
-        <p className="mb-8 text-xl font-semibold leading-relaxed text-ink sm:text-2xl">{displayClue(q.clue)}</p>
+        <p className="mb-4 text-xl font-semibold leading-relaxed text-ink sm:text-2xl">{displayClue(q.clue)}</p>
+        <HowToPlay key={index} category={q.categoryName} clue={q.clue} />
 
         {!feedback ? (
           <form

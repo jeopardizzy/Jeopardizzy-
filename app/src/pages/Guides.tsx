@@ -1,7 +1,10 @@
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GUIDES } from "../data/guides";
+import { tasksByGuide } from "../data/taskGuides";
+import { builderCategories } from "../lib/board";
+import { quizData } from "../data/quizData";
 import { TASK_TYPE_LABELS, type TaskType } from "../data/categoryTypes";
 import { useWorkbookStore } from "../store/workbookStore";
 import { useMotionSafe } from "../lib/useMotionSafe";
@@ -14,7 +17,16 @@ export default function Guides() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const pick = useWorkbookStore((s) => s.pick);
 
-  const gameGuides = GUIDES.filter((g) => g.type !== "general");
+  const [query, setQuery] = useState("");
+  // every task in the app, under the guide that explains it
+  const tasks = useMemo(
+    () => tasksByGuide([...builderCategories().map((c) => c.name), ...quizData.categories.map((c) => c.name)]),
+    [],
+  );
+  const q = query.trim().toLowerCase();
+  const matches = (g: (typeof GUIDES)[number]) =>
+    !q || g.name.toLowerCase().includes(q) || (tasks.get(g.id) ?? []).some((t) => t.toLowerCase().includes(q));
+  const gameGuides = GUIDES.filter((g) => g.type !== "general" && matches(g));
   const generalGuides = GUIDES.filter((g) => g.type === "general");
 
   const practice = (type: string) => {
@@ -25,7 +37,8 @@ export default function Guides() {
   };
 
   const renderCard = (g: (typeof GUIDES)[number], idx: number) => {
-    const open = openIdx === idx;
+    // a search that finds one guide opens it
+    const open = openIdx === idx || (openIdx === null && !!q && gameGuides.length === 1 && idx === 0);
     const practicable = g.type in TASK_TYPE_LABELS;
     return (
       <motion.div
@@ -36,7 +49,7 @@ export default function Guides() {
         className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card"
       >
         <button
-          onClick={() => setOpenIdx(open ? null : idx)}
+          onClick={() => setOpenIdx(open ? -1 : idx)}
           aria-expanded={open}
           className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-cream"
         >
@@ -87,6 +100,19 @@ export default function Guides() {
                   ))}
                 </ul>
 
+                {(tasks.get(g.id)?.length ?? 0) > 0 && (
+                  <>
+                    <h3 className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-mute">Tasks</h3>
+                    <ul className="mb-4 flex flex-wrap gap-1.5" aria-label={`Tasks for ${g.name}`}>
+                      {tasks.get(g.id)!.map((t) => (
+                        <li key={t} className="rounded-full border border-line bg-cream px-2.5 py-0.5 text-xs text-ink">
+                          {t}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+
                 {practicable && (
                   <button
                     onClick={() => practice(g.type)}
@@ -113,13 +139,30 @@ export default function Guides() {
         <h1 className="font-display mb-1 text-3xl text-ink sm:text-4xl">Guides</h1>
         <p className="mb-6 text-mute">
           Every puzzle type explained: the rules, a worked example, and the strategies that make
-          them easier.
+          them easier. Every task in the app is listed under its guide.
         </p>
 
-        <h2 className="font-display mb-3 text-lg text-sage-deep">Puzzle types</h2>
-        <div className="mb-8 space-y-3">{gameGuides.map((g, i) => renderCard(g, i))}</div>
+        <label htmlFor="guide-search" className="sr-only">
+          Find a task
+        </label>
+        <input
+          id="guide-search"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpenIdx(null);
+          }}
+          placeholder="Find a task, e.g. Bonus Mix or Sheesh…"
+          className="mb-6 w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-ink"
+        />
 
-        {generalGuides.length > 0 && (
+        <h2 className="font-display mb-3 text-lg text-sage-deep">Puzzle types</h2>
+        <div className="mb-8 space-y-3">
+          {gameGuides.map((g, i) => renderCard(g, i))}
+          {gameGuides.length === 0 && <p className="text-mute">No task by that name.</p>}
+        </div>
+
+        {generalGuides.length > 0 && !q && (
           <>
             <h2 className="font-display mb-3 text-lg text-sage-deep">General approach</h2>
             <div className="space-y-3">
