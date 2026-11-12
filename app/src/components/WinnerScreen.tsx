@@ -6,7 +6,7 @@ import { useWorkbookStore } from "../store/workbookStore";
 import { aggregateCategoryStats, weakestCategories } from "../lib/stats";
 import { useMotionSafe } from "../lib/useMotionSafe";
 import { canDrill } from "../lib/access";
-import { useEntitlement } from "../store/entitlementStore";
+import { hasAccess, useEntitlement } from "../store/entitlementStore";
 import { askForReview, shouldAskForReview } from "../lib/reviewPrompt";
 
 /** Winner celebration with final standings. */
@@ -121,7 +121,7 @@ function TrainingNotes() {
   if (outcomes.length === 0) return null;
 
   const practiceThese = () => {
-    if (!canDrill(useEntitlement.getState().fullClub)) return useEntitlement.getState().openSheet();
+    if (!canDrill(hasAccess(useEntitlement.getState()))) return useEntitlement.getState().openSheet();
     useWorkbookStore.getState().startDrill(gameWeak.map((w) => w.name));
     navigate("/workbook");
   };

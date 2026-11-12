@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { TEAM_COLORS, useTeamStore } from "../store/teamStore";
 import { useMotionSafe } from "../lib/useMotionSafe";
 import { canPlayGame } from "../lib/access";
-import { useEntitlement } from "../store/entitlementStore";
+import { hasAccess, useEntitlement } from "../store/entitlementStore";
 import { LIGHTNING_SECONDS } from "../lib/board";
 import { RELAY_URL } from "../party/connection";
 import { usePartyHost } from "../party/hostSession";
@@ -25,7 +25,7 @@ export default function TeamSetup() {
 
   const finalEnabled = useTeamStore((s) => s.finalEnabled);
   const setFinalEnabled = useTeamStore((s) => s.setFinalEnabled);
-  const fullClub = useEntitlement((s) => s.fullClub);
+  const fullClub = useEntitlement(hasAccess);
   const wrongPenalty = useTeamStore((s) => s.settings.wrongPenalty === true);
   const setWrongPenalty = useTeamStore((s) => s.setWrongPenalty);
   const lightning = useTeamStore((s) => s.settings.lightning === true);

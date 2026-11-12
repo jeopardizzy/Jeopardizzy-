@@ -3,8 +3,11 @@ import type { PurchasesAdapter } from "../../src/lib/purchases";
 import {
   ENTITLEMENT_KEY,
   STORE_TIMEOUT_MS,
+  TRIAL_KEY,
+  hasAccess,
   useEntitlement,
 } from "../../src/store/entitlementStore";
+import { TRIAL_MS, trialDaysLeft } from "../../src/lib/access";
 
 const mem = new Map<string, string>();
 (globalThis as { localStorage?: unknown }).localStorage = {
@@ -19,7 +22,7 @@ function fake(over: Partial<PurchasesAdapter> = {}): PurchasesAdapter & { fire: 
   let onResume = () => {};
   return {
     kind: "native",
-    price: async () => "$4.99",
+    price: async () => "$7.99",
     owned: async () => false,
     buy: async () => "purchased",
     restore: async () => false,
@@ -31,6 +34,9 @@ function fake(over: Partial<PurchasesAdapter> = {}): PurchasesAdapter & { fire: 
     },
     canRedeemCode: false,
     redeemCode: async () => {},
+    trialAvailable: async () => true,
+    trialStartedAt: async () => null,
+    startTrial: async () => Date.now(),
     fire: () => listener(),
     resume: () => onResume(),
     ...over,
@@ -40,7 +46,18 @@ function fake(over: Partial<PurchasesAdapter> = {}): PurchasesAdapter & { fire: 
 const never = <T>() => new Promise<T>(() => {});
 const cached = () => JSON.parse(mem.get(ENTITLEMENT_KEY) ?? "{}").fullClub;
 const reset = () =>
-  useEntitlement.setState({ fullClub: false, price: null, busy: "idle", notice: null, sheetOpen: false });
+  useEntitlement.setState({
+    fullClub: false,
+    price: null,
+    busy: "idle",
+    notice: null,
+    sheetOpen: false,
+    trialAvailable: false,
+    trialEndsAt: null,
+    trialActive: false,
+  });
+const DAY = 24 * 60 * 60 * 1000;
+const trialRec = () => JSON.parse(mem.get(TRIAL_KEY) ?? "null");
 
 describe("Full Club entitlement", () => {
   beforeEach(() => {
@@ -64,7 +81,7 @@ describe("Full Club entitlement", () => {
   it("launch: store says owned → unlocked, cached, price loaded", async () => {
     await useEntitlement.getState().init(fake({ owned: async () => true }));
     expect(useEntitlement.getState().fullClub).toBe(true);
-    expect(useEntitlement.getState().price).toBe("$4.99");
+    expect(useEntitlement.getState().price).toBe("$7.99");
     expect(cached()).toBe(true);
   });
 
@@ -182,5 +199,101 @@ describe("Full Club entitlement", () => {
     await useEntitlement.getState().init(fake({ redeemCode: async () => Promise.reject(new Error("iOS 15")) }));
     await useEntitlement.getState().redeem();
     expect(useEntitlement.getState().notice).toBe("redeem-error");
+  });
+});
+
+describe("Free week", () => {
+  beforeEach(() => {
+    mem.clear();
+    reset();
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("offered on a fresh install; starting it opens everything without buying", async () => {
+    await useEntitlement.getState().init(fake());
+    expect(useEntitlement.getState().trialAvailable).toBe(true);
+    useEntitlement.getState().openSheet();
+    await useEntitlement.getState().startTrial();
+    const s = useEntitlement.getState();
+    expect(s).toMatchObject({ fullClub: false, trialActive: true, trialAvailable: false, sheetOpen: false });
+    expect(hasAccess(s)).toBe(true);
+    expect(trialDaysLeft(s.trialEndsAt!, Date.now())).toBe(7);
+    expect(cached()).toBe(false); // the free week is never cached as a purchase
+  });
+
+  it("cancelling the store sheet starts nothing", async () => {
+    await useEntitlement.getState().init(fake({ startTrial: async () => "cancelled" }));
+    await useEntitlement.getState().startTrial();
+    expect(useEntitlement.getState()).toMatchObject({ trialActive: false, trialAvailable: true, busy: "idle" });
+    expect(trialRec()).toBeNull();
+  });
+
+  it("not offered where the store has no trial product (or on the web)", async () => {
+    await useEntitlement.getState().init(fake({ trialAvailable: async () => false }));
+    expect(useEntitlement.getState().trialAvailable).toBe(false);
+    await useEntitlement.getState().startTrial();
+    expect(useEntitlement.getState().trialActive).toBe(false);
+  });
+
+  it("ends by itself after 7 days, even with the app open", async () => {
+    vi.useFakeTimers();
+    const init = useEntitlement.getState().init(fake());
+    await vi.advanceTimersByTimeAsync(10);
+    await init;
+    await useEntitlement.getState().startTrial();
+    expect(hasAccess(useEntitlement.getState())).toBe(true);
+    await vi.advanceTimersByTimeAsync(TRIAL_MS + 1000);
+    expect(hasAccess(useEntitlement.getState())).toBe(false);
+  });
+
+  it("only once: an ended week is not offered again", async () => {
+    mem.set(TRIAL_KEY, JSON.stringify({ startedAt: Date.now() - 8 * DAY, warned: true, endedShown: true }));
+    await useEntitlement.getState().init(fake());
+    expect(useEntitlement.getState()).toMatchObject({ trialActive: false, trialAvailable: false, sheetOpen: false });
+  });
+
+  it("iOS reinstall: the store's earlier start wins over a fresh device", async () => {
+    const started = Date.now() - 3 * DAY;
+    await useEntitlement.getState().init(fake({ trialStartedAt: async () => started }));
+    const s = useEntitlement.getState();
+    expect(s).toMatchObject({ trialActive: true, trialAvailable: false });
+    expect(s.trialEndsAt).toBe(started + TRIAL_MS);
+    expect(trialRec().startedAt).toBe(started);
+  });
+
+  it("last day: the sheet opens once with a reminder", async () => {
+    mem.set(TRIAL_KEY, JSON.stringify({ startedAt: Date.now() - 6.5 * DAY }));
+    await useEntitlement.getState().init(fake());
+    expect(useEntitlement.getState()).toMatchObject({ sheetOpen: true, notice: "trial-ending", trialActive: true });
+    useEntitlement.getState().closeSheet();
+    await useEntitlement.getState().init(fake());
+    expect(useEntitlement.getState().sheetOpen).toBe(false);
+  });
+
+  it("after the week: the sheet opens once to say it's over", async () => {
+    mem.set(TRIAL_KEY, JSON.stringify({ startedAt: Date.now() - 8 * DAY, warned: true }));
+    await useEntitlement.getState().init(fake());
+    expect(useEntitlement.getState()).toMatchObject({ sheetOpen: true, notice: "trial-ended", trialActive: false });
+    useEntitlement.getState().closeSheet();
+    await useEntitlement.getState().init(fake());
+    expect(useEntitlement.getState().sheetOpen).toBe(false);
+  });
+
+  it("buyers never see trial reminders, and a refund check can't end a trial", async () => {
+    mem.set(TRIAL_KEY, JSON.stringify({ startedAt: Date.now() - 6.5 * DAY }));
+    await useEntitlement.getState().init(fake({ owned: async () => true }));
+    expect(useEntitlement.getState().sheetOpen).toBe(false);
+    reset();
+    mem.set(TRIAL_KEY, JSON.stringify({ startedAt: Date.now() - DAY }));
+    await useEntitlement.getState().init(fake({ owned: async () => false }));
+    expect(hasAccess(useEntitlement.getState())).toBe(true);
+  });
+
+  it("offline store on launch keeps the device's trial", async () => {
+    mem.set(TRIAL_KEY, JSON.stringify({ startedAt: Date.now() - DAY }));
+    await useEntitlement.getState().init(
+      fake({ trialStartedAt: async () => Promise.reject(new Error("offline")), trialAvailable: async () => Promise.reject(new Error("offline")) }),
+    );
+    expect(useEntitlement.getState().trialActive).toBe(true);
   });
 });

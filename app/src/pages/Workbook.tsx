@@ -22,7 +22,7 @@ import SpokenAnswer from "../components/SpokenAnswer";
 import { canUseLevel, FREE_WORKBOOK_LEVEL } from "../lib/access";
 import HowToPlay from "../components/HowToPlay";
 import { displayClue } from "../lib/displayClue";
-import { useEntitlement } from "../store/entitlementStore";
+import { hasAccess, useEntitlement } from "../store/entitlementStore";
 
 const LEVELS: { id: Level; label: string }[] = [
   { id: "all", label: "All levels" },
@@ -74,7 +74,7 @@ function Picker() {
   const startTest = useWorkbookStore((s) => s.startTest);
   const bests = useWorkbookStore((s) => s.records.workbookBests);
   const reduce = useMotionSafe();
-  const fullClub = useEntitlement((s) => s.fullClub);
+  const fullClub = useEntitlement(hasAccess);
   const openSheet = useEntitlement((s) => s.openSheet);
 
   // free tier: Easy tests only, no drills (also covers a refund mid-session)
@@ -465,7 +465,7 @@ function TestResults() {
 
 /** Full Club status, with Restore always reachable (store requirement). */
 function FullClubCard() {
-  const fullClub = useEntitlement((s) => s.fullClub);
+  const fullClub = useEntitlement(hasAccess);
   const platform = useEntitlement((s) => s.platform);
   const openSheet = useEntitlement((s) => s.openSheet);
   if (fullClub) {

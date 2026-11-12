@@ -5,7 +5,8 @@ import type { GameDef } from "../data/games";
 import { gameRoundCount, getRoundCategories, listPlayableGames } from "../lib/board";
 import { useMotionSafe } from "../lib/useMotionSafe";
 import { canPlayGame } from "../lib/access";
-import { useEntitlement } from "../store/entitlementStore";
+import { hasAccess, useEntitlement } from "../store/entitlementStore";
+import TrialBadge from "../components/TrialBadge";
 
 /** Exact clue count across all rounds (handles 4-wide boards and mixes). */
 function gameClueCount(g: GameDef): number {
@@ -39,7 +40,7 @@ export default function Sets() {
   const navigate = useNavigate();
   const selectSet = useTeamStore((s) => s.selectSet);
   const reduce = useMotionSafe();
-  const fullClub = useEntitlement((s) => s.fullClub);
+  const fullClub = useEntitlement(hasAccess);
   const openSheet = useEntitlement((s) => s.openSheet);
 
   return (
@@ -47,6 +48,7 @@ export default function Sets() {
       <div className="mx-auto max-w-4xl">
 
         <h1 className="font-display mb-1 text-3xl text-ink sm:text-4xl">Choose your board</h1>
+        <TrialBadge className="mb-3" />
         <p className="mb-8 text-mute">
           Every game is a list of boards — five categories, five clues each, values climbing with
           every round. Pick the flavor that fits the table.

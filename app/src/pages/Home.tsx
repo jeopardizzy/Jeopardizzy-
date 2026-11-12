@@ -4,6 +4,7 @@ import { useTeamStore } from "../store/teamStore";
 import { dailyStamp } from "../lib/random";
 import { useMotionSafe } from "../lib/useMotionSafe";
 import Toggles from "../components/Toggles";
+import TrialBadge from "../components/TrialBadge";
 
 /**
  * Home: the Daily Board card, front and center. Sections live in the
@@ -22,6 +23,9 @@ export default function Home() {
     <main className="stage-bg relative flex min-h-dvh flex-col items-center justify-center px-4 py-10">
       <div className="absolute right-4 top-4">
         <Toggles />
+      </div>
+      <div className="absolute left-4 top-4">
+        <TrialBadge />
       </div>
 
       <motion.section

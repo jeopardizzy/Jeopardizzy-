@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { grantsFullClub, needsAcknowledge } from "../../src/lib/purchases";
+import { grantsFullClub, needsAcknowledge, trialStart } from "../../src/lib/purchases";
 
 describe("grantsFullClub", () => {
   const base = { productIdentifier: "full_club" };
@@ -29,5 +29,19 @@ describe("needsAcknowledge (Play promo codes redeemed outside the app)", () => {
     expect(needsAcknowledge({ ...open, revocationDate: "2026-10-20T00:00:00Z" })).toBe(false);
     expect(needsAcknowledge({ productIdentifier: "full_club" })).toBe(false);
     expect(needsAcknowledge({ ...open, productIdentifier: "something_else" })).toBe(false);
+  });
+});
+
+describe("trialStart (the iOS free-week purchase)", () => {
+  const t = { productIdentifier: "trial_7_day", purchaseDate: "2026-11-10T12:00:00Z" };
+
+  it("reads the start from the free purchase", () => {
+    expect(trialStart(t)).toBe(Date.parse("2026-11-10T12:00:00Z"));
+  });
+
+  it("ignores revoked trials, Full Club itself and bad dates", () => {
+    expect(trialStart({ ...t, revocationDate: "2026-11-11T00:00:00Z" })).toBeNull();
+    expect(trialStart({ ...t, productIdentifier: "full_club" })).toBeNull();
+    expect(trialStart({ ...t, purchaseDate: "" })).toBeNull();
   });
 });

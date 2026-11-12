@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEntitlement } from "../store/entitlementStore";
 import { STORE_LINKS } from "../lib/purchases";
 import { useMotionSafe } from "../lib/useMotionSafe";
+import { TRIAL_DAYS, trialDaysLeft } from "../lib/access";
 
 const INCLUDED = [
   "All 18 team games — every Idiom Arena, Book Club and Classic Vault set",
@@ -16,6 +17,8 @@ const NOTICES = {
   pending: "Your purchase is waiting for approval. It unlocks as soon as it clears.",
   error: "The store didn’t answer. Check your connection and try again.",
   "redeem-error": "The code sheet didn’t open. You can also redeem in the App Store app: tap your photo, then “Redeem Gift Card or Code”.",
+  "trial-ending": "Your free week ends tomorrow. Unlock Full Club to keep every board.",
+  "trial-ended": "Your free week is over. Thanks for playing! Unlock Full Club to keep every board.",
 } as const;
 
 /** Full Club offer: buy or restore in the apps, a pointer to the apps on the web. */
@@ -30,9 +33,16 @@ export default function UnlockSheet() {
   const restore = useEntitlement((s) => s.restore);
   const canRedeem = useEntitlement((s) => s.canRedeem);
   const redeem = useEntitlement((s) => s.redeem);
-  const reduce = useMotionSafe();
   const native = platform === "native";
   const android = native && Capacitor.getPlatform() === "android";
+  const trialAvailable = useEntitlement((s) => s.trialAvailable);
+  const trialActive = useEntitlement((s) => s.trialActive);
+  const trialEndsAt = useEntitlement((s) => s.trialEndsAt);
+  const startTrial = useEntitlement((s) => s.startTrial);
+  const offerTrial = native && trialAvailable;
+  const daysLeft = trialActive && trialEndsAt !== null ? trialDaysLeft(trialEndsAt, Date.now()) : null;
+  const unlockLabel = price ? `Unlock for ${price}` : "Unlock Full Club";
+  const reduce = useMotionSafe();
 
   return (
     <AnimatePresence>
@@ -70,6 +80,12 @@ export default function UnlockSheet() {
               games stay free forever.
             </p>
 
+            {daysLeft !== null && (
+              <p className="mb-4 rounded-xl bg-sage-soft px-4 py-3 text-sm font-semibold text-ink">
+                ⏳ Free trial: {daysLeft} day{daysLeft === 1 ? "" : "s"} left. Everything above is open until then.
+              </p>
+            )}
+
             {notice && (
               <p role="status" className="mb-4 rounded-xl bg-butter-soft px-4 py-3 text-sm font-semibold text-ink">
                 {NOTICES[notice]}
@@ -78,12 +94,31 @@ export default function UnlockSheet() {
 
             {native ? (
               <div className="flex flex-col gap-3">
+                {offerTrial && (
+                  <>
+                    <button
+                      onClick={startTrial}
+                      disabled={busy !== "idle"}
+                      className="font-display rounded-xl bg-sage px-6 py-3.5 text-lg text-white transition enabled:hover:bg-sage-deep enabled:active:scale-[0.98] disabled:opacity-60"
+                    >
+                      {busy === "buying" ? "Opening the store…" : `Try everything free for ${TRIAL_DAYS} days`}
+                    </button>
+                    <p className="-mt-1 text-center text-xs leading-relaxed text-mute">
+                      Free for {TRIAL_DAYS} days, then the games and levels above lock again. Nothing is
+                      charged automatically: to keep them, unlock Full Club{price ? ` for ${price}` : ""} once.
+                    </p>
+                  </>
+                )}
                 <button
                   onClick={buy}
                   disabled={busy !== "idle"}
-                  className="font-display rounded-xl bg-sage px-6 py-3.5 text-lg text-white transition enabled:hover:bg-sage-deep enabled:active:scale-[0.98] disabled:opacity-60"
+                  className={
+                    offerTrial
+                      ? "rounded-xl border-2 border-sage px-6 py-3 font-semibold text-sage-deep transition enabled:hover:bg-cream disabled:opacity-60"
+                      : "font-display rounded-xl bg-sage px-6 py-3.5 text-lg text-white transition enabled:hover:bg-sage-deep enabled:active:scale-[0.98] disabled:opacity-60"
+                  }
                 >
-                  {busy === "buying" ? "Opening the store…" : price ? `Unlock for ${price}` : "Unlock Full Club"}
+                  {busy === "buying" && !offerTrial ? "Opening the store…" : unlockLabel}
                 </button>
                 <button
                   onClick={restore}

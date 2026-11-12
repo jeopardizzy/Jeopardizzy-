@@ -1,7 +1,7 @@
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { NativePurchases, PURCHASE_TYPE, type Transaction } from "@capgo/native-purchases";
-import { FULL_CLUB_PRODUCT_ID } from "./access";
+import { FULL_CLUB_PRODUCT_ID, TRIAL_PRODUCT_ID } from "./access";
 
 /**
  * Thin platform layer over the stores. The entitlement store talks only to
@@ -11,7 +11,7 @@ import { FULL_CLUB_PRODUCT_ID } from "./access";
  */
 export interface PurchasesAdapter {
   readonly kind: "native" | "web";
-  /** localized price ("$4.99"), or null when the store can't say */
+  /** localized price ("$7.99"), or null when the store can't say */
   price(): Promise<string | null>;
   /** does the store report a current, unrevoked Full Club purchase? */
   owned(): Promise<boolean>;
@@ -25,6 +25,12 @@ export interface PurchasesAdapter {
   /** the store has an in-app code-redemption sheet (iOS; Android takes codes in the purchase sheet) */
   readonly canRedeemCode: boolean;
   redeemCode(): Promise<void>;
+  /** can the free week start here? iOS: the "7-Day Trial" product is live; Android: always; web: never */
+  trialAvailable(): Promise<boolean>;
+  /** when the store says the free week started (iOS), or null if it can't tell */
+  trialStartedAt(): Promise<number | null>;
+  /** start the free week: the start time, or "cancelled" */
+  startTrial(): Promise<number | "cancelled">;
 }
 
 const INAPP = { productType: PURCHASE_TYPE.INAPP } as const;
@@ -46,6 +52,15 @@ export function needsAcknowledge(
 ): boolean {
   return grantsFullClub(t) && t.isAcknowledged === false && !!t.purchaseToken;
 }
+
+/** The iOS free-week purchase: right product, not revoked. */
+export function trialStart(t: Pick<Transaction, "productIdentifier" | "revocationDate" | "purchaseDate">): number | null {
+  if (t.productIdentifier !== TRIAL_PRODUCT_ID || t.revocationDate) return null;
+  const at = Date.parse(t.purchaseDate);
+  return Number.isFinite(at) ? at : null;
+}
+
+const ios = () => Capacitor.getPlatform() === "ios";
 
 function isCancel(err: unknown): boolean {
   const msg = String((err as { message?: string })?.message ?? err).toLowerCase();
@@ -94,10 +109,31 @@ const nativeAdapter: PurchasesAdapter = {
   // iPad web views report a Mac user agent, so no version gate: below iOS 16
   // the sheet fails to open and the app points to the App Store app instead
   get canRedeemCode() {
-    return Capacitor.getPlatform() === "ios";
+    return ios();
   },
   async redeemCode() {
     await NativePurchases.presentOfferCodeRedeemSheet();
+  },
+  async trialAvailable() {
+    if (!ios()) return true;
+    const { products } = await NativePurchases.getProducts({ productIdentifiers: [TRIAL_PRODUCT_ID], ...INAPP });
+    return products.some((p) => p.identifier === TRIAL_PRODUCT_ID);
+  },
+  async trialStartedAt() {
+    if (!ios()) return null; // Android: the device's own record is all there is
+    const { purchases } = await NativePurchases.getPurchases({ ...INAPP, onlyCurrentEntitlements: true });
+    const starts = purchases.map(trialStart).filter((at): at is number => at !== null);
+    return starts.length ? Math.min(...starts) : null;
+  },
+  async startTrial() {
+    if (!ios()) return Date.now();
+    try {
+      const t = await NativePurchases.purchaseProduct({ productIdentifier: TRIAL_PRODUCT_ID, ...INAPP });
+      return trialStart(t) ?? Date.now();
+    } catch (err) {
+      if (isCancel(err)) return "cancelled";
+      throw err;
+    }
   },
 };
 
@@ -117,6 +153,9 @@ const webAdapter: PurchasesAdapter = {
   onResume: () => {},
   canRedeemCode: false,
   redeemCode: async () => {},
+  trialAvailable: async () => false,
+  trialStartedAt: async () => null,
+  startTrial: async () => "cancelled",
 };
 
 export function platformAdapter(): PurchasesAdapter {

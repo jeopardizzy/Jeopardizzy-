@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { builderCategories, customGame } from "../lib/board";
 import { displayClue } from "../lib/displayClue";
 import { useTeamStore } from "../store/teamStore";
-import { useEntitlement } from "../store/entitlementStore";
+import { hasAccess, useEntitlement } from "../store/entitlementStore";
 import type { CustomPick } from "../data/games";
 
 const MAX = 5;
@@ -18,7 +18,7 @@ const LEVELS = ["100 · easiest", "200", "300", "400", "500 · hardest"];
 export default function BoardBuilder() {
   const navigate = useNavigate();
   const selectCustom = useTeamStore((s) => s.selectCustom);
-  const fullClub = useEntitlement((s) => s.fullClub);
+  const fullClub = useEntitlement(hasAccess);
   const openSheet = useEntitlement((s) => s.openSheet);
   const all = useMemo(() => builderCategories(), []);
   const [picks, setPicks] = useState<CustomPick[]>([]);

@@ -6,7 +6,7 @@
 //          ipad-13 (2064x2752; also used for Play's tablet slots). Default: all.
 //
 // The app runs as on a phone with nothing bought: a stand-in for the native
-// bridge answers the store calls the way the real store does (price $4.99,
+// bridge answers the store calls the way the real store does (price $7.99,
 // no purchases), so lock badges and the Full Club sheet look as users see them.
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -27,7 +27,7 @@ const { chromium } = require("@playwright/test");
 const storeStandIn = () => {
   window.webkit = { messageHandlers: { bridge: { postMessage: () => {} } } };
   const answers = {
-    getProducts: { products: [{ identifier: "full_club", priceString: "$4.99" }] },
+    getProducts: { products: [{ identifier: "full_club", priceString: "$7.99" }] },
     getPurchases: { purchases: [] },
   };
   window.Capacitor = {
@@ -104,7 +104,7 @@ for (const name of presets) {
   // 7 Full Club sheet
   await page.goto(base + "/#/sets");
   await page.getByRole("button", { name: /Play Championship.* — Full Club/ }).click();
-  await page.getByRole("dialog", { name: "Full Club" }).getByRole("button", { name: "Unlock for $4.99" }).waitFor();
+  await page.getByRole("dialog", { name: "Full Club" }).getByRole("button", { name: "Unlock for $7.99" }).waitFor();
   await shot("shot-7-fullclub");
 
   await ctx.close();
